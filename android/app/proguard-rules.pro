@@ -1,0 +1,21 @@
+# Flutter engine classes — required for JNI / reflection in release builds.
+-keep class io.flutter.app.** { *; }
+-keep class io.flutter.plugin.**  { *; }
+-keep class io.flutter.util.**  { *; }
+-keep class io.flutter.view.**  { *; }
+-keep class io.flutter.**  { *; }
+-keep class io.flutter.plugins.**  { *; }
+
+# AdMob requires these rules to keep SDK classes in release builds.
+-keep class com.google.android.gms.ads.** { *; }
+-keep class com.google.ads.** { *; }
+
+# Keep Google Mobile Ads annotations.
+-dontwarn com.google.android.gms.ads.**
+
+# Keep in_app_purchase classes.
+-keep class com.android.billingclient.** { *; }
+
+# Play Core — used by Flutter's deferred component manager at runtime.
+-keep class com.google.android.play.core.** { *; }
+-dontwarn com.google.android.play.core.**
