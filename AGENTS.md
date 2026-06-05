@@ -26,11 +26,12 @@ APP FEATURES
   7. Data      — bit, byte, KB, MB, GB, TB, PB
   8. Time      — ms, second, minute, hour, day, week, month, year
 
-4 screens:
+5 screens:
   1. HomeScreen        (bottom nav item 0 — category grid + quick presets)
   2. CurrencyScreen    (bottom nav item 1 — live FX rates via Frankfurter.app)
-  3. HistoryScreen     (bottom nav item 2 — last 20 conversions)
-  4. SettingsScreen    (bottom nav item 3 — theme, premium, about)
+  3. CompassScreen     (bottom nav item 2 — live heading via sensors + manual angle)
+  4. HistoryScreen     (bottom nav item 3 — last 20 conversions)
+  5. SettingsScreen    (bottom nav item 4 — theme, premium, about)
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 FOLDER STRUCTURE (enforce this exactly)
@@ -101,7 +102,7 @@ Border radius: 12 (cards), 8 (buttons/inputs/chips)
 Font: system default (clean, no custom font needed)
 Input font size: 32 (large, thumb-friendly)
 Result font size: 32
-Bottom navbar: 4 items (Home / Currency / History / Settings)
+Bottom navbar: 5 items (Home / Currency / Compass / History / Settings)
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 QUALITY RULES

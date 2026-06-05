@@ -1,37 +1,38 @@
-/// Bottom-navigation shell — hosts the three main tabs.
+/// Bottom-navigation shell — hosts all five main tabs with swipe support.
 library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../core/colors.dart';
+import 'compass_screen.dart';
 import 'currency_screen.dart';
 import 'history_screen.dart';
 import 'home_screen.dart';
 import 'settings_screen.dart';
 
-/// Bottom-navigation host that switches between the three main screens.
+/// Bottom-navigation host that switches between the five main screens.
 ///
-/// Uses [IndexedStack] so each tab retains its scroll position and widget
-/// state across tab switches. Android back button behaviour:
+/// Uses [PageView] so each tab retains its scroll position and widget
+/// state across tab switches, and supports swipe left/right between tabs.
+/// Android back button behaviour:
 /// - On the Home tab (index 0): allows the OS to pop / exit.
 /// - On any other tab: navigates back to index 0 instead of exiting.
 class MainShell extends StatefulWidget {
-  /// Creates a [MainShell].
   const MainShell({super.key});
 
   @override
   State<MainShell> createState() => _MainShellState();
 }
 
-class _MainShellState extends State<MainShell>
-    with SingleTickerProviderStateMixin {
+class _MainShellState extends State<MainShell> {
   int _currentIndex = 0;
-  late final AnimationController _tabAnimController;
+  late final PageController _pageController;
 
   static const List<Widget> _screens = [
     HomeScreen(),
     CurrencyScreen(),
+    CompassScreen(),
     HistoryScreen(),
     SettingsScreen(),
   ];
@@ -48,6 +49,11 @@ class _MainShellState extends State<MainShell>
       label: 'Currency',
     ),
     BottomNavigationBarItem(
+      icon: Icon(Icons.explore_outlined),
+      activeIcon: Icon(Icons.explore_rounded),
+      label: 'Compass',
+    ),
+    BottomNavigationBarItem(
       icon: Icon(Icons.history_outlined),
       activeIcon: Icon(Icons.history_rounded),
       label: 'History',
@@ -62,24 +68,23 @@ class _MainShellState extends State<MainShell>
   @override
   void initState() {
     super.initState();
-    _tabAnimController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 250),
-    );
-    _tabAnimController.value = 1.0;
+    _pageController = PageController(initialPage: 0);
   }
 
   @override
   void dispose() {
-    _tabAnimController.dispose();
+    _pageController.dispose();
     super.dispose();
   }
 
   void _onTabTapped(int index) {
     if (index == _currentIndex) return;
     HapticFeedback.selectionClick();
-    setState(() => _currentIndex = index);
-    _tabAnimController.forward(from: 0.0);
+    _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
   }
 
   @override
@@ -92,16 +97,15 @@ class _MainShellState extends State<MainShell>
         }
       },
       child: Scaffold(
-        body: FadeTransition(
-          opacity: _tabAnimController.drive(
-            CurveTween(curve: const Interval(0.0, 0.6, curve: Curves.easeOut)),
-          ).drive(
-            Tween(begin: 0.4, end: 1.0),
-          ),
-          child: IndexedStack(
-            index: _currentIndex,
-            children: _screens,
-          ),
+        body: PageView(
+          controller: _pageController,
+          physics: const ClampingScrollPhysics(),
+          onPageChanged: (index) {
+            setState(() => _currentIndex = index);
+          },
+          children: _screens.map((screen) {
+            return _KeepAlivePage(child: screen);
+          }).toList(),
         ),
         bottomNavigationBar: BottomNavigationBar(
           currentIndex: _currentIndex,
@@ -114,4 +118,25 @@ class _MainShellState extends State<MainShell>
       ),
     );
   }
+}
+
+/// Wraps a screen widget so it survives PageView page changes.
+class _KeepAlivePage extends StatefulWidget {
+  final Widget child;
+  const _KeepAlivePage({required this.child});
+
+  @override
+  State<_KeepAlivePage> createState() => _KeepAlivePageState();
+}
+
+class _KeepAlivePageState extends State<_KeepAlivePage>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return widget.child;
+  }
+
+  @override
+  bool get wantKeepAlive => true;
 }
