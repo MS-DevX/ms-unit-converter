@@ -197,6 +197,7 @@ class _CompassScreenState extends State<CompassScreen> {
                               ? _selectedLabel
                               : null,
                           isLive: _isLive,
+                          isDark: isDark,
                           onBearingSelected: (bearing) =>
                               _setManualDirection(bearing),
                         ),

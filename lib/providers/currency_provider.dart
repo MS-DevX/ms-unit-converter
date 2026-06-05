@@ -90,7 +90,10 @@ class CurrencyProvider extends ChangeNotifier {
 
   Future<void> _init() async {
     final cached = await CurrencyService.loadCachedRates();
-    if (cached != null) {
+    // Only use cached rates if they cover every currency in [allCurrencies].
+    final bool cachedIsComplete = cached != null &&
+        allCurrencies.every((c) => cached.containsKey(c.code));
+    if (cachedIsComplete) {
       _rates = cached;
       _lastUpdated = await CurrencyService.loadLastUpdated();
       _isLoading = false;
@@ -129,10 +132,12 @@ class CurrencyProvider extends ChangeNotifier {
       notifyListeners();
     } catch (_) {
       final cached = await CurrencyService.loadCachedRates();
-      if (cached != null && cached.isNotEmpty) {
+      final bool cachedIsComplete = cached != null &&
+          allCurrencies.every((c) => cached.containsKey(c.code));
+      if (cachedIsComplete) {
         _rates = cached;
         _lastUpdated = await CurrencyService.loadLastUpdated();
-      } else if (_rates.isEmpty) {
+      } else {
         _rates = CurrencyService.getFallbackRates();
         _error = 'Could not fetch rates. Using approximate rates.';
       }
@@ -151,24 +156,28 @@ class CurrencyProvider extends ChangeNotifier {
     if (amount == null || amount.isNaN || amount.isInfinite) return [];
 
     final sourceCode = _fromCurrency!.code;
-    final sourceRate = _rates[sourceCode]!;
+    final sourceRate = _rates[sourceCode];
+    // Safety: source currency missing from rates — should never happen
+    // when [isReady] is true, but guard against corrupted state.
+    if (sourceRate == null) return [];
 
-    return allCurrencies.map((currency) {
-      final targetRate = _rates[currency.code]!;
+    final List<CurrencyResultRow> results = [];
+    for (final currency in allCurrencies) {
+      final targetRate = _rates[currency.code];
+      if (targetRate == null) continue;
+
       final rate = targetRate / sourceRate;
       final converted = amount * rate;
 
-      final formattedResult = Formatters.formatResult(converted);
-      final formattedRate = Formatters.formatResult(rate);
-
-      return CurrencyResultRow(
+      results.add(CurrencyResultRow(
         currency: currency,
         rate: rate,
         convertedValue: converted,
-        formattedResult: formattedResult,
-        formattedRate: formattedRate,
-      );
-    }).toList();
+        formattedResult: Formatters.formatResult(converted),
+        formattedRate: Formatters.formatResult(rate),
+      ));
+    }
+    return results;
   }
 
   /// Returns a formatted string showing the base rate of the source

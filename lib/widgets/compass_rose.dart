@@ -68,6 +68,9 @@ class CompassRose extends StatelessWidget {
   /// Whether the compass is in live sensor mode.
   final bool isLive;
 
+  /// Whether the device is using dark theme.
+  final bool isDark;
+
   /// Called when the user taps a point on the compass face.
   final ValueChanged<double>? onBearingSelected;
 
@@ -76,6 +79,7 @@ class CompassRose extends StatelessWidget {
     this.heading,
     this.selectedLabel,
     this.isLive = false,
+    this.isDark = false,
     this.onBearingSelected,
   });
 
@@ -100,6 +104,7 @@ class CompassRose extends StatelessWidget {
           heading: heading,
           selectedLabel: selectedLabel,
           isLive: isLive,
+          isDark: isDark,
         ),
       ),
     );
@@ -110,11 +115,13 @@ class _CompassRosePainter extends CustomPainter {
   final double? heading;
   final String? selectedLabel;
   final bool isLive;
+  final bool isDark;
 
   _CompassRosePainter({
     this.heading,
     this.selectedLabel,
     this.isLive = false,
+    this.isDark = false,
   });
 
   @override
@@ -156,16 +163,15 @@ class _CompassRosePainter extends CustomPainter {
     }
 
     // ── Cardinal labels: N, E, S, W (bold, theme-aware) ────────────
-    final labelStyle = TextStyle(
-      fontSize: radius * 0.16,
-      fontWeight: FontWeight.w900,
-      color: Colors.black.withValues(alpha: 0.85),
-    );
     final labelOffset = radius * 0.75;
-    _drawLabel(canvas, center, labelOffset, -90, 'N', labelStyle);
-    _drawLabel(canvas, center, labelOffset, 0, 'E', labelStyle);
-    _drawLabel(canvas, center, labelOffset, 90, 'S', labelStyle);
-    _drawLabel(canvas, center, labelOffset, 180, 'W', labelStyle);
+    _drawLabel(canvas, center, labelOffset, -90, 'N',
+        _labelStyle(radius, isDark, 'N'));
+    _drawLabel(canvas, center, labelOffset, 0, 'E',
+        _labelStyle(radius, isDark, 'E'));
+    _drawLabel(canvas, center, labelOffset, 90, 'S',
+        _labelStyle(radius, isDark, 'S'));
+    _drawLabel(canvas, center, labelOffset, 180, 'W',
+        _labelStyle(radius, isDark, 'W'));
 
     // ── Highlighted arc for selected direction ────────────────────
     if (heading != null) {
@@ -267,10 +273,48 @@ class _CompassRosePainter extends CustomPainter {
     );
   }
 
+  /// Returns the [TextStyle] for a cardinal label at the given [radius].
+  ///
+  /// On light theme all cardinals share a single dark style.
+  /// On dark theme each cardinal gets a distinct bright colour:
+  /// N = amber, E = green, S = blue, W = pink.
+  static TextStyle _labelStyle(double radius, bool dark, String label) {
+    final double size = radius * 0.16;
+
+    if (!dark) {
+      return TextStyle(
+        fontSize: size,
+        fontWeight: FontWeight.w900,
+        color: Colors.black.withValues(alpha: 0.85),
+      );
+    }
+
+    final Color color;
+    switch (label) {
+      case 'N':
+        color = const Color(0xFFF59E0B); // amber
+      case 'E':
+        color = const Color(0xFF10B981); // green
+      case 'S':
+        color = const Color(0xFF3B82F6); // blue
+      case 'W':
+        color = const Color(0xFFEC4899); // pink
+      default:
+        color = Colors.white;
+    }
+
+    return TextStyle(
+      fontSize: size,
+      fontWeight: FontWeight.w900,
+      color: color,
+    );
+  }
+
   @override
   bool shouldRepaint(_CompassRosePainter oldDelegate) {
     return oldDelegate.heading != heading ||
         oldDelegate.selectedLabel != selectedLabel ||
-        oldDelegate.isLive != isLive;
+        oldDelegate.isLive != isLive ||
+        oldDelegate.isDark != isDark;
   }
 }
