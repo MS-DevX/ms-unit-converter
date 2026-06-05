@@ -1,113 +1,188 @@
 # MS Unit Converter — Release Guide
 
-## Project Structure
+## Project Identifiers
+
+| Field | Value |
+|-------|-------|
+| App name | MS Unit Converter |
+| Package ID | `com.msdevx.unitconverter` |
+| Developer | MS DevX |
+| Version | `2.0.0+2` (pubspec.yaml:19) |
+| Min SDK | 21 (Android 5.0) |
+| Target SDK | 34 (Android 14) |
+| Flutter | Latest stable 3.x |
+
+---
+
+## Full File Map & What Each File Does
 
 ```
 unit_converter/
 ├── lib/
-│   ├── main.dart                  # App entry, Provider wiring, theme setup
+│   ├── main.dart                        # App entry — Provider tree, theme setup, IAP init
+│   │
 │   ├── core/
-│   │   ├── theme.dart             # AppTheme — light + dark ThemeData
-│   │   ├── constants.dart         # App-wide config (ad IDs, IAP IDs, strings)
-│   │   └── colors.dart            # AppColors — all color tokens
+│   │   ├── theme.dart                   # AppTheme — light + dark ThemeData (Material 3)
+│   │   ├── constants.dart               # AppConstants — ad IDs, IAP ID, URLs, storage keys
+│   │   └── colors.dart                  # AppColors — all color tokens (primary, bg, text, etc.)
+│   │
 │   ├── data/
-│   │   └── units_data.dart        # Unit definitions + conversion factors (8 categories)
+│   │   ├── units_data.dart              # UnitCategory enum (15 categories) + unitsData map + presets
+│   │   └── currencies_data.dart         # allCurrencies list (30 currencies) + fallbackRatesToUsd
+│   │
 │   ├── models/
-│   │   ├── unit_model.dart        # UnitModel class
-│   │   ├── conversion_result.dart # ConversionResult class
-│   │   └── history_entry.dart     # HistoryEntry class
+│   │   ├── unit_model.dart              # UnitModel — name, symbol, toBase, isSpecialCase
+│   │   ├── currency_model.dart          # CurrencyModel — code, name, symbol, flag, decimalDigits
+│   │   ├── conversion_result.dart       # ConversionResult — result, formattedResult, formula, isValid
+│   │   └── history_entry.dart           # HistoryEntry — id, category, units, value, result, timestamp
+│   │
 │   ├── providers/
-│   │   ├── converter_provider.dart # Conversion state (category, units, value, result)
-│   │   ├── history_provider.dart   # History state (load, save, clear)
-│   │   └── settings_provider.dart  # Theme mode, isPremium flag
+│   │   ├── converter_provider.dart      # ConverterProvider — category, units, input, result state
+│   │   ├── currency_provider.dart       # CurrencyProvider — source currency, rates, all results
+│   │   ├── history_provider.dart        # HistoryProvider — load, add, remove, clear in-memory + storage
+│   │   └── settings_provider.dart       # SettingsProvider — themeMode (system default), isPremium
+│   │
 │   ├── services/
-│   │   ├── conversion_service.dart # Pure conversion logic (no UI)
-│   │   ├── history_service.dart    # SharedPreferences read/write
-│   │   ├── admob_service.dart      # AppOpenAd load/show logic
-│   │   └── iap_service.dart        # In-app purchase (remove ads)
+│   │   ├── conversion_service.dart      # Pure conversion logic (linear, temp, fuel economy)
+│   │   ├── currency_service.dart        # Frankfurter.app fetch, cache, fallback, convert
+│   │   ├── history_service.dart         # SharedPreferences CRUD for history entries
+│   │   ├── admob_service.dart           # AppOpenAd singleton — load, show, cooldown, dispose
+│   │   ├── iap_service.dart             # In-app purchase — init, purchase, restore, verify
+│   │   └── compass_service.dart         # Sensor fusion — accelerometer + magnetometer heading
+│   │
 │   ├── screens/
-│   │   ├── splash_screen.dart      # Splash (1500ms) + ad init
-│   │   ├── converter_screen.dart   # Main screen — bottom nav item 1
-│   │   ├── history_screen.dart     # History — bottom nav item 2
-│   │   └── settings_screen.dart    # Settings — bottom nav item 3
+│   │   ├── splash_screen.dart           # 1500ms splash — brand + ad init + premium check
+│   │   ├── main_shell.dart              # Bottom nav (5 tabs) + PageView with reduced-sensitivity swipe
+│   │   ├── home_screen.dart             # Category grid with gradient cards + quick presets
+│   │   ├── converter_screen.dart        # Full converter — input bar, swap, all-unit results list
+│   │   ├── currency_screen.dart         # Live FX rates — source dropdown, all-currency results
+│   │   ├── compass_screen.dart          # Live heading + manual angle + 8-direction chips
+│   │   ├── history_screen.dart          # Last 20 conversions — swipe/delete, clear all
+│   │   └── settings_screen.dart         # Theme toggle, premium IAP, about, rate/share/privacy
+│   │
 │   ├── widgets/
-│   │   ├── category_chip_bar.dart  # Horizontal scrollable category selector
-│   │   ├── unit_dropdown.dart      # Styled unit dropdown
-│   │   ├── swap_button.dart        # Animated rotate swap button
-│   │   ├── result_display.dart     # Result + formula + copy button
-│   │   ├── history_tile.dart       # Single history list item
-│   │   └── empty_state_widget.dart # Reusable empty state (icon + message)
+│   │   ├── category_chip_bar.dart       # Horizontal scrollable category selector chips
+│   │   ├── converter_input_bar.dart     # Value input + source unit picker (tap to search)
+│   │   ├── converter_connector_bar.dart # Gradient bar with swap button + pulsing arrow
+│   │   ├── conversion_results_list.dart # Wrapper that maps results to ConversionResultRows
+│   │   ├── conversion_result_row.dart   # Single result row — copy, share, animated value
+│   │   ├── compass_rose.dart            # Custom-painted rose — needle, 16 ticks, N/E/S/W labels
+│   │   ├── swap_button.dart             # Animated rotate swap button (180°, easeInOutBack)
+│   │   ├── unit_dropdown.dart           # Styled dropdown for unit selection
+│   │   └── unit_search_dialog.dart      # Full-screen searchable unit picker
+│   │
 │   └── utils/
-│       ├── formatters.dart         # Number formatting helpers
-│       └── validators.dart         # Input validation helpers
+│       ├── formatters.dart              # formatResult (8 sig digits), formatInput (sanitize)
+│       └── validators.dart              # Input validation helpers
+│
 ├── android/
 │   ├── app/
-│   │   ├── build.gradle.kts        # App-level build config, signing, proguard
-│   │   ├── proguard-rules.pro      # ProGuard rules
-│   │   ├── upload-keystore.jks     # 🔑 RELEASE SIGNING KEYSTORE
-│   │   └── src/
-│   │       └── main/
-│   │           └── AndroidManifest.xml  # AdMob App ID, permissions
-│   ├── build.gradle.kts            # Project-level Gradle config
-│   ├── gradle/
-│   │   └── wrapper/                # Gradle wrapper (use for builds)
-│   ├── gradle.properties           # Gradle JVM settings
-│   ├── key.properties              # 🔑 Keystore alias + passwords (gitignored)
-│   ├── settings.gradle.kts         # Module settings
-│   ├── local.properties            # Local Android SDK path (gitignored)
-│   ├── gradlew                     # Gradle wrapper script (Linux/macOS)
-│   └── gradlew.bat                 # Gradle wrapper script (Windows)
-├── ios/                            # iOS platform code (for future Play Store)
+│   │   ├── build.gradle.kts             # App-level Gradle — signing, proguard, SDK versions
+│   │   ├── proguard-rules.pro           # ProGuard rules
+│   │   ├── upload-keystore.jks          # 🔑 RELEASE SIGNING KEYSTORE (gitignored)
+│   │   └── src/main/
+│   │       └── AndroidManifest.xml      # AdMob App ID, INTERNET permission, Play query
+│   ├── build.gradle.kts                 # Project-level Gradle
+│   ├── settings.gradle.kts              # Module settings
+│   ├── gradle.properties                # JVM args, AndroidX, R8
+│   ├── key.properties                   # 🔑 Keystore alias + passwords (gitignored)
+│   └── upload_certificate.pem           # Public cert for Play Console App Integrity
+│
 ├── assets/
-│   └── icon.png                    # App launcher icon
-├── test/                           # Unit tests
-├── pubspec.yaml                    # ★ VERSION + dependencies
-├── RELEASE_GUIDE.md                # This file
-└── AGENTS.md                       # OpenCode agent rules
+│   └── icon.png                         # App launcher icon source (512×512)
+│
+├── ios/
+│   └── Runner/Assets.xcassets/AppIcon.appiconset/  # All iOS icon sizes
+│
+├── test/                                # Unit tests (8 files)
+│
+├── pubspec.yaml                         # Version + dependencies + launcher_icons config
+├── RELEASE_GUIDE.md                     # This file
+├── AGENTS.md                            # OpenCode agent rules
+└── README.md                            # Project README
 ```
 
 ---
 
-## Key Files Map
+## Key Configuration Points
 
-### 🔢 Version
-| File | Line | What to change |
-|------|------|----------------|
-| `pubspec.yaml` | 19 | `version: x.y.z+b` — bump `x.y.z` (versionName) and/or `b` (versionCode) |
-
-**Android mapping:** `versionName` = `x.y.z`, `versionCode` = `b` (integer, must increment)
+### 📦 Version Number
+**File:** `pubspec.yaml:19` — `version: 2.0.0+2`
+- `2.0.0` = versionName (user-facing)
+- `2` = versionCode (integer, must increment per release)
+- Override via CLI: `--build-name=2.1.0 --build-number=3`
 
 ### 🔑 Release Signing
-| File | Purpose | In git? |
-|------|---------|---------|
-| `android/app/upload-keystore.jks` | The actual keystore binary | ❌ (`**/*.jks` in `.gitignore`) |
-| `android/key.properties` | Keystore alias, passwords, storeFile path | ❌ (`key.properties` in `.gitignore`) |
-| `android/app/build.gradle.kts:36-41` | Reads `key.properties` to configure `signingConfigs.release` | ✅ |
+| File | Purpose | Git? |
+|------|---------|------|
+| `android/app/upload-keystore.jks` | Actual keystore binary | ❌ (`.gitignore` has `**/*.jks`) |
+| `android/key.properties` | Keystore credentials | ❌ (`.gitignore` has `key.properties`) |
+| `android/upload_certificate.pem` | Public cert for Play Console | ✅ (safe to commit) |
+| `android/app/build.gradle.kts:36-41` | Reads key.properties for signing config | ✅ |
 
-### 📦 Monetization IDs
-| ID | Value | Defined in | Used in |
-|----|-------|------------|---------|
-| AdMob App ID | `ca-app-pub-8684958562988579~6766583891` | `lib/core/constants.dart:19` + `AndroidManifest.xml:35` | AdMob SDK init |
-| App Open Ad Unit ID | `ca-app-pub-8684958562988579/2956999697` | `lib/core/constants.dart:23` | `lib/services/admob_service.dart:52` |
-| IAP Remove Ads ID | `com.msdevx.unitconverter.removeads` | `lib/core/constants.dart:27` | `lib/services/iap_service.dart:74,77,153` |
-| IAP Display Price | `$1.99` | `lib/core/constants.dart:30` | `lib/screens/settings_screen.dart:115` |
+Keystore credentials (`android/key.properties`):
+```
+storePassword=MSDevX@2024!Secure
+keyPassword=MSDevX@2024!Secure
+keyAlias=upload
+storeFile=upload-keystore.jks
+```
 
-**To switch between test and production:** Update the values in `lib/core/constants.dart` and `AndroidManifest.xml`.  
-Google test ad unit: `ca-app-pub-3940256099942544/9257395921`
+### 📢 AdMob & IAP IDs
+**File:** `lib/core/constants.dart`
 
-### 🎨 Theme & Colors
+| Constant | Value | Line |
+|----------|-------|------|
+| `admobAppIdAndroid` | `ca-app-pub-8684958562988579~6766583891` | 19-20 |
+| `appOpenAdUnitId` | `ca-app-pub-8684958562988579/2956999697` | 23-24 |
+| `removeAdsProductId` | `com.msdevx.unitconverter.removeads` | 27-28 |
+| `removeAdsPrice` | `\$1.99` | 31 |
+
+Also mirrored in `android/app/src/main/AndroidManifest.xml:38` for AdMob App ID.
+
+**Test ad unit:** `ca-app-pub-3940256099942544/9257395921` (Google test App Open Ad)
+
+### 🌓 Theme & Colors
 | File | What it controls |
 |------|------------------|
-| `lib/core/colors.dart` | All color tokens (primary, surfaces, text, success/warning/danger) |
-| `lib/core/theme.dart` | `ThemeData` for light + dark mode, applies colors from `colors.dart` |
+| `lib/core/colors.dart` | All color tokens (primary, surfaces, text, borders, states) |
+| `lib/core/theme.dart` | Light + dark `ThemeData` using Material 3 |
+| `lib/providers/settings_provider.dart:21` | Default theme: `ThemeMode.system` (follows device) |
+| Cycle: System → Light → Dark → System | Set in `toggleTheme()` at line 81 |
+
+### 💱 Currency API
+- **Provider:** Frankfurter.app (free, no API key)
+- **Endpoint:** `https://api.frankfurter.app/latest?from=USD`
+- **Service:** `lib/services/currency_service.dart`
+- **Supported:** 30 currencies (defined in `lib/data/currencies_data.dart`)
+- **Fallback:** Hardcoded approximate rates (same file), used on first launch or offline
+- **Caching:** Rates + timestamp saved to SharedPreferences
+
+### 🧭 Compass
+- **Service:** `lib/services/compass_service.dart` — sensor fusion via `sensors_plus`
+- **Algorithm:** Tilt-compensated heading using accelerometer + magnetometer
+- **Widget:** `lib/widgets/compass_rose.dart` — CustomPainter with arrow, 16 ticks, N/E/S/W
+- **Screen:** `lib/screens/compass_screen.dart` — live mode + manual angle + 8 direction chips
+
+### 💰 Monetization Model
+- **Free** with single App Open Ad on cold start (only if 4+ hours since last show)
+- **\$1.99** one-time IAP to remove ads (`com.msdevx.unitconverter.removeads`)
+- **No banners, no interstitials, no rewarded ads**
+- Ad service: `lib/services/admob_service.dart`
+- IAP service: `lib/services/iap_service.dart`
+- Premium status persisted in SharedPreferences, checked in `settings_provider.dart`
+
+### 🔒 Privacy Policy URL
+`lib/core/constants.dart:34` → `https://msdevx.com/privacy`
+Hosted externally — publish generic MS DevX privacy policy there.
 
 ---
 
 ## Build Commands
 
-### Debug APK (quick test on device)
+### Debug (quick test)
 ```bash
-flutter build apk --debug
+flutter build apk --debug --target-platform android-arm64
 ```
 Output: `build/app/outputs/flutter-apk/app-debug.apk`
 
@@ -115,22 +190,32 @@ Output: `build/app/outputs/flutter-apk/app-debug.apk`
 ```bash
 flutter build apk --release
 ```
-Output: `build/app/outputs/flutter-apk/app-release.apk`
+Output: `build/app/outputs/flutter-apk/app-release.apk` (~53 MB universal)
 
 ### Release AAB (Play Store submission)
 ```bash
 flutter build appbundle --release
 ```
-Output: `build/app/outputs/bundle/release/app-release.aab`
+Output: `build/app/outputs/bundle/release/app-release.aab` (~54 MB)
 
-### Clean build (start fresh)
+### Regenerate icons
 ```bash
-flutter clean && flutter pub get
+dart run flutter_launcher_icons
 ```
 
-### Override version from CLI (optional)
+### Run analyzer
 ```bash
-flutter build appbundle --release --build-name=1.1.0 --build-number=2
+flutter analyze
+```
+
+### Run tests
+```bash
+flutter test
+```
+
+### Clean build
+```bash
+flutter clean && flutter pub get
 ```
 
 ---
@@ -138,57 +223,51 @@ flutter build appbundle --release --build-name=1.1.0 --build-number=2
 ## Release Checklist
 
 ### Before Every Release
-1. — [ ] Bump version in `pubspec.yaml:19` (e.g. `1.0.0+1` → `1.1.0+2`)
-2. — [ ] Run tests: `flutter test`
-3. — [ ] Clean build: `flutter clean && flutter pub get`
-4. — [ ] Build release AAB: `flutter build appbundle --release`
-5. — [ ] Verify the output at `build/app/outputs/bundle/release/app-release.aab`
+- [ ] Bump version in `pubspec.yaml:19` (e.g. `2.0.0+2` → `2.1.0+3`)
+- [ ] Run `flutter analyze` — must be 0 issues
+- [ ] Run `flutter test` — all tests pass
+- [ ] Run `flutter clean && flutter pub get`
+- [ ] Build release AAB: `flutter build appbundle --release`
+- [ ] Verify output at `build/app/outputs/bundle/release/app-release.aab`
+- [ ] Update `lib/core/constants.dart:13` appVersion if needed
 
-### First-Time Setup (one-time)
-- [ ] Generate upload keystore: `keytool -genkey -v -keystore upload-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload`
-- [ ] Place keystore in `android/app/upload-keystore.jks`
-- [ ] Create `android/key.properties` with:
-  ```
-  storePassword=<your-password>
-  keyPassword=<your-password>
-  keyAlias=upload
-  storeFile=upload-keystore.jks
-  ```
-- [ ] Create Google Play Console listing
-- [ ] Create IAP product `com.msdevx.unitconverter.removeads` in Play Console ($1.99, managed product)
+### First-Time Setup (one-time only)
+- [ ] Generate upload keystore:
+      `keytool -genkey -v -keystore android/app/upload-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload`
+- [ ] Create `android/key.properties` with passwords
+- [ ] Export certificate: `keytool -export -rfc -keystore android/app/upload-keystore.jks -alias upload -file android/upload_certificate.pem`
+- [ ] Upload `android/upload_certificate.pem` to Play Console → App Integrity
+- [ ] Create Play Console app listing with package `com.msdevx.unitconverter`
+- [ ] Create IAP product `com.msdevx.unitconverter.removeads` (\$1.99, managed product)
 
-### First Upload to Play Store
+### Upload to Play Store
 1. Go to [Google Play Console](https://play.google.com/console/)
-2. Create a new app with package name `com.msdevx.unitconverter`
+2. Navigate to the existing app `com.msdevx.unitconverter`
 3. Go to **Release > Production > Create new release**
 4. Upload `build/app/outputs/bundle/release/app-release.aab`
 5. Fill in release notes
 6. Roll out
 
-### Subsequent Updates
-1. Bump version in `pubspec.yaml`
-2. Build AAB
-3. Upload to existing release on Play Console
-
 ---
 
 ## Troubleshooting
 
-### Build fails: "Keystore was tampered with, or password was incorrect"
-→ Check `android/key.properties` passwords match the keystore.
+| Symptom | Likely Fix |
+|---------|------------|
+| "Keystore was tampered with" | Check `android/key.properties` passwords match keystore |
+| "Could not find storeFile" | Verify `storeFile=upload-keystore.jks` relative to `android/` dir |
+| "Daemon compilation failed" | `flutter clean && flutter pub get` — stale Kotlin cache |
+| Ad not showing | Use real device; verify ad unit ID in `constants.dart:23`; check cooldown |
+| IAP not working | Product must be published in Play Console; test with License Testing account |
+| Currency rates not updating | Check internet; Frankfurter.app may be rate-limited; fallback rates used |
+| Compass heading wrong | Calibrate device by waving in figure-8 pattern; sensor precision varies by device |
+| Build fails with Kotlin warnings | Non-blocking — warnings about built-in Kotlin migration are cosmetic |
 
-### Build fails: "Could not find storeFile"
-→ Verify `storeFile` path in `key.properties`. For `upload-keystore.jks` in `android/app/`, the relative path from `android/` is `app/upload-keystore.jks`.
+---
 
-### "Daemon compilation failed" / Kotlin cache errors
-→ Run `flutter clean && flutter pub get` and rebuild. These are stale cache issues.
+## Critical Notes
 
-### Ad not showing
-→ Ensure you're using a real device (not emulator for production ads).  
-→ Check ad unit ID in `lib/core/constants.dart:23`.  
-→ Verify AdMob App ID in `AndroidManifest.xml:35`.
-
-### IAP not working
-→ Product must be published in Play Console first.  
-→ Test with a Play Console tester account (License Testing).  
-→ Check product ID matches `lib/core/constants.dart:27`.
+- **Back up `android/app/upload-keystore.jks`** to cloud + external drive. Loss = cannot publish updates.
+- **Upload `android/upload_certificate.pem`** to Play Console before first AAB upload (App Integrity requirement).
+- The `key.properties` file is gitignored — restore from backup on a fresh clone.
+- Universal APK is ~53 MB; Play Store delivers split APKs from AAB (~22 MB per device).
