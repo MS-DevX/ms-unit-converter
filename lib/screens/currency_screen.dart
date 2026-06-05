@@ -1,4 +1,4 @@
-/// Currency converter screen — real-time exchange rate conversion.
+/// Currency converter screen — shows all 30 currencies as a scrollable list.
 library;
 
 import 'package:flutter/material.dart';
@@ -10,7 +10,7 @@ import '../data/currencies_data.dart';
 import '../models/currency_model.dart';
 import '../providers/currency_provider.dart';
 
-/// Full-screen currency converter with live rate fetching.
+/// Full-screen currency converter with real-time rates for all currencies.
 class CurrencyScreen extends StatefulWidget {
   const CurrencyScreen({super.key});
 
@@ -40,29 +40,43 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
     HapticFeedback.selectionClick();
   }
 
-  void _onTargetChanged(CurrencyModel? currency) {
-    if (currency != null) {
-      context.read<CurrencyProvider>().setToCurrency(currency);
-    }
-    HapticFeedback.selectionClick();
+  void _copyValue(CurrencyResultRow row) {
+    final text = '${row.formattedResult} ${row.currency.symbol}';
+    Clipboard.setData(ClipboardData(text: text));
+    HapticFeedback.lightImpact();
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text('Copied ${row.currency.code} — $text'),
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 2),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        ),
+      );
   }
 
   String _formatLastUpdated(DateTime? dt) {
-    if (dt == null) return 'Not yet updated';
+    if (dt == null) return 'Never';
     final diff = DateTime.now().difference(dt);
-    if (diff.inSeconds < 60) return 'Updated just now';
-    if (diff.inMinutes < 60) return 'Updated ${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return 'Updated ${diff.inHours}h ago';
-    return 'Updated ${dt.day}/${dt.month}/${dt.year}';
+    if (diff.inSeconds < 60) return 'just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    return '${dt.day}/${dt.month}/${dt.year}';
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
 
     return Consumer<CurrencyProvider>(
       builder: (context, provider, _) {
+        final results = provider.getAllResults();
+
         return GestureDetector(
           onTap: () => FocusScope.of(context).unfocus(),
           child: Scaffold(
@@ -86,7 +100,7 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
             ),
             body: Column(
               children: [
-                // ── Input row: amount + source ──────────────────────
+                // ── Input row: amount + source dropdown ────────────
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
                   child: Row(
@@ -109,7 +123,9 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                             hintStyle: TextStyle(
                               fontSize: 36,
                               fontWeight: FontWeight.w600,
-                              color: isDark ? AppColors.darkTextSecondary.withValues(alpha: 0.3) : AppColors.lightTextSecondary.withValues(alpha: 0.3),
+                              color: isDark
+                                  ? AppColors.darkTextSecondary.withValues(alpha: 0.3)
+                                  : AppColors.lightTextSecondary.withValues(alpha: 0.3),
                             ),
                             border: InputBorder.none,
                             isDense: true,
@@ -120,9 +136,9 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                       const SizedBox(width: 12),
                       Expanded(
                         flex: 2,
-                        child: _CurrencyDropdown(
+                        child: _SourceDropdown(
                           value: provider.fromCurrency,
-                          currencies: provider.currencies,
+                          currencies: allCurrencies,
                           onChanged: _onSourceChanged,
                           isDark: isDark,
                         ),
@@ -131,95 +147,55 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                   ),
                 ),
 
-                // ── Gradient connector bar with swap ───────────────
-                _CurrencyConnectorBar(
-                  onSwap: () {
-                    provider.swap();
-                    HapticFeedback.mediumImpact();
-                  },
-                ),
-
-                // ── Result row: amount + target ─────────────────────
+                // ── Base rate indicator ────────────────────────────
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        flex: 3,
-                        child: AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 200),
-                          transitionBuilder: (child, animation) {
-                            return FadeTransition(opacity: animation, child: child);
-                          },
-                          child: Text(
-                            provider.isLoading
-                                ? '\u2014'
-                                : '${provider.toCurrency?.symbol ?? ''} ${provider.resultDisplay}',
-                            key: ValueKey('${provider.toCurrency?.code}_${provider.resultDisplay}'),
-                            style: TextStyle(
-                              fontSize: 36,
-                              fontWeight: FontWeight.w700,
-                              color: provider.resultDisplay == '\u2014' || provider.resultDisplay == 'Invalid'
-                                  ? (isDark ? AppColors.darkTextSecondary.withValues(alpha: 0.4) : AppColors.lightTextSecondary.withValues(alpha: 0.4))
-                                  : AppColors.success,
-                              height: 1.2,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        flex: 2,
-                        child: _CurrencyDropdown(
-                          value: provider.toCurrency,
-                          currencies: provider.currencies,
-                          onChanged: _onTargetChanged,
-                          isDark: isDark,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // ── Info row: last updated + error ─────────────────
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.fromLTRB(16, 2, 16, 0),
                   child: Row(
                     children: [
                       if (provider.isLoading)
                         SizedBox(
-                          width: 12,
-                          height: 12,
+                          width: 10,
+                          height: 10,
                           child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: textColor.withValues(alpha: 0.5),
+                            strokeWidth: 1.5,
+                            color: (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary)
+                                .withValues(alpha: 0.5),
                           ),
                         )
                       else ...[
                         Icon(
                           Icons.check_circle_rounded,
-                          size: 12,
-                          color: AppColors.success.withValues(alpha: 0.6),
+                          size: 10,
+                          color: AppColors.success.withValues(alpha: 0.5),
                         ),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: 3),
                       ],
-                      const SizedBox(width: 4),
+                      const SizedBox(width: 3),
                       Text(
-                        provider.isLoading ? 'Updating...' : _formatLastUpdated(provider.lastUpdated),
+                        provider.isLoading ? 'Updating...' : 'Updated ${_formatLastUpdated(provider.lastUpdated)}',
                         style: TextStyle(
-                          fontSize: 11,
-                          color: textColor.withValues(alpha: 0.5),
+                          fontSize: 10,
+                          color: (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary)
+                              .withValues(alpha: 0.45),
                         ),
                       ),
+                      if (!provider.isLoading && provider.baseRateDisplay != '\u2014') ...[
+                        Text(
+                          '  ·  ${provider.baseRateDisplay}',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary)
+                                .withValues(alpha: 0.45),
+                          ),
+                        ),
+                      ],
                       if (provider.error != null) ...[
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             provider.error!,
-                            style: TextStyle(
-                              fontSize: 11,
+                            style: const TextStyle(
+                              fontSize: 10,
                               color: AppColors.warning,
                             ),
                             overflow: TextOverflow.ellipsis,
@@ -230,81 +206,66 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                   ),
                 ),
 
-                // ── Quick currency pairs ───────────────────────────
+                // ── Quick source switches ──────────────────────────
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Row(
+                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                  child: SizedBox(
+                    height: 32,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
                       children: [
-                        Icon(
-                          Icons.flash_on_rounded,
-                          size: 14,
-                          color: AppColors.warning,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Quick Pairs',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: textColor,
+                        'USD', 'EUR', 'GBP', 'JPY', 'CNY', 'INR', 'AUD', 'CAD', 'CHF', 'BRL',
+                      ].map((code) {
+                        final currency = currencyByCode(code);
+                        final isSelected = provider.fromCurrency?.code == code;
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 6),
+                          child: GestureDetector(
+                            onTap: currency == null
+                                ? null
+                                : () => _onSourceChanged(currency),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10),
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? AppColors.primary
+                                    : (isDark ? AppColors.darkSurface : AppColors.lightSurface),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: isSelected
+                                      ? AppColors.primary
+                                      : (isDark ? AppColors.borderDark : AppColors.borderLight),
+                                ),
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                code,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                  color: isSelected ? Colors.white : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
-                      ],
+                        );
+                      }).toList(),
                     ),
                   ),
                 ),
-                const SizedBox(height: 8),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      _QuickPairChip(
-                        label: 'USD → EUR',
-                        isDark: isDark,
-                        onTap: () => _setPair('USD', 'EUR'),
-                      ),
-                      _QuickPairChip(
-                        label: 'EUR → USD',
-                        isDark: isDark,
-                        onTap: () => _setPair('EUR', 'USD'),
-                      ),
-                      _QuickPairChip(
-                        label: 'USD → GBP',
-                        isDark: isDark,
-                        onTap: () => _setPair('USD', 'GBP'),
-                      ),
-                      _QuickPairChip(
-                        label: 'USD → JPY',
-                        isDark: isDark,
-                        onTap: () => _setPair('USD', 'JPY'),
-                      ),
-                      _QuickPairChip(
-                        label: 'GBP → EUR',
-                        isDark: isDark,
-                        onTap: () => _setPair('GBP', 'EUR'),
-                      ),
-                    ],
+
+                // ── Results list ───────────────────────────────────
+                const SizedBox(height: 12),
+                Expanded(
+                  child: _CurrencyResultsList(
+                    results: results,
+                    sourceCode: provider.fromCurrency?.code,
+                    isDark: isDark,
+                    onRowTapped: _copyValue,
                   ),
                 ),
-
-                const Spacer(),
-
-                // ── Refresh prompt ─────────────────────────────────
-                if (!provider.isLoading && provider.lastUpdated != null)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                    child: Text(
-                      'Swipe down to refresh',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: textColor.withValues(alpha: 0.35),
-                      ),
-                    ),
-                  ),
+                if (provider.isLoading && results.isEmpty)
+                  const Center(child: CircularProgressIndicator()),
               ],
             ),
           ),
@@ -312,27 +273,17 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
       },
     );
   }
-
-  void _setPair(String fromCode, String toCode) {
-    final provider = context.read<CurrencyProvider>();
-    final from = currencyByCode(fromCode);
-    final to = currencyByCode(toCode);
-    if (from != null) provider.setFromCurrency(from);
-    if (to != null) provider.setToCurrency(to);
-    HapticFeedback.selectionClick();
-  }
 }
 
-// ── Currency Dropdown ──────────────────────────────────────────────────
+// ── Source Dropdown ─────────────────────────────────────────────────
 
-/// A compact dropdown for selecting a currency from the full list.
-class _CurrencyDropdown extends StatelessWidget {
+class _SourceDropdown extends StatelessWidget {
   final CurrencyModel? value;
   final List<CurrencyModel> currencies;
   final ValueChanged<CurrencyModel?> onChanged;
   final bool isDark;
 
-  const _CurrencyDropdown({
+  const _SourceDropdown({
     required this.value,
     required this.currencies,
     required this.onChanged,
@@ -383,124 +334,116 @@ class _CurrencyDropdown extends StatelessWidget {
   }
 }
 
-// ── Connector Bar ─────────────────────────────────────────────────────
+// ── Results List ────────────────────────────────────────────────────
 
-/// Gradient bar with swap button, styled to match the converter pattern.
-class _CurrencyConnectorBar extends StatelessWidget {
-  final VoidCallback onSwap;
-
-  const _CurrencyConnectorBar({required this.onSwap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Container(
-        height: 40,
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF059669), Color(0xFFD97706)],
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-          ),
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF059669).withValues(alpha: 0.35),
-              blurRadius: 8,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            const SizedBox(width: 14),
-            const Icon(
-              Icons.currency_exchange_rounded,
-              color: Colors.white70,
-              size: 20,
-            ),
-            const SizedBox(width: 8),
-            const Text(
-              'Exchange rate',
-              style: TextStyle(
-                color: Colors.white70,
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const Spacer(),
-            GestureDetector(
-              onTap: onSwap,
-              child: Container(
-                width: 28,
-                height: 28,
-                margin: const EdgeInsets.only(right: 10),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.swap_vert_rounded,
-                  color: Colors.white,
-                  size: 16,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ── Quick Pair Chip ───────────────────────────────────────────────────
-
-/// Tappable chip for a popular currency pair.
-class _QuickPairChip extends StatelessWidget {
-  final String label;
+/// Scrollable list showing converted values for all currencies.
+class _CurrencyResultsList extends StatelessWidget {
+  final List<CurrencyResultRow> results;
+  final String? sourceCode;
   final bool isDark;
-  final VoidCallback onTap;
+  final void Function(CurrencyResultRow row) onRowTapped;
 
-  const _QuickPairChip({
-    required this.label,
+  const _CurrencyResultsList({
+    required this.results,
+    required this.sourceCode,
     required this.isDark,
-    required this.onTap,
+    required this.onRowTapped,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: isDark ? AppColors.borderDark : AppColors.borderLight,
+    if (results.isEmpty) {
+      return Center(
+        child: Text(
+          'Enter an amount to convert',
+          style: TextStyle(
+            fontSize: 14,
+            color: (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary)
+                .withValues(alpha: 0.5),
           ),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.swap_horiz_rounded,
-              size: 12,
-              color: AppColors.primary,
-            ),
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
-              ),
-            ),
-          ],
-        ),
+      );
+    }
+
+    return ListView.separated(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      itemCount: results.length,
+      separatorBuilder: (_, _) => Divider(
+        height: 0.5,
+        thickness: 0.5,
+        indent: 16,
+        endIndent: 16,
+        color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
       ),
+      itemBuilder: (context, index) {
+        final row = results[index];
+        final isSource = row.currency.code == sourceCode;
+
+        return GestureDetector(
+          onTap: () => onRowTapped(row),
+          child: Container(
+            height: 48,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            color: isSource
+                ? (isDark
+                    ? AppColors.primary.withValues(alpha: 0.1)
+                    : AppColors.primary.withValues(alpha: 0.06))
+                : Colors.transparent,
+            child: Row(
+              children: [
+                Text(
+                  row.currency.flag,
+                  style: const TextStyle(fontSize: 18),
+                ),
+                const SizedBox(width: 10),
+                SizedBox(
+                  width: 42,
+                  child: Text(
+                    row.currency.code,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    row.currency.name,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary)
+                          .withValues(alpha: 0.6),
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  row.formattedResult,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: isSource
+                        ? AppColors.primary
+                        : (isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary),
+                    height: 1.2,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  row.currency.symbol,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary)
+                        .withValues(alpha: 0.5),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

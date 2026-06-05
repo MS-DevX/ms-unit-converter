@@ -1,7 +1,7 @@
 /// UI-state provider for the Currency converter tab.
 ///
-/// Manages source and target currencies, the input value, the computed
-/// result, and the lifecycle of fetching / caching exchange rates.
+/// Manages the source currency, input value, exchange rates, and computes
+/// results for all 30 currencies in a single list view.
 library;
 
 import 'dart:async';
@@ -13,6 +13,32 @@ import '../models/currency_model.dart';
 import '../services/currency_service.dart';
 import '../utils/formatters.dart';
 
+/// A single row in the all-currencies result list.
+class CurrencyResultRow {
+  /// The currency being shown.
+  final CurrencyModel currency;
+
+  /// The rate of this currency relative to the source currency.
+  final double rate;
+
+  /// The converted amount (`inputValue × rate`).
+  final double convertedValue;
+
+  /// User-facing formatted string of [convertedValue].
+  final String formattedResult;
+
+  /// User-facing formatted rate string (e.g. "1.0923").
+  final String formattedRate;
+
+  const CurrencyResultRow({
+    required this.currency,
+    required this.rate,
+    required this.convertedValue,
+    required this.formattedResult,
+    required this.formattedRate,
+  });
+}
+
 /// Exposes the full currency-converter state to the widget tree.
 class CurrencyProvider extends ChangeNotifier {
   // ─── Currency lists ────────────────────────────────────────────────
@@ -23,9 +49,7 @@ class CurrencyProvider extends ChangeNotifier {
   // ─── Mutable state ─────────────────────────────────────────────────
 
   CurrencyModel? _fromCurrency;
-  CurrencyModel? _toCurrency;
   String _inputValue = '';
-  String _resultDisplay = '\u2014';
   bool _isLoading = true;
   String? _error;
   DateTime? _lastUpdated;
@@ -36,9 +60,7 @@ class CurrencyProvider extends ChangeNotifier {
   // ─── Getters ───────────────────────────────────────────────────────
 
   CurrencyModel? get fromCurrency => _fromCurrency;
-  CurrencyModel? get toCurrency => _toCurrency;
   String get inputValue => _inputValue;
-  String get resultDisplay => _resultDisplay;
   bool get isLoading => _isLoading;
   String? get error => _error;
   DateTime? get lastUpdated => _lastUpdated;
@@ -50,25 +72,20 @@ class CurrencyProvider extends ChangeNotifier {
     return parsed != null && parsed.isFinite;
   }
 
-  /// True when both currencies are set and rates are loaded.
+  /// True when the source currency and rates are available.
   bool get isReady =>
-      _fromCurrency != null &&
-      _toCurrency != null &&
-      _rates.containsKey(_fromCurrency!.code) &&
-      _rates.containsKey(_toCurrency!.code);
+      _fromCurrency != null && _rates.containsKey(_fromCurrency!.code);
 
   // ─── Constructor ───────────────────────────────────────────────────
 
   /// Loads cached rates immediately, then fetches fresh ones in the
-  /// background. Selects USD → EUR as defaults.
+  /// background. Defaults source to USD.
   CurrencyProvider() {
     _fromCurrency = currencyByCode('USD');
-    _toCurrency = currencyByCode('EUR');
     _init();
   }
 
   Future<void> _init() async {
-    // 1. Try cached rates first.
     final cached = await CurrencyService.loadCachedRates();
     if (cached != null) {
       _rates = cached;
@@ -77,7 +94,6 @@ class CurrencyProvider extends ChangeNotifier {
       notifyListeners();
     }
 
-    // 2. Fetch fresh rates in background.
     await refreshRates();
   }
 
@@ -86,33 +102,16 @@ class CurrencyProvider extends ChangeNotifier {
   /// Sets the source currency and recalculates.
   void setFromCurrency(CurrencyModel currency) {
     _fromCurrency = currency;
-    _recalculate();
+    notifyListeners();
   }
 
-  /// Sets the target currency and recalculates.
-  void setToCurrency(CurrencyModel currency) {
-    _toCurrency = currency;
-    _recalculate();
-  }
-
-  /// Sanitises [value] and recomputes the result.
+  /// Sanitises [value] and recomputes all results.
   void setInput(String value) {
     _inputValue = Formatters.formatInput(value);
-    _recalculate();
-  }
-
-  /// Swaps source and target currencies, then recalculates.
-  void swap() {
-    final temp = _fromCurrency;
-    _fromCurrency = _toCurrency;
-    _toCurrency = temp;
-    _recalculate();
+    notifyListeners();
   }
 
   /// Fetches live rates from Frankfurter.app.
-  ///
-  /// Falls back to cached rates, then to hardcoded fallback rates.
-  /// Sets [_error] on failure and [notifyListeners].
   Future<void> refreshRates() async {
     _isLoading = true;
     _error = null;
@@ -124,70 +123,64 @@ class CurrencyProvider extends ChangeNotifier {
       _lastUpdated = DateTime.now();
       await CurrencyService.saveRates(fresh);
       _isLoading = false;
-      _recalculate();
+      notifyListeners();
     } catch (_) {
-      // Try cached again (may have been loaded on init but lost).
       final cached = await CurrencyService.loadCachedRates();
       if (cached != null && cached.isNotEmpty) {
         _rates = cached;
         _lastUpdated = await CurrencyService.loadLastUpdated();
       } else if (_rates.isEmpty) {
-        // Last resort: hardcoded fallback.
         _rates = CurrencyService.getFallbackRates();
         _error = 'Could not fetch rates. Using approximate rates.';
       }
       _isLoading = false;
-      _recalculate();
-    }
-  }
-
-  /// Formats the source amount with the source currency symbol.
-  String get formattedInputDisplay {
-    if (_inputValue.isEmpty) return '';
-    final currency = _fromCurrency;
-    if (currency == null) return _inputValue;
-    return '${currency.symbol} $_inputValue';
-  }
-
-  /// Returns the rate of the source currency relative to USD.
-  double? get sourceRate {
-    if (_fromCurrency == null) return null;
-    return _rates[_fromCurrency!.code];
-  }
-
-  /// Returns the rate of the target currency relative to USD.
-  double? get targetRate {
-    if (_toCurrency == null) return null;
-    return _rates[_toCurrency!.code];
-  }
-
-  // ─── Private ───────────────────────────────────────────────────────
-
-  void _recalculate() {
-    if (_inputValue.isEmpty) {
-      _resultDisplay = '\u2014';
       notifyListeners();
-      return;
     }
+  }
+
+  /// Returns all currencies with their converted values for the current
+  /// source currency and input amount. Returns an empty list when input
+  /// is empty or invalid.
+  List<CurrencyResultRow> getAllResults() {
+    if (_inputValue.isEmpty || !isReady) return [];
 
     final amount = double.tryParse(_inputValue);
-    if (amount == null || amount.isNaN || amount.isInfinite) {
-      _resultDisplay = 'Invalid';
-      notifyListeners();
-      return;
+    if (amount == null || amount.isNaN || amount.isInfinite) return [];
+
+    final sourceCode = _fromCurrency!.code;
+    final sourceRate = _rates[sourceCode]!;
+    final sourceCurrency = _fromCurrency!;
+
+    return allCurrencies.map((currency) {
+      final targetRate = _rates[currency.code]!;
+      final rate = targetRate / sourceRate;
+      final converted = amount * rate;
+
+      final formattedResult = Formatters.formatResult(converted);
+      final formattedRate = Formatters.formatResult(rate);
+
+      return CurrencyResultRow(
+        currency: currency,
+        rate: rate,
+        convertedValue: converted,
+        formattedResult: formattedResult,
+        formattedRate: formattedRate,
+      );
+    }).toList();
+  }
+
+  /// Returns a formatted string showing the base rate of the source
+  /// currency relative to a key reference (EUR as the most common
+  /// trading pair). Returns "—" when unavailable.
+  String get baseRateDisplay {
+    if (_fromCurrency == null) return '\u2014';
+    final sourceCode = _fromCurrency!.code;
+    if (!_rates.containsKey(sourceCode) || !_rates.containsKey('EUR')) {
+      return '\u2014';
     }
-
-    if (!isReady) {
-      _resultDisplay = '\u2014';
-      notifyListeners();
-      return;
-    }
-
-    final fromRate = _rates[_fromCurrency!.code]!;
-    final toRate = _rates[_toCurrency!.code]!;
-    final result = CurrencyService.convert(amount, fromRate, toRate);
-
-    _resultDisplay = Formatters.formatResult(result);
-    notifyListeners();
+    final sourceRate = _rates[sourceCode]!;
+    final eurRate = _rates['EUR']!;
+    final rate = eurRate / sourceRate;
+    return '1 ${_fromCurrency!.symbol} = ${Formatters.formatResult(rate)} €';
   }
 }
