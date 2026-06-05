@@ -6,6 +6,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../core/colors.dart';
 import '../data/units_data.dart';
@@ -96,10 +97,15 @@ class _CategoryChip extends StatelessWidget {
             ? AppColors.darkTextSecondary
             : AppColors.lightTextSecondary;
 
+    void _handleTap() {
+      HapticFeedback.selectionClick();
+      onTap();
+    }
+
     return Padding(
       padding: const EdgeInsets.only(right: 8),
       child: GestureDetector(
-        onTap: onTap,
+        onTap: _handleTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeInOut,

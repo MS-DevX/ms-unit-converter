@@ -14,12 +14,21 @@ import '../utils/formatters.dart';
 import '../widgets/category_chip_bar.dart';
 import '../widgets/converter_input_bar.dart';
 import '../widgets/conversion_results_list.dart';
-import '../widgets/swap_button.dart';
+import '../widgets/converter_connector_bar.dart';
 
 class ConverterScreen extends StatefulWidget {
   final UnitCategory? initialCategory;
+  final double? presetValue;
+  final String? presetFromUnitName;
+  final String? presetToUnitName;
 
-  const ConverterScreen({super.key, this.initialCategory});
+  const ConverterScreen({
+    super.key,
+    this.initialCategory,
+    this.presetValue,
+    this.presetFromUnitName,
+    this.presetToUnitName,
+  });
 
   @override
   State<ConverterScreen> createState() => _ConverterScreenState();
@@ -44,7 +53,29 @@ class _ConverterScreenState extends State<ConverterScreen> {
     if (!_initialized && widget.initialCategory != null) {
       _initialized = true;
       context.read<ConverterProvider>().setCategory(widget.initialCategory!);
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _applyPreset(context.read<ConverterProvider>());
+      });
     }
+  }
+
+  void _applyPreset(ConverterProvider converter) {
+    final value = widget.presetValue;
+    final fromName = widget.presetFromUnitName;
+    final toName = widget.presetToUnitName;
+    if (value == null || fromName == null || toName == null) return;
+
+    final units = converter.currentUnits;
+    final matchedFrom = units.where((u) => u.name == fromName).toList();
+    final matchedTo = units.where((u) => u.name == toName).toList();
+
+    if (matchedFrom.isNotEmpty) converter.setFromUnit(matchedFrom.first);
+    if (matchedTo.isNotEmpty) converter.setToUnit(matchedTo.first);
+
+    final text = value == value.roundToDouble() ? value.toInt().toString() : value.toString();
+    _inputController.text = text;
+    converter.setInput(text);
   }
 
   void _onCategorySelected(BuildContext context, UnitCategory category) {
@@ -189,12 +220,11 @@ class _ConverterScreenState extends State<ConverterScreen> {
                     ),
                   ),
 
-                  // ── Swap button ──────────────────────────────────────
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 6),
-                    child: Center(
-                      child: SwapButton(onSwap: converter.swapUnits),
-                    ),
+                  // ── Gradient connector bar ────────────────────────────
+                  ConverterConnectorBar(
+                    gradientColors: _categoryGradients[converter.selectedCategory] ??
+                        [AppColors.primary, AppColors.primaryDark],
+                    onSwap: converter.swapUnits,
                   ),
 
                   // ── Results list ─────────────────────────────────────

@@ -12,6 +12,7 @@ import 'package:provider/provider.dart';
 
 import 'core/theme.dart';
 import 'providers/converter_provider.dart';
+import 'providers/currency_provider.dart';
 import 'providers/history_provider.dart';
 import 'providers/settings_provider.dart';
 import 'screens/splash_screen.dart';
@@ -54,6 +55,7 @@ class _MyAppState extends State<MyApp> {
   // Providers are owned here so they live for the full app lifetime.
   final SettingsProvider _settings = SettingsProvider();
   final ConverterProvider _converter = ConverterProvider();
+  final CurrencyProvider _currency = CurrencyProvider();
   final HistoryProvider _history = HistoryProvider();
 
   @override
@@ -82,6 +84,7 @@ class _MyAppState extends State<MyApp> {
       providers: [
         ChangeNotifierProvider<SettingsProvider>.value(value: _settings),
         ChangeNotifierProvider<ConverterProvider>.value(value: _converter),
+        ChangeNotifierProvider<CurrencyProvider>.value(value: _currency),
         ChangeNotifierProvider<HistoryProvider>.value(value: _history),
       ],
       // Consumer here so themeMode updates re-render MaterialApp only.

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../core/colors.dart';
+import 'currency_screen.dart';
 import 'history_screen.dart';
 import 'home_screen.dart';
 import 'settings_screen.dart';
@@ -30,6 +31,7 @@ class _MainShellState extends State<MainShell>
 
   static const List<Widget> _screens = [
     HomeScreen(),
+    CurrencyScreen(),
     HistoryScreen(),
     SettingsScreen(),
   ];
@@ -39,6 +41,11 @@ class _MainShellState extends State<MainShell>
       icon: Icon(Icons.home_outlined),
       activeIcon: Icon(Icons.home_rounded),
       label: 'Home',
+    ),
+    BottomNavigationBarItem(
+      icon: Icon(Icons.monetization_on_outlined),
+      activeIcon: Icon(Icons.monetization_on_rounded),
+      label: 'Currency',
     ),
     BottomNavigationBarItem(
       icon: Icon(Icons.history_outlined),

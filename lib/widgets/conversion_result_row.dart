@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../core/colors.dart';
 import '../models/conversion_result.dart';
@@ -65,6 +66,16 @@ class ConversionResultRow extends StatelessWidget {
       );
   }
 
+  void _onShare(BuildContext context) {
+    if (result == null || !result!.isValid) return;
+    HapticFeedback.lightImpact();
+    final text = '$_displayValue ${unit.symbol}';
+    Share.share(
+      text,
+      subject: 'Conversion result',
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final Color bgColor = isSelected
@@ -88,20 +99,49 @@ class ConversionResultRow extends StatelessWidget {
         child: Row(
           children: [
             Expanded(
-              child: Text(
-                _displayValue,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: valueColor,
-                  height: 1.2,
-                  letterSpacing: -0.2,
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                transitionBuilder: (child, animation) {
+                  return FadeTransition(
+                    opacity: animation,
+                    child: child,
+                  );
+                },
+                child: Text(
+                  _displayValue,
+                  key: ValueKey('${unit.name}_$_displayValue'),
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: valueColor,
+                    height: 1.2,
+                    letterSpacing: -0.2,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
               ),
             ),
             const SizedBox(width: 12),
+            GestureDetector(
+              onTap: () => _onShare(context),
+              child: Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? AppColors.darkTextSecondary.withValues(alpha: 0.15)
+                      : AppColors.lightTextSecondary.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.share_outlined,
+                  size: 14,
+                  color: unitColor.withValues(alpha: 0.7),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
             Text(
               '${unit.name} (${unit.symbol})',
               style: TextStyle(

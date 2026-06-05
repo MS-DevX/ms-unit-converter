@@ -1,21 +1,11 @@
 import 'package:flutter/material.dart';
 import 'colors.dart';
 
-/// App-wide theme definitions for MS Unit Converter.
-/// Provides ready-to-use [ThemeData] for light and dark modes
-/// built entirely from [AppColors] tokens with Material 3 enabled.
 class AppTheme {
-  /// Light theme built on [AppColors] light tokens.
   static ThemeData get lightTheme {
-    const colorScheme = ColorScheme.light(
-      primary: AppColors.primary,
-      secondary: AppColors.secondary,
-      surface: AppColors.lightSurface,
-      error: AppColors.error,
-      onPrimary: Colors.white,
-      onSecondary: Colors.white,
-      onSurface: AppColors.lightTextPrimary,
-      onError: Colors.white,
+    final colorScheme = ColorScheme.fromSeed(
+      seedColor: AppColors.primary,
+      brightness: Brightness.light,
     );
 
     return ThemeData(
@@ -87,7 +77,7 @@ class AppTheme {
           minimumSize:
               const WidgetStatePropertyAll(Size(0, 48)),
           backgroundColor:
-              WidgetStatePropertyAll(AppColors.primary),
+              WidgetStatePropertyAll(colorScheme.primary),
           foregroundColor:
               const WidgetStatePropertyAll(Colors.white),
         ),
@@ -101,17 +91,10 @@ class AppTheme {
     );
   }
 
-  /// Dark theme built on [AppColors] dark tokens.
   static ThemeData get darkTheme {
-    const colorScheme = ColorScheme.dark(
-      primary: AppColors.primary,
-      secondary: AppColors.secondary,
-      surface: AppColors.darkSurface,
-      error: AppColors.error,
-      onPrimary: Colors.white,
-      onSecondary: Colors.white,
-      onSurface: AppColors.darkTextPrimary,
-      onError: Colors.white,
+    final colorScheme = ColorScheme.fromSeed(
+      seedColor: AppColors.primary,
+      brightness: Brightness.dark,
     );
 
     return ThemeData(
@@ -183,7 +166,7 @@ class AppTheme {
           minimumSize:
               const WidgetStatePropertyAll(Size(0, 48)),
           backgroundColor:
-              WidgetStatePropertyAll(AppColors.primary),
+              WidgetStatePropertyAll(colorScheme.primary),
           foregroundColor:
               const WidgetStatePropertyAll(Colors.white),
         ),

@@ -184,14 +184,42 @@ class HistoryScreen extends StatelessWidget {
 // ── Private widgets ──────────────────────────────────────────────────────────
 
 /// Shown when there are no history entries.
-class _EmptyState extends StatelessWidget {
+class _EmptyState extends StatefulWidget {
   final bool isDark;
 
   const _EmptyState({required this.isDark});
 
   @override
+  State<_EmptyState> createState() => _EmptyStateState();
+}
+
+class _EmptyStateState extends State<_EmptyState>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulseController;
+  late final Animation<double> _pulseAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2000),
+    );
+    _pulseAnimation = Tween<double>(begin: 0.6, end: 1.0).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+    _pulseController.repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final color = isDark
+    final color = widget.isDark
         ? AppColors.darkTextSecondary
         : AppColors.lightTextSecondary;
 
@@ -199,26 +227,39 @@ class _EmptyState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.history_toggle_off_rounded,
-            size: 72,
-            color: color.withValues(alpha: 0.35),
+          AnimatedBuilder(
+            animation: _pulseAnimation,
+            builder: (context, child) {
+              return Opacity(
+                opacity: _pulseAnimation.value,
+                child: Icon(
+                  Icons.history_toggle_off_rounded,
+                  size: 96,
+                  color: color.withValues(alpha: 0.3),
+                ),
+              );
+            },
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 28),
           Text(
             'No history yet',
             style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
               color: color,
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            'Your conversions will appear here.',
-            style: TextStyle(
-              fontSize: 14,
-              color: color.withValues(alpha: 0.65),
+          const SizedBox(height: 10),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 48),
+            child: Text(
+              'Your conversion results will show up here automatically. Start converting to build your history.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                height: 1.5,
+                color: color.withValues(alpha: 0.6),
+              ),
             ),
           ),
         ],

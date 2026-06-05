@@ -37,4 +37,8 @@ class AppColors {
   // Divider
   static const Color dividerLight = Color(0xFFE5E7EB);
   static const Color dividerDark = Color(0xFF334155);
+
+  // Currency converter
+  static const Color currencyFrom = Color(0xFF059669);
+  static const Color currencyTo = Color(0xFFD97706);
 }

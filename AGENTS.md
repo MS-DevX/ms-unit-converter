@@ -26,10 +26,11 @@ APP FEATURES
   7. Data      — bit, byte, KB, MB, GB, TB, PB
   8. Time      — ms, second, minute, hour, day, week, month, year
 
-3 screens:
-  1. ConverterScreen  (main — bottom nav item 1)
-  2. HistoryScreen    (bottom nav item 2)
-  3. SettingsScreen   (bottom nav item 3)
+4 screens:
+  1. HomeScreen        (bottom nav item 0 — category grid + quick presets)
+  2. CurrencyScreen    (bottom nav item 1 — live FX rates via Frankfurter.app)
+  3. HistoryScreen     (bottom nav item 2 — last 20 conversions)
+  4. SettingsScreen    (bottom nav item 3 — theme, premium, about)
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 FOLDER STRUCTURE (enforce this exactly)
@@ -42,21 +43,26 @@ lib/
     colors.dart                    ← AppColors class with all color tokens
   /data
     units_data.dart                ← all unit definitions and conversion factors
+    currencies_data.dart           ← supported currency list + fallback rates
   /models
     unit_model.dart                ← UnitModel class
+    currency_model.dart            ← CurrencyModel class
     conversion_result.dart         ← ConversionResult class
     history_entry.dart             ← HistoryEntry class
   /providers
     converter_provider.dart        ← conversion state (selected category, units, value, result)
+    currency_provider.dart         ← currency state (from, to, value, result, rates, fetch)
     history_provider.dart          ← history state (load, save, clear)
     settings_provider.dart         ← theme mode, isPremium state
   /services
     conversion_service.dart        ← pure conversion logic (no UI)
+    currency_service.dart          ← fetch FX rates, cache, convert
     history_service.dart           ← SharedPreferences read/write
     admob_service.dart             ← banner + interstitial ad management
     iap_service.dart               ← in-app purchase (remove ads)
   /screens
     converter_screen.dart
+    currency_screen.dart
     history_screen.dart
     settings_screen.dart
   /widgets
@@ -95,7 +101,7 @@ Border radius: 12 (cards), 8 (buttons/inputs/chips)
 Font: system default (clean, no custom font needed)
 Input font size: 32 (large, thumb-friendly)
 Result font size: 32
-Bottom navbar: 3 items (Converter / History / Settings)
+Bottom navbar: 4 items (Home / Currency / History / Settings)
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 QUALITY RULES

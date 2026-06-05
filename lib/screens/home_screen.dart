@@ -1,19 +1,19 @@
-/// Home screen — premium category grid with animated cards.
+/// Home screen — premium category grid with animated cards and quick presets.
 library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../core/colors.dart';
 import '../core/constants.dart';
 import '../data/units_data.dart';
 import 'converter_screen.dart';
 
-/// A premium grid showing all conversion categories as styled cards.
+/// A premium grid showing all conversion categories as styled cards
+/// with quick conversion presets below.
 class HomeScreen extends StatelessWidget {
-  /// Creates a [HomeScreen].
   const HomeScreen({super.key});
 
-  /// Per-category gradient colours — two-tone for premium depth.
   static const Map<UnitCategory, List<Color>> _categoryGradients = {
     UnitCategory.length: [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
     UnitCategory.weight: [Color(0xFF10B981), Color(0xFF047857)],
@@ -32,6 +32,15 @@ class HomeScreen extends StatelessWidget {
     UnitCategory.fuelEconomy: [Color(0xFF22D3EE), Color(0xFF0E7490)],
   };
 
+  static const List<_PresetConversion> _quickPresets = [
+    _PresetConversion(category: UnitCategory.length, value: 1, fromUnitName: 'Kilometer', toUnitName: 'Mile'),
+    _PresetConversion(category: UnitCategory.length, value: 1, fromUnitName: 'Meter', toUnitName: 'Foot'),
+    _PresetConversion(category: UnitCategory.weight, value: 1, fromUnitName: 'Kilogram', toUnitName: 'Pound'),
+    _PresetConversion(category: UnitCategory.temperature, value: 0, fromUnitName: 'Celsius', toUnitName: 'Fahrenheit'),
+    _PresetConversion(category: UnitCategory.volume, value: 1, fromUnitName: 'Liter', toUnitName: 'Gallon (US)'),
+    _PresetConversion(category: UnitCategory.speed, value: 1, fromUnitName: 'Kilometers per Hour', toUnitName: 'Miles per Hour'),
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -47,23 +56,38 @@ class HomeScreen extends StatelessWidget {
           final crossAxisCount = constraints.maxWidth > 600 ? 4 : 2;
           final childAspectRatio = constraints.maxWidth > 600 ? 1.2 : 1.1;
 
-          return GridView.builder(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: crossAxisCount,
-              crossAxisSpacing: 14,
-              mainAxisSpacing: 14,
-              childAspectRatio: childAspectRatio,
-            ),
-            itemCount: UnitCategory.values.length,
-            itemBuilder: (context, index) {
-              final category = UnitCategory.values[index];
-              return _CategoryCard(
-                category: category,
-                gradients: _categoryGradients[category]!,
-                onTap: () => _openConverter(context, category),
-              );
-            },
+          return CustomScrollView(
+            slivers: [
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                sliver: SliverGrid(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: crossAxisCount,
+                    crossAxisSpacing: 14,
+                    mainAxisSpacing: 14,
+                    childAspectRatio: childAspectRatio,
+                  ),
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final category = UnitCategory.values[index];
+                      return _CategoryCard(
+                        category: category,
+                        gradients: _categoryGradients[category]!,
+                        onTap: () => _openConverter(context, category),
+                        onLongPress: () => _showCategoryPresets(context, category),
+                      );
+                    },
+                    childCount: UnitCategory.values.length,
+                  ),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: _QuickConversions(
+                  presets: _quickPresets,
+                  onPresetTapped: (preset) => _openConverterWithPreset(context, preset),
+                ),
+              ),
+            ],
           );
         },
       ),
@@ -95,6 +119,292 @@ class HomeScreen extends StatelessWidget {
       ),
     );
   }
+
+  void _showCategoryPresets(BuildContext context, UnitCategory category) {
+    HapticFeedback.mediumImpact();
+    final presets = category.commonConversions;
+    final gradients = _categoryGradients[category]!;
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                  alignment: Alignment.center,
+                ),
+                Row(
+                  children: [
+                    Text(category.icon, style: const TextStyle(fontSize: 20)),
+                    const SizedBox(width: 8),
+                    Text(
+                      category.displayName,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Long-press a conversion to jump in',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ...presets.map((p) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.of(ctx).pop();
+                      _openConverterWithPreset(
+                        context,
+                        _PresetConversion(
+                          category: category,
+                          value: p.value,
+                          fromUnitName: p.fromUnitName,
+                          toUnitName: p.toUnitName,
+                        ),
+                      );
+                    },
+                    child: Container(
+                      height: 48,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: gradients,
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      child: Row(
+                        children: [
+                          Text(
+                            '${p.value == p.value.roundToDouble() ? p.value.toInt() : p.value} ${p.fromUnitName}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            child: Icon(
+                              Icons.arrow_forward_rounded,
+                              color: Colors.white.withValues(alpha: 0.6),
+                              size: 16,
+                            ),
+                          ),
+                          Text(
+                            p.toUnitName,
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.85),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const Spacer(),
+                          Icon(
+                            Icons.arrow_forward_ios_rounded,
+                            color: Colors.white.withValues(alpha: 0.4),
+                            size: 12,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                )),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _openConverterWithPreset(BuildContext context, _PresetConversion preset) {
+    HapticFeedback.lightImpact();
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) {
+          return ConverterScreen(
+            initialCategory: preset.category,
+            presetValue: preset.value,
+            presetFromUnitName: preset.fromUnitName,
+            presetToUnitName: preset.toUnitName,
+          );
+        },
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(
+            opacity: animation,
+            child: ScaleTransition(
+              scale: Tween<double>(begin: 0.92, end: 1.0).animate(
+                CurvedAnimation(
+                  parent: animation,
+                  curve: Curves.easeOutCubic,
+                ),
+              ),
+              child: child,
+            ),
+          );
+        },
+        transitionDuration: const Duration(milliseconds: 300),
+      ),
+    );
+  }
+}
+
+class _PresetConversion {
+  final UnitCategory category;
+  final double value;
+  final String fromUnitName;
+  final String toUnitName;
+
+  const _PresetConversion({
+    required this.category,
+    required this.value,
+    required this.fromUnitName,
+    required this.toUnitName,
+  });
+
+  String get label => '${value == value.roundToDouble() ? value.toInt() : value} $fromUnitName → $toUnitName';
+}
+
+class _QuickConversions extends StatelessWidget {
+  final List<_PresetConversion> presets;
+  final ValueChanged<_PresetConversion> onPresetTapped;
+
+  const _QuickConversions({
+    required this.presets,
+    required this.onPresetTapped,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.flash_on_rounded,
+                size: 16,
+                color: AppColors.warning,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'Quick Conversions',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: textColor,
+                  letterSpacing: 0.3,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          ...presets.map((preset) => Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: _PresetChip(
+              preset: preset,
+              onTap: () => onPresetTapped(preset),
+            ),
+          )),
+        ],
+      ),
+    );
+  }
+}
+
+class _PresetChip extends StatelessWidget {
+  final _PresetConversion preset;
+  final VoidCallback onTap;
+
+  const _PresetChip({
+    required this.preset,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final gradients = HomeScreen._categoryGradients[preset.category]!;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 44,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          gradient: LinearGradient(
+            colors: gradients,
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: gradients.last.withValues(alpha: 0.25),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            const SizedBox(width: 14),
+            Text(
+              preset.category.icon,
+              style: const TextStyle(fontSize: 16),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                preset.label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.2,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios_rounded,
+              color: Colors.white.withValues(alpha: 0.6),
+              size: 12,
+            ),
+            const SizedBox(width: 14),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 /// A single premium category card with gradient, icon, name, and unit count.
@@ -102,11 +412,13 @@ class _CategoryCard extends StatelessWidget {
   final UnitCategory category;
   final List<Color> gradients;
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
 
   const _CategoryCard({
     required this.category,
     required this.gradients,
     required this.onTap,
+    this.onLongPress,
   });
 
   @override
@@ -142,11 +454,12 @@ class _CategoryCard extends StatelessWidget {
               ),
             ],
           ),
-          child: Material(
+            child: Material(
             color: Colors.transparent,
             child: InkWell(
               borderRadius: BorderRadius.circular(16),
               onTap: onTap,
+              onLongPress: onLongPress,
                 child: Padding(
                   padding: const EdgeInsets.all(14),
                   child: Column(
