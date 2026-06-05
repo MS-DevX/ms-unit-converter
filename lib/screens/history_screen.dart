@@ -118,62 +118,67 @@ class HistoryScreen extends StatelessWidget {
             return _EmptyState(isDark: isDark);
           }
 
-          return ListView.builder(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-            itemCount: history.entries.length,
-            itemBuilder: (context, index) {
-              final entry = history.entries[index];
-              return Dismissible(
-                key: ValueKey(entry.id),
-                direction: DismissDirection.endToStart,
-                background: Container(
-                  alignment: Alignment.centerRight,
-                  padding: const EdgeInsets.only(right: 20),
-                  margin: const EdgeInsets.only(bottom: 10),
-                  decoration: BoxDecoration(
-                    color: AppColors.error,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: const Icon(
-                    Icons.delete_outline_rounded,
-                    color: Colors.white,
-                    size: 28,
-                  ),
-                ),
-                confirmDismiss: (_) async {
-                  return await showDialog<bool>(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      title: const Text('Delete entry?'),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.of(ctx).pop(false),
-                          child: const Text('Cancel'),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.of(ctx).pop(true),
-                          style: TextButton.styleFrom(
-                            foregroundColor: AppColors.error,
-                          ),
-                          child: const Text('Delete'),
-                        ),
-                      ],
+          return RefreshIndicator(
+            onRefresh: () => history.refresh(),
+            displacement: 60,
+            child: ListView.builder(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+              itemCount: history.entries.length,
+              itemBuilder: (context, index) {
+                final entry = history.entries[index];
+                return Dismissible(
+                  key: ValueKey(entry.id),
+                  direction: DismissDirection.endToStart,
+                  background: Container(
+                    alignment: Alignment.centerRight,
+                    padding: const EdgeInsets.only(right: 20),
+                    margin: const EdgeInsets.only(bottom: 10),
+                    decoration: BoxDecoration(
+                      color: AppColors.error,
+                      borderRadius: BorderRadius.circular(16),
                     ),
-                  );
-                },
-                onDismissed: (_) {
-                  HapticFeedback.lightImpact();
-                  context.read<HistoryProvider>().removeEntry(entry.id);
-                },
-                child: _HistoryCard(
-                  entry: entry,
-                  onLongPress: () => _showEntryOptions(context, entry),
-                ),
-              );
-            },
+                    child: const Icon(
+                      Icons.delete_outline_rounded,
+                      color: Colors.white,
+                      size: 28,
+                    ),
+                  ),
+                  confirmDismiss: (_) async {
+                    return await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        title: const Text('Delete entry?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(ctx).pop(false),
+                            child: const Text('Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.of(ctx).pop(true),
+                            style: TextButton.styleFrom(
+                              foregroundColor: AppColors.error,
+                            ),
+                            child: const Text('Delete'),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                  onDismissed: (_) {
+                    HapticFeedback.lightImpact();
+                    context.read<HistoryProvider>().removeEntry(entry.id);
+                  },
+                  child: _HistoryCard(
+                    entry: entry,
+                    onLongPress: () => _showEntryOptions(context, entry),
+                  ),
+                );
+              },
+            ),
           );
         },
       ),

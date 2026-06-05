@@ -49,7 +49,7 @@ class CurrencyProvider extends ChangeNotifier {
   // ─── Mutable state ─────────────────────────────────────────────────
 
   CurrencyModel? _fromCurrency;
-  String _inputValue = '';
+  String _inputValue = '1';
   bool _isLoading = true;
   String? _error;
   DateTime? _lastUpdated;
@@ -79,9 +79,12 @@ class CurrencyProvider extends ChangeNotifier {
   // ─── Constructor ───────────────────────────────────────────────────
 
   /// Loads cached rates immediately, then fetches fresh ones in the
-  /// background. Defaults source to USD.
+  /// background. Defaults source to USD, input to "1".
   CurrencyProvider() {
     _fromCurrency = currencyByCode('USD');
+    // Populate fallback rates synchronously so [isReady] is true
+    // instantly, even before cache or network resolves.
+    _rates = Map.from(fallbackRatesToUsd);
     _init();
   }
 
@@ -149,7 +152,6 @@ class CurrencyProvider extends ChangeNotifier {
 
     final sourceCode = _fromCurrency!.code;
     final sourceRate = _rates[sourceCode]!;
-    final sourceCurrency = _fromCurrency!;
 
     return allCurrencies.map((currency) {
       final targetRate = _rates[currency.code]!;

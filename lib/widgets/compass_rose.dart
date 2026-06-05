@@ -1,14 +1,12 @@
-/// Custom-painted compass rose with rotating arrow and 16-point tick marks.
+/// Custom-painted compass rose with rotating arrow, 16 tick marks,
+/// and bold cardinal labels (N/E/S/W). No intermediate labels on the arrow.
 ///
 /// Always shows:
 /// - Outer circle with thin rim
 /// - 16 tick marks at 22.5° intervals
-/// - 4 cardinal labels (N, E, S, W) — large, bold, fixed
-///
-/// On interaction (when [selectedLabel] is non-null):
-/// - Arrow/needle rotates to point at the selected bearing
-/// - The matching 16-point label fades in near its tick mark
-/// - A highlighted arc (22.5°) on the rim shows the active segment
+/// - 4 cardinal labels (N, E, S, W) — large, bold, theme-aware black/white
+/// - Arrow/needle rotating to the current heading
+/// - Highlighted arc (22.5°) on the rim showing the active segment
 library;
 
 import 'dart:math' as math;
@@ -152,18 +150,18 @@ class _CompassRosePainter extends CustomPainter {
         center.dx + outerR * math.cos(angle),
         center.dy + outerR * math.sin(angle),
       );
-      paint.color = Colors.grey.withValues(alpha: isCardinal ? 0.5 : 0.25);
-      paint.strokeWidth = isCardinal ? 2.0 : 1.0;
+      paint.color = Colors.grey.withValues(alpha: isCardinal ? 0.6 : 0.25);
+      paint.strokeWidth = isCardinal ? 2.5 : 1.0;
       canvas.drawLine(inner, outer, paint);
     }
 
-    // ── Cardinal labels: N, E, S, W ────────────────────────────────
+    // ── Cardinal labels: N, E, S, W (bold, theme-aware) ────────────
     final labelStyle = TextStyle(
-      fontSize: radius * 0.14,
-      fontWeight: FontWeight.w800,
-      color: Colors.grey.withValues(alpha: 0.7),
+      fontSize: radius * 0.16,
+      fontWeight: FontWeight.w900,
+      color: Colors.black.withValues(alpha: 0.85),
     );
-    final labelOffset = radius * 0.78;
+    final labelOffset = radius * 0.75;
     _drawLabel(canvas, center, labelOffset, -90, 'N', labelStyle);
     _drawLabel(canvas, center, labelOffset, 0, 'E', labelStyle);
     _drawLabel(canvas, center, labelOffset, 90, 'S', labelStyle);
@@ -176,7 +174,6 @@ class _CompassRosePainter extends CustomPainter {
         ..strokeWidth = 3
         ..strokeCap = StrokeCap.round;
 
-      // Active segment centered on the heading, ±11.25° (22.5° span).
       final startAngle = (heading! - 90 - 11.25) * math.pi / 180;
       final sweepAngle = 22.5 * math.pi / 180;
 
@@ -192,37 +189,10 @@ class _CompassRosePainter extends CustomPainter {
       );
     }
 
-    // ── Selected 16-point label (appears near rim) ────────────────
-    if (selectedLabel != null && heading != null) {
-      final selStyle = TextStyle(
-        fontSize: radius * 0.10,
-        fontWeight: FontWeight.w700,
-        color: isLive
-            ? const Color(0xFF10B981)
-            : const Color(0xFF3B82F6),
-      );
-      // Position label at the heading angle, just inside the rim.
-      final labelAngle = (heading! - 90) * math.pi / 180;
-      final labelR = radius * 0.70;
-      final pos = Offset(
-        center.dx + labelR * math.cos(labelAngle),
-        center.dy + labelR * math.sin(labelAngle),
-      );
-      final tp = TextPainter(
-        text: TextSpan(text: selectedLabel, style: selStyle),
-        textDirection: TextDirection.ltr,
-      )..layout();
-      tp.paint(
-        canvas,
-        pos - Offset(tp.width / 2, tp.height / 2),
-      );
-    }
-
     // ── Arrow / Needle ────────────────────────────────────────────
     if (heading != null) {
       _drawArrow(canvas, center, radius * 0.70, heading!, isLive);
     } else {
-      // Default North.
       _drawArrow(canvas, center, radius * 0.70, 0, false);
     }
 
@@ -241,7 +211,6 @@ class _CompassRosePainter extends CustomPainter {
       center.dy + length * math.sin(radians),
     );
 
-    // Arrow shaft.
     final shaftPaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.5

@@ -97,7 +97,7 @@ class _CategoryChip extends StatelessWidget {
             ? AppColors.darkTextSecondary
             : AppColors.lightTextSecondary;
 
-    void _handleTap() {
+    void handleTap() {
       HapticFeedback.selectionClick();
       onTap();
     }
@@ -105,7 +105,7 @@ class _CategoryChip extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(right: 8),
       child: GestureDetector(
-        onTap: _handleTap,
+        onTap: handleTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeInOut,

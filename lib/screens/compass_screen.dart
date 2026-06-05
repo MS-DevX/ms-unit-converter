@@ -6,7 +6,6 @@
 library;
 
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -64,13 +63,10 @@ class _CompassScreenState extends State<CompassScreen> {
       }
     });
 
-    _liveSub = compass.liveStatusStream.listen((_) {
-      // Stream fires on every sensor update; we use _isLive to gate.
-    });
+    _liveSub = compass.liveStatusStream.listen((_) {});
   }
 
   void _setManualDirection(double bearingDeg, {bool updateInput = true}) {
-    // Normalise to 0–360.
     var bearing = bearingDeg % 360;
     if (bearing < 0) bearing += 360;
 
@@ -110,7 +106,7 @@ class _CompassScreenState extends State<CompassScreen> {
     _setManualDirection(parsed, updateInput: false);
   }
 
-  void _resumeLive() {
+  Future<void> _resumeLive() async {
     setState(() {
       _isLive = true;
       _manualHeading = null;
@@ -118,11 +114,19 @@ class _CompassScreenState extends State<CompassScreen> {
     _inputController.clear();
     _inputFocusNode.unfocus();
     HapticFeedback.lightImpact();
+    // Small settle delay for sensors to stabiliSe after pause.
+    await Future.delayed(const Duration(milliseconds: 100));
   }
 
   void _onTapChip(String label) {
     final point = compassPoints.firstWhere((p) => p.label == label);
     _setManualDirection(point.bearing);
+  }
+
+  Future<void> _onRefresh() async {
+    await _resumeLive();
+    // Give sensors a moment to produce a fresh reading.
+    await Future.delayed(const Duration(milliseconds: 500));
   }
 
   @override
@@ -133,7 +137,7 @@ class _CompassScreenState extends State<CompassScreen> {
         : _manualHeading;
 
     final displayLabel = displayHeading != null
-        ? '${_selectedLabel} · ${displayHeading.roundToDouble() == displayHeading ? displayHeading.toInt().toString() : displayHeading.toStringAsFixed(1)}°'
+        ? '$_selectedLabel · ${displayHeading.roundToDouble() == displayHeading ? displayHeading.toInt().toString() : displayHeading.toStringAsFixed(1)}°'
         : 'N · 0°';
 
     return Scaffold(
@@ -155,144 +159,174 @@ class _CompassScreenState extends State<CompassScreen> {
             ),
         ],
       ),
-      body: Column(
-        children: [
-          // ── Compass rose ──────────────────────────────────────────
-          Expanded(
-            flex: 3,
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: CompassRose(
-                heading: displayHeading,
-                selectedLabel: _isLive || _manualHeading != null
-                    ? _selectedLabel
-                    : null,
-                isLive: _isLive,
-                onBearingSelected: (bearing) =>
-                    _setManualDirection(bearing),
-              ),
-            ),
-          ),
+      body: RefreshIndicator(
+        onRefresh: _onRefresh,
+        displacement: 60,
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: RadialGradient(
+                    center: Alignment.center,
+                    radius: 0.85,
+                    colors: isDark
+                        ? [
+                            const Color(0xFF0F1A2E),
+                            const Color(0xFF080E14),
+                          ]
+                        : [
+                            const Color(0xFFF0F4FF),
+                            const Color(0xFFE8ECF1),
+                          ],
+                    stops: const [0.3, 1.0],
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    // ── Compass rose ─────────────────────────────────
+                    Expanded(
+                      flex: 3,
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: CompassRose(
+                          heading: displayHeading,
+                          selectedLabel: _isLive || _manualHeading != null
+                              ? _selectedLabel
+                              : null,
+                          isLive: _isLive,
+                          onBearingSelected: (bearing) =>
+                              _setManualDirection(bearing),
+                        ),
+                      ),
+                    ),
 
-          // ── Direction display ─────────────────────────────────────
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 200),
-            transitionBuilder: (child, animation) =>
-                FadeTransition(opacity: animation, child: child),
-            child: Column(
-              key: ValueKey(displayLabel),
-              children: [
-                Text(
-                  _selectedLabel,
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.w800,
-                    color: _isLive
-                        ? AppColors.success
-                        : (isDark
-                            ? AppColors.darkTextPrimary
-                            : AppColors.lightTextPrimary),
-                    letterSpacing: 2,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  _roundBearing(displayHeading ?? 0),
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: (isDark
-                            ? AppColors.darkTextSecondary
-                            : AppColors.lightTextSecondary)
-                        .withValues(alpha: 0.7),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
+                    // ── Direction display ────────────────────────────
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 200),
+                      transitionBuilder: (child, animation) =>
+                          FadeTransition(opacity: animation, child: child),
+                      child: Column(
+                        key: ValueKey(displayLabel),
+                        children: [
+                          Text(
+                            _selectedLabel,
+                            style: TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.w800,
+                              color: _isLive
+                                  ? AppColors.success
+                                  : (isDark
+                                      ? AppColors.darkTextPrimary
+                                      : AppColors.lightTextPrimary),
+                              letterSpacing: 2,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            _roundBearing(displayHeading ?? 0),
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: (isDark
+                                      ? AppColors.darkTextSecondary
+                                      : AppColors.lightTextSecondary)
+                                  .withValues(alpha: 0.7),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
 
-          // ── Angle input ───────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 48),
-            child: TextField(
-              controller: _inputController,
-              focusNode: _inputFocusNode,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-                signed: false,
-              ),
-              onChanged: _onInputChanged,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
-              ),
-              decoration: InputDecoration(
-                hintText: 'Enter bearing (0–360)',
-                hintStyle: TextStyle(
-                  fontSize: 14,
-                  color: (isDark
-                          ? AppColors.darkTextSecondary
-                          : AppColors.lightTextSecondary)
-                      .withValues(alpha: 0.4),
-                ),
-                suffixText: '°',
-                suffixStyle: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                  color: (isDark
-                          ? AppColors.darkTextSecondary
-                          : AppColors.lightTextSecondary)
-                      .withValues(alpha: 0.5),
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                  ),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                  ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.primary, width: 2),
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
+                    // ── Angle input ──────────────────────────────────
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 48),
+                      child: TextField(
+                        controller: _inputController,
+                        focusNode: _inputFocusNode,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                          signed: false,
+                        ),
+                        onChanged: _onInputChanged,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: 'Enter bearing (0–360)',
+                          hintStyle: TextStyle(
+                            fontSize: 14,
+                            color: (isDark
+                                    ? AppColors.darkTextSecondary
+                                    : AppColors.lightTextSecondary)
+                                .withValues(alpha: 0.4),
+                          ),
+                          suffixText: '°',
+                          suffixStyle: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w600,
+                            color: (isDark
+                                    ? AppColors.darkTextSecondary
+                                    : AppColors.lightTextSecondary)
+                                .withValues(alpha: 0.5),
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
 
-          // ── Quick direction chips ─────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              alignment: WrapAlignment.center,
-              children: [
-                _Chip('N', isDark, _selectedLabel, () => _onTapChip('N')),
-                _Chip('NE', isDark, _selectedLabel, () => _onTapChip('NE')),
-                _Chip('E', isDark, _selectedLabel, () => _onTapChip('E')),
-                _Chip('SE', isDark, _selectedLabel, () => _onTapChip('SE')),
-                _Chip('S', isDark, _selectedLabel, () => _onTapChip('S')),
-                _Chip('SW', isDark, _selectedLabel, () => _onTapChip('SW')),
-                _Chip('W', isDark, _selectedLabel, () => _onTapChip('W')),
-                _Chip('NW', isDark, _selectedLabel, () => _onTapChip('NW')),
-              ],
+                    // ── Quick direction chips ────────────────────────
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        alignment: WrapAlignment.center,
+                        children: [
+                          _Chip('N', isDark, _selectedLabel, () => _onTapChip('N')),
+                          _Chip('NE', isDark, _selectedLabel, () => _onTapChip('NE')),
+                          _Chip('E', isDark, _selectedLabel, () => _onTapChip('E')),
+                          _Chip('SE', isDark, _selectedLabel, () => _onTapChip('SE')),
+                          _Chip('S', isDark, _selectedLabel, () => _onTapChip('S')),
+                          _Chip('SW', isDark, _selectedLabel, () => _onTapChip('SW')),
+                          _Chip('W', isDark, _selectedLabel, () => _onTapChip('W')),
+                          _Chip('NW', isDark, _selectedLabel, () => _onTapChip('NW')),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+                ),
+              ),
             ),
-          ),
-          const SizedBox(height: 24),
-        ],
+          ],
+        ),
       ),
     );
   }

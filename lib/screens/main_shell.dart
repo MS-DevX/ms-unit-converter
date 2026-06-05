@@ -1,4 +1,4 @@
-/// Bottom-navigation shell — hosts all five main tabs with swipe support.
+/// Bottom-navigation shell — hosts all five main tabs with reduced-sensitivity swipe.
 library;
 
 import 'package:flutter/material.dart';
@@ -11,10 +11,25 @@ import 'history_screen.dart';
 import 'home_screen.dart';
 import 'settings_screen.dart';
 
+/// Page physics that require a longer horizontal drag before a page
+/// transition starts. This prevents accidental swipes when the user
+/// intends to scroll vertically.
+class _ReducedSensitivityPhysics extends PageScrollPhysics {
+  const _ReducedSensitivityPhysics({super.parent});
+
+  @override
+  _ReducedSensitivityPhysics applyTo(ScrollPhysics? ancestor) {
+    return _ReducedSensitivityPhysics(parent: ancestor);
+  }
+
+  @override
+  double get dragStartDistanceMotionThreshold => 28.0;
+}
+
 /// Bottom-navigation host that switches between the five main screens.
 ///
-/// Uses [PageView] so each tab retains its scroll position and widget
-/// state across tab switches, and supports swipe left/right between tabs.
+/// Uses [PageView] with [ReducedSensitivityPhysics] so tab state is
+/// preserved and swipe is still available but requires a firmer drag.
 /// Android back button behaviour:
 /// - On the Home tab (index 0): allows the OS to pop / exit.
 /// - On any other tab: navigates back to index 0 instead of exiting.
@@ -99,7 +114,7 @@ class _MainShellState extends State<MainShell> {
       child: Scaffold(
         body: PageView(
           controller: _pageController,
-          physics: const ClampingScrollPhysics(),
+          physics: const _ReducedSensitivityPhysics(),
           onPageChanged: (index) {
             setState(() => _currentIndex = index);
           },

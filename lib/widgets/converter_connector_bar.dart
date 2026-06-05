@@ -3,8 +3,6 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../core/colors.dart';
-
 class ConverterConnectorBar extends StatefulWidget {
   final List<Color> gradientColors;
   final VoidCallback onSwap;

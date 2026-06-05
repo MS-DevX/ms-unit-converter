@@ -23,6 +23,12 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
   final FocusNode _inputFocusNode = FocusNode();
 
   @override
+  void initState() {
+    super.initState();
+    _inputController.text = '1';
+  }
+
+  @override
   void dispose() {
     _inputController.dispose();
     _inputFocusNode.dispose();
@@ -58,6 +64,11 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         ),
       );
+  }
+
+  Future<void> _onRefresh() async {
+    HapticFeedback.lightImpact();
+    await context.read<CurrencyProvider>().refreshRates();
   }
 
   String _formatLastUpdated(DateTime? dt) {
@@ -98,174 +109,214 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                   ),
               ],
             ),
-            body: Column(
+            body: Stack(
               children: [
-                // ── Input row: amount + source dropdown ────────────
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        flex: 3,
-                        child: TextField(
-                          controller: _inputController,
-                          focusNode: _inputFocusNode,
-                          keyboardType: TextInputType.number,
-                          onChanged: _onInputChanged,
-                          style: TextStyle(
-                            fontSize: 36,
-                            fontWeight: FontWeight.w600,
-                            color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
-                            height: 1.2,
-                          ),
-                          decoration: InputDecoration(
-                            hintText: '0',
-                            hintStyle: TextStyle(
-                              fontSize: 36,
-                              fontWeight: FontWeight.w600,
-                              color: isDark
-                                  ? AppColors.darkTextSecondary.withValues(alpha: 0.3)
-                                  : AppColors.lightTextSecondary.withValues(alpha: 0.3),
-                            ),
-                            border: InputBorder.none,
-                            isDense: true,
-                            contentPadding: EdgeInsets.zero,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        flex: 2,
-                        child: _SourceDropdown(
-                          value: provider.fromCurrency,
-                          currencies: allCurrencies,
-                          onChanged: _onSourceChanged,
-                          isDark: isDark,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // ── Base rate indicator ────────────────────────────
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 2, 16, 0),
-                  child: Row(
-                    children: [
-                      if (provider.isLoading)
-                        SizedBox(
-                          width: 10,
-                          height: 10,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 1.5,
-                            color: (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary)
-                                .withValues(alpha: 0.5),
-                          ),
-                        )
-                      else ...[
-                        Icon(
-                          Icons.check_circle_rounded,
-                          size: 10,
-                          color: AppColors.success.withValues(alpha: 0.5),
-                        ),
-                        const SizedBox(width: 3),
-                      ],
-                      const SizedBox(width: 3),
-                      Text(
-                        provider.isLoading ? 'Updating...' : 'Updated ${_formatLastUpdated(provider.lastUpdated)}',
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary)
-                              .withValues(alpha: 0.45),
-                        ),
-                      ),
-                      if (!provider.isLoading && provider.baseRateDisplay != '\u2014') ...[
-                        Text(
-                          '  ·  ${provider.baseRateDisplay}',
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary)
-                                .withValues(alpha: 0.45),
-                          ),
-                        ),
-                      ],
-                      if (provider.error != null) ...[
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            provider.error!,
-                            style: const TextStyle(
-                              fontSize: 10,
-                              color: AppColors.warning,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-
-                // ── Quick source switches ──────────────────────────
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-                  child: SizedBox(
-                    height: 32,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      children: [
-                        'USD', 'EUR', 'GBP', 'JPY', 'CNY', 'INR', 'AUD', 'CAD', 'CHF', 'BRL',
-                      ].map((code) {
-                        final currency = currencyByCode(code);
-                        final isSelected = provider.fromCurrency?.code == code;
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 6),
-                          child: GestureDetector(
-                            onTap: currency == null
-                                ? null
-                                : () => _onSourceChanged(currency),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10),
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? AppColors.primary
-                                    : (isDark ? AppColors.darkSurface : AppColors.lightSurface),
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: isSelected
-                                      ? AppColors.primary
-                                      : (isDark ? AppColors.borderDark : AppColors.borderLight),
-                                ),
-                              ),
-                              alignment: Alignment.center,
-                              child: Text(
-                                code,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                                  color: isSelected ? Colors.white : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
-                                ),
+                RefreshIndicator(
+                  onRefresh: _onRefresh,
+                  displacement: 60,
+                  child: CustomScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    slivers: [
+                      SliverToBoxAdapter(
+                        child: Column(
+                          children: [
+                            // ── Input row: amount + source dropdown ────
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    flex: 3,
+                                    child: TextField(
+                                      controller: _inputController,
+                                      focusNode: _inputFocusNode,
+                                      keyboardType: TextInputType.number,
+                                      onChanged: _onInputChanged,
+                                      style: TextStyle(
+                                        fontSize: 36,
+                                        fontWeight: FontWeight.w600,
+                                        color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                                        height: 1.2,
+                                      ),
+                                      decoration: InputDecoration(
+                                        hintText: '0',
+                                        hintStyle: TextStyle(
+                                          fontSize: 36,
+                                          fontWeight: FontWeight.w600,
+                                          color: isDark
+                                              ? AppColors.darkTextSecondary.withValues(alpha: 0.3)
+                                              : AppColors.lightTextSecondary.withValues(alpha: 0.3),
+                                        ),
+                                        border: InputBorder.none,
+                                        isDense: true,
+                                        contentPadding: EdgeInsets.zero,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    flex: 2,
+                                    child: _SourceDropdown(
+                                      value: provider.fromCurrency,
+                                      currencies: allCurrencies,
+                                      onChanged: _onSourceChanged,
+                                      isDark: isDark,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                ),
 
-                // ── Results list ───────────────────────────────────
-                const SizedBox(height: 12),
-                Expanded(
-                  child: _CurrencyResultsList(
-                    results: results,
-                    sourceCode: provider.fromCurrency?.code,
-                    isDark: isDark,
-                    onRowTapped: _copyValue,
+                            // ── Base rate indicator ────────────────────
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 2, 16, 0),
+                              child: Row(
+                                children: [
+                                  if (provider.isLoading)
+                                    SizedBox(
+                                      width: 10,
+                                      height: 10,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 1.5,
+                                        color: (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary)
+                                            .withValues(alpha: 0.5),
+                                      ),
+                                    )
+                                  else ...[
+                                    Icon(
+                                      Icons.check_circle_rounded,
+                                      size: 10,
+                                      color: AppColors.success.withValues(alpha: 0.5),
+                                    ),
+                                    const SizedBox(width: 3),
+                                  ],
+                                  const SizedBox(width: 3),
+                                  Text(
+                                    provider.isLoading ? 'Updating...' : 'Updated ${_formatLastUpdated(provider.lastUpdated)}',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary)
+                                          .withValues(alpha: 0.45),
+                                    ),
+                                  ),
+                                  if (!provider.isLoading && provider.baseRateDisplay != '\u2014') ...[
+                                    Text(
+                                      '  ·  ${provider.baseRateDisplay}',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary)
+                                            .withValues(alpha: 0.45),
+                                      ),
+                                    ),
+                                  ],
+                                  if (provider.error != null) ...[
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        provider.error!,
+                                        style: const TextStyle(
+                                          fontSize: 10,
+                                          color: AppColors.warning,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+
+                            // ── Quick source switches ──────────────────
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                              child: SizedBox(
+                                height: 32,
+                                child: ListView(
+                                  scrollDirection: Axis.horizontal,
+                                  children: [
+                                    'USD', 'EUR', 'GBP', 'JPY', 'CNY', 'INR', 'AUD', 'CAD', 'CHF', 'BRL',
+                                  ].map((code) {
+                                    final currency = currencyByCode(code);
+                                    final isSelected = provider.fromCurrency?.code == code;
+                                    return Padding(
+                                      padding: const EdgeInsets.only(right: 6),
+                                      child: GestureDetector(
+                                        onTap: currency == null
+                                            ? null
+                                            : () => _onSourceChanged(currency),
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                                          decoration: BoxDecoration(
+                                            color: isSelected
+                                                ? AppColors.primary
+                                                : (isDark ? AppColors.darkSurface : AppColors.lightSurface),
+                                            borderRadius: BorderRadius.circular(16),
+                                            border: Border.all(
+                                              color: isSelected
+                                                  ? AppColors.primary
+                                                  : (isDark ? AppColors.borderDark : AppColors.borderLight),
+                                            ),
+                                          ),
+                                          alignment: Alignment.center,
+                                          child: Text(
+                                            code,
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                              color: isSelected ? Colors.white : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                          ],
+                        ),
+                      ),
+
+                      // ── Results list ───────────────────────────────────
+                      SliverFillRemaining(
+                        hasScrollBody: true,
+                        child: results.isEmpty
+                            ? Center(
+                                child: Text(
+                                  provider.isLoading
+                                      ? 'Loading rates...'
+                                      : 'Enter an amount to convert',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary)
+                                        .withValues(alpha: 0.5),
+                                  ),
+                                ),
+                              )
+                            : _CurrencyResultsList(
+                                results: results,
+                                sourceCode: provider.fromCurrency?.code,
+                                isDark: isDark,
+                                onRowTapped: _copyValue,
+                              ),
+                      ),
+                    ],
                   ),
                 ),
                 if (provider.isLoading && results.isEmpty)
-                  const Center(child: CircularProgressIndicator()),
+                  const Positioned(
+                    top: 120,
+                    left: 0,
+                    right: 0,
+                    child: Center(
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -352,19 +403,6 @@ class _CurrencyResultsList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (results.isEmpty) {
-      return Center(
-        child: Text(
-          'Enter an amount to convert',
-          style: TextStyle(
-            fontSize: 14,
-            color: (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary)
-                .withValues(alpha: 0.5),
-          ),
-        ),
-      );
-    }
-
     return ListView.separated(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       itemCount: results.length,

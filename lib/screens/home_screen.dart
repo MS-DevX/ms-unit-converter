@@ -11,8 +11,21 @@ import 'converter_screen.dart';
 
 /// A premium grid showing all conversion categories as styled cards
 /// with quick conversion presets below.
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  int _refreshKey = 0;
+
+  Future<void> _onRefresh() async {
+    setState(() => _refreshKey++);
+    // Re-stagger animations by rebuilding the grid.
+    await Future.delayed(const Duration(milliseconds: 400));
+  }
 
   static const Map<UnitCategory, List<Color>> _categoryGradients = {
     UnitCategory.length: [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
@@ -51,45 +64,44 @@ class HomeScreen extends StatelessWidget {
         ),
         centerTitle: false,
       ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final crossAxisCount = constraints.maxWidth > 600 ? 4 : 2;
-          final childAspectRatio = constraints.maxWidth > 600 ? 1.2 : 1.1;
-
-          return CustomScrollView(
-            slivers: [
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-                sliver: SliverGrid(
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: crossAxisCount,
-                    crossAxisSpacing: 14,
-                    mainAxisSpacing: 14,
-                    childAspectRatio: childAspectRatio,
-                  ),
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final category = UnitCategory.values[index];
-                      return _CategoryCard(
-                        category: category,
-                        gradients: _categoryGradients[category]!,
-                        onTap: () => _openConverter(context, category),
-                        onLongPress: () => _showCategoryPresets(context, category),
-                      );
-                    },
-                    childCount: UnitCategory.values.length,
-                  ),
+      body: RefreshIndicator(
+        onRefresh: _onRefresh,
+        displacement: 60,
+        child: CustomScrollView(
+          key: ValueKey(_refreshKey),
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+              sliver: SliverGrid(
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: MediaQuery.of(context).size.width > 600 ? 4 : 2,
+                  crossAxisSpacing: 14,
+                  mainAxisSpacing: 14,
+                  childAspectRatio: MediaQuery.of(context).size.width > 600 ? 1.2 : 1.1,
+                ),
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final category = UnitCategory.values[index];
+                    return _CategoryCard(
+                      category: category,
+                      gradients: _categoryGradients[category]!,
+                      onTap: () => _openConverter(context, category),
+                      onLongPress: () => _showCategoryPresets(context, category),
+                    );
+                  },
+                  childCount: UnitCategory.values.length,
                 ),
               ),
-              SliverToBoxAdapter(
-                child: _QuickConversions(
-                  presets: _quickPresets,
-                  onPresetTapped: (preset) => _openConverterWithPreset(context, preset),
-                ),
+            ),
+            SliverToBoxAdapter(
+              child: _QuickConversions(
+                presets: _quickPresets,
+                onPresetTapped: (preset) => _openConverterWithPreset(context, preset),
               ),
-            ],
-          );
-        },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -352,8 +364,7 @@ class _PresetChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final gradients = HomeScreen._categoryGradients[preset.category]!;
+    final gradients = _HomeScreenState._categoryGradients[preset.category]!;
 
     return GestureDetector(
       onTap: onTap,

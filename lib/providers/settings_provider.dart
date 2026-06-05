@@ -17,7 +17,7 @@ import '../core/constants.dart';
 /// frame) and then use [setThemeMode], [toggleTheme], and [setPremium]
 /// to mutate state.
 class SettingsProvider extends ChangeNotifier {
-  /// Current [ThemeMode]; defaults to [ThemeMode.system] until loaded.
+  /// Current [ThemeMode]; defaults to [ThemeMode.system] (follows device).
   ThemeMode themeMode = ThemeMode.system;
 
   /// Whether the user has purchased the "Remove Ads" upgrade.
