@@ -1,20 +1,19 @@
-/// Compass screen — live device heading with manual angle entry.
+/// Compass screen — pure live GPS-based true heading compass.
 ///
-/// On open: sensors activate, arrow follows device direction in real-time.
-/// User taps rose / types angle / taps chip: pauses live mode, locks to manual.
-/// "↺ Live" button resumes sensor tracking.
+/// Displays a rotating dial compass with degree ticks, cardinal markers,
+/// fixed red heading needle, centre heading value, and GPS coordinates
+/// in DMS format. Pure live mode — no manual entry, no toggles.
 library;
 
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:geolocator/geolocator.dart';
 
-import '../core/colors.dart';
 import '../services/compass_service.dart';
 import '../widgets/compass_rose.dart';
 
-/// Full-screen compass showing live heading with manual override.
+/// Full-screen live compass with GPS coordinates.
 class CompassScreen extends StatefulWidget {
   const CompassScreen({super.key});
 
@@ -23,362 +22,196 @@ class CompassScreen extends StatefulWidget {
 }
 
 class _CompassScreenState extends State<CompassScreen> {
-  final TextEditingController _inputController = TextEditingController();
-  final FocusNode _inputFocusNode = FocusNode();
-
   StreamSubscription<double>? _headingSub;
-  StreamSubscription<bool>? _liveSub;
+  StreamSubscription<Position>? _positionSub;
 
-  double? _liveHeading;
-  double? _manualHeading;
-  bool _isLive = true;
-  String _selectedLabel = 'N';
+  double _trueHeading = 0;
+  String _directionLabel = 'North';
+  String _latDMS = '--';
+  String _lngDMS = '--';
 
   @override
   void initState() {
     super.initState();
-    _startSensors();
+    _startServices();
   }
 
   @override
   void dispose() {
     _headingSub?.cancel();
-    _liveSub?.cancel();
+    _positionSub?.cancel();
     CompassService.instance.stop();
-    _inputController.dispose();
-    _inputFocusNode.dispose();
     super.dispose();
   }
 
-  void _startSensors() {
+  void _startServices() {
     final compass = CompassService.instance;
     compass.start();
 
-    _headingSub = compass.headingStream.listen((heading) {
-      if (_isLive && mounted) {
+    _headingSub = compass.trueHeadingStream.listen((heading) {
+      if (mounted) {
         setState(() {
-          _liveHeading = heading;
-          _selectedLabel = nearestCompassPoint(heading).label;
+          _trueHeading = heading;
+          _directionLabel = _directionFromHeading(heading);
         });
       }
     });
 
-    _liveSub = compass.liveStatusStream.listen((_) {});
-  }
-
-  void _setManualDirection(double bearingDeg, {bool updateInput = true}) {
-    var bearing = bearingDeg % 360;
-    if (bearing < 0) bearing += 360;
-
-    setState(() {
-      _isLive = false;
-      _manualHeading = bearing;
-      _liveHeading = bearing;
-      _selectedLabel = nearestCompassPoint(bearing).label;
+    _positionSub = compass.positionStream.listen((position) {
+      if (mounted) {
+        setState(() {
+          _latDMS = _toDMS(position.latitude, true);
+          _lngDMS = _toDMS(position.longitude, false);
+        });
+      }
     });
-
-    if (updateInput) {
-      final intStr = bearing.roundToDouble() == bearing
-          ? bearing.toInt().toString()
-          : bearing.toStringAsFixed(1);
-      _inputController.text = intStr;
-      _inputFocusNode.unfocus();
-    }
-
-    HapticFeedback.selectionClick();
   }
 
-  void _onInputChanged(String value) {
-    if (value.isEmpty) {
-      setState(() {
-        _isLive = false;
-        _manualHeading = null;
-        _liveHeading = null;
-        _selectedLabel = 'N';
-      });
-      return;
-    }
-
-    final parsed = double.tryParse(value);
-    if (parsed == null || parsed.isNaN || parsed.isInfinite) return;
-    if (parsed < 0 || parsed > 360) return;
-
-    _setManualDirection(parsed, updateInput: false);
+  /// Returns the 8-point compass label for a given heading (0–360).
+  String _directionFromHeading(double h) {
+    if (h >= 337.5 || h < 22.5) return 'North';
+    if (h >= 22.5 && h < 67.5) return 'North East';
+    if (h >= 67.5 && h < 112.5) return 'East';
+    if (h >= 112.5 && h < 157.5) return 'South East';
+    if (h >= 157.5 && h < 202.5) return 'South';
+    if (h >= 202.5 && h < 247.5) return 'South West';
+    if (h >= 247.5 && h < 292.5) return 'West';
+    if (h >= 292.5 && h < 337.5) return 'North West';
+    return 'North';
   }
 
-  Future<void> _resumeLive() async {
-    setState(() {
-      _isLive = true;
-      _manualHeading = null;
-    });
-    _inputController.clear();
-    _inputFocusNode.unfocus();
-    HapticFeedback.lightImpact();
-    // Small settle delay for sensors to stabiliSe after pause.
-    await Future.delayed(const Duration(milliseconds: 100));
-  }
-
-  void _onTapChip(String label) {
-    final point = compassPoints.firstWhere((p) => p.label == label);
-    _setManualDirection(point.bearing);
+  /// Converts decimal degrees to DMS string (e.g. `31°29'23.4" N`).
+  String _toDMS(double decimal, bool isLat) {
+    final dir = isLat
+        ? (decimal >= 0 ? 'N' : 'S')
+        : (decimal >= 0 ? 'E' : 'W');
+    decimal = decimal.abs();
+    final d = decimal.floor();
+    final m = ((decimal - d) * 60).floor();
+    final s = (decimal - d - m / 60.0) * 3600;
+    return '$d°$m\'${s.toStringAsFixed(1)}" $dir';
   }
 
   Future<void> _onRefresh() async {
-    await _resumeLive();
-    // Give sensors a moment to produce a fresh reading.
-    await Future.delayed(const Duration(milliseconds: 500));
+    final compass = CompassService.instance;
+    compass.stop();
+    await Future.delayed(const Duration(milliseconds: 200));
+    _startServices();
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final displayHeading = _isLive
-        ? _liveHeading
-        : _manualHeading;
-
-    final displayLabel = displayHeading != null
-        ? '$_selectedLabel · ${displayHeading.roundToDouble() == displayHeading ? displayHeading.toInt().toString() : displayHeading.toStringAsFixed(1)}°'
-        : 'N · 0°';
-
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Compass',
-          style: TextStyle(fontWeight: FontWeight.w700),
-        ),
-        centerTitle: false,
-        actions: [
-          if (!_isLive && _manualHeading != null)
-            TextButton.icon(
-              onPressed: _resumeLive,
-              icon: const Icon(Icons.my_location_rounded, size: 18),
-              label: const Text('Live'),
-              style: TextButton.styleFrom(
-                foregroundColor: AppColors.success,
-              ),
-            ),
-        ],
-      ),
-      body: RefreshIndicator(
-        onRefresh: _onRefresh,
-        displacement: 60,
-        child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            SliverFillRemaining(
-              hasScrollBody: false,
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: RadialGradient(
-                    center: Alignment.center,
-                    radius: 0.85,
-                    colors: isDark
-                        ? [
-                            const Color(0xFF0F1A2E),
-                            const Color(0xFF080E14),
-                          ]
-                        : [
-                            const Color(0xFFF0F4FF),
-                            const Color(0xFFE8ECF1),
-                          ],
-                    stops: const [0.3, 1.0],
-                  ),
-                ),
+      backgroundColor: const Color(0xFF000000),
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: _onRefresh,
+          displacement: 60,
+          color: const Color(0xFF3B82F6),
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              SliverFillRemaining(
+                hasScrollBody: false,
                 child: Column(
                   children: [
-                    // ── Compass rose ─────────────────────────────────
+                    const Spacer(flex: 1),
+
+                    // ── Direction name ──────────────────────────────
+                    Padding(
+                      padding: const EdgeInsets.only(top: 16, bottom: 8),
+                      child: Text(
+                        _directionLabel,
+                        style: const TextStyle(
+                          fontSize: 36,
+                          fontWeight: FontWeight.w300,
+                          color: Color(0xFF9CA3AF),
+                          letterSpacing: 2,
+                        ),
+                      ),
+                    ),
+
+                    const Spacer(flex: 1),
+
+                    // ── Compass rose ────────────────────────────────
                     Expanded(
-                      flex: 3,
+                      flex: 4,
                       child: Padding(
-                        padding: const EdgeInsets.all(24),
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: CompassRose(
-                          heading: displayHeading,
-                          selectedLabel: _isLive || _manualHeading != null
-                              ? _selectedLabel
-                              : null,
-                          isLive: _isLive,
-                          isDark: isDark,
-                          onBearingSelected: (bearing) =>
-                              _setManualDirection(bearing),
+                          heading: _trueHeading,
+                          isDark: true,
                         ),
                       ),
                     ),
 
-                    // ── Direction display ────────────────────────────
-                    AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 200),
-                      transitionBuilder: (child, animation) =>
-                          FadeTransition(opacity: animation, child: child),
-                      child: Column(
-                        key: ValueKey(displayLabel),
+                    const Spacer(flex: 1),
+
+                    // ── GPS coordinates ─────────────────────────────
+                    Padding(
+                      padding: const EdgeInsets.only(
+                        bottom: 40,
+                        left: 32,
+                        right: 32,
+                      ),
+                      child: Row(
                         children: [
-                          Text(
-                            _selectedLabel,
-                            style: TextStyle(
-                              fontSize: 32,
-                              fontWeight: FontWeight.w800,
-                              color: _isLive
-                                  ? AppColors.success
-                                  : (isDark
-                                      ? AppColors.darkTextPrimary
-                                      : AppColors.lightTextPrimary),
-                              letterSpacing: 2,
+                          Expanded(
+                            child: _CoordinateColumn(
+                              label: 'North latitude',
+                              value: _latDMS,
                             ),
                           ),
-                          const SizedBox(height: 2),
-                          Text(
-                            _roundBearing(displayHeading ?? 0),
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              color: (isDark
-                                      ? AppColors.darkTextSecondary
-                                      : AppColors.lightTextSecondary)
-                                  .withValues(alpha: 0.7),
+                          const SizedBox(width: 24),
+                          Expanded(
+                            child: _CoordinateColumn(
+                              label: 'East longitude',
+                              value: _lngDMS,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 12),
-
-                    // ── Angle input ──────────────────────────────────
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 48),
-                      child: TextField(
-                        controller: _inputController,
-                        focusNode: _inputFocusNode,
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                          signed: false,
-                        ),
-                        onChanged: _onInputChanged,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                          color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
-                        ),
-                        decoration: InputDecoration(
-                          hintText: 'Enter bearing (0–360)',
-                          hintStyle: TextStyle(
-                            fontSize: 14,
-                            color: (isDark
-                                    ? AppColors.darkTextSecondary
-                                    : AppColors.lightTextSecondary)
-                                .withValues(alpha: 0.4),
-                          ),
-                          suffixText: '°',
-                          suffixStyle: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w600,
-                            color: (isDark
-                                    ? AppColors.darkTextSecondary
-                                    : AppColors.lightTextSecondary)
-                                .withValues(alpha: 0.5),
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                            ),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: AppColors.primary, width: 2),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // ── Quick direction chips ────────────────────────
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        alignment: WrapAlignment.center,
-                        children: [
-                          _Chip('N', isDark, _selectedLabel, () => _onTapChip('N')),
-                          _Chip('NE', isDark, _selectedLabel, () => _onTapChip('NE')),
-                          _Chip('E', isDark, _selectedLabel, () => _onTapChip('E')),
-                          _Chip('SE', isDark, _selectedLabel, () => _onTapChip('SE')),
-                          _Chip('S', isDark, _selectedLabel, () => _onTapChip('S')),
-                          _Chip('SW', isDark, _selectedLabel, () => _onTapChip('SW')),
-                          _Chip('W', isDark, _selectedLabel, () => _onTapChip('W')),
-                          _Chip('NW', isDark, _selectedLabel, () => _onTapChip('NW')),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 24),
                   ],
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
-
-  String _roundBearing(double bearing) {
-    final rounded = bearing.roundToDouble() == bearing
-        ? bearing.toInt()
-        : bearing.toStringAsFixed(1);
-    return '$rounded°';
-  }
 }
 
-class _Chip extends StatelessWidget {
+class _CoordinateColumn extends StatelessWidget {
   final String label;
-  final bool isDark;
-  final String selected;
-  final VoidCallback onTap;
+  final String value;
 
-  const _Chip(this.label, this.isDark, this.selected, this.onTap);
+  const _CoordinateColumn({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
-    final isSelected = label == selected;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primary
-              : (isDark ? AppColors.darkSurface : AppColors.lightSurface),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected
-                ? AppColors.primary
-                : (isDark ? AppColors.borderDark : AppColors.borderLight),
-          ),
-        ),
-        child: Text(
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
           label,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 13,
-            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-            color: isSelected
-                ? Colors.white
-                : (isDark
-                    ? AppColors.darkTextSecondary
-                    : AppColors.lightTextSecondary),
+            color: Color(0xFF6B7280),
+            fontWeight: FontWeight.w400,
           ),
         ),
-      ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+      ],
     );
   }
 }

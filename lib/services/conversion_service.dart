@@ -1,7 +1,8 @@
 /// Pure-logic conversion engine for MS Unit Converter.
 ///
-/// All conversions — normal, temperature, and fuel economy — pass through
-/// [convert]. The service is stateless and deterministic;
+/// All conversions — normal, temperature, fuel economy, cooking, shoe size,
+/// clothing size, number base, and typography — pass through [convert].
+/// The service is stateless and deterministic;
 /// it holds no UI, storage, or network dependencies.
 library;
 
@@ -25,12 +26,10 @@ class ConversionService {
     UnitModel to,
     UnitCategory category,
   ) {
-    // ── Validate input ──────────────────────────────────────────
     if (value.isNaN || value.isInfinite) {
       return ConversionResult.failure('Invalid input');
     }
 
-    // ── Same-unit short circuit ─────────────────────────────────
     if (from == to) {
       final formatted = Formatters.formatResult(value);
       return ConversionResult.success(
@@ -40,14 +39,22 @@ class ConversionService {
       );
     }
 
-    // ── Perform conversion ─────────────────────────────────────
     final double result;
-    if (category == UnitCategory.temperature) {
-      result = _convertTemperature(value, from, to);
-    } else if (category == UnitCategory.fuelEconomy) {
-      result = _convertFuelEconomy(value, from, to);
-    } else {
-      result = (value * from.toBase) / to.toBase;
+    switch (category) {
+      case UnitCategory.temperature:
+        result = _convertTemperature(value, from, to);
+      case UnitCategory.fuelEconomy:
+        result = _convertFuelEconomy(value, from, to);
+      case UnitCategory.cooking:
+        result = _convertCooking(value, from, to);
+      case UnitCategory.shoeSize:
+        result = _convertShoeSize(value, from, to);
+      case UnitCategory.clothingSize:
+        result = _convertClothingSize(value, from, to);
+      case UnitCategory.typography:
+        result = _convertTypography(value, from, to);
+      default:
+        result = (value * from.toBase) / to.toBase;
     }
 
     if (result.isNaN || result.isInfinite) {
@@ -65,15 +72,6 @@ class ConversionService {
   }
 
   /// Builds a human-readable formula string.
-  ///
-  /// For linear conversions the format includes the multiplication factor:
-  /// `"<value> <from.symbol> × <factor> = <result> <to.symbol>"`
-  /// Example: `"1 km × 1000 = 1000 m"`.
-  ///
-  /// For special-case categories (temperature, fuel economy) the factor
-  /// is omitted and the format is:
-  /// `"<value> <from.symbol> = <result> <to.symbol>"`
-  /// Example: `"100 °C = 212 °F"`.
   static String buildFormula(
     double value,
     UnitModel from,
@@ -92,23 +90,17 @@ class ConversionService {
     return '$valStr ${from.symbol} × $factorStr = $resStr ${to.symbol}';
   }
 
-  // ── Temperature (uses Celsius as intermediate) ─────────────────
+  // ── Temperature ─────────────────────────────────────────────────
 
-  /// Converts a temperature value completely offline using
-  /// Celsius as the intermediate reference.
   static double _convertTemperature(
     double value,
     UnitModel from,
     UnitModel to,
   ) {
-    // Step 1: convert the input to Celsius.
     final double celsius = _toCelsius(value, from.name);
-
-    // Step 2: convert from Celsius to the target unit.
     return _fromCelsius(celsius, to.name);
   }
 
-  /// Converts [value] in [fromName] to Celsius.
   static double _toCelsius(double value, String fromName) {
     switch (fromName) {
       case 'Celsius':
@@ -122,7 +114,6 @@ class ConversionService {
     }
   }
 
-  /// Converts a Celsius value to the unit identified by [toName].
   static double _fromCelsius(double celsius, String toName) {
     switch (toName) {
       case 'Celsius':
@@ -136,26 +127,17 @@ class ConversionService {
     }
   }
 
-  // ── Fuel Economy (uses km/L as intermediate) ──────────────────
+  // ── Fuel Economy ────────────────────────────────────────────────
 
-  /// Converts a fuel-economy value using km/L as the intermediate.
-  ///
-  /// [L/100km] uses a reciprocal relationship (like temperature)
-  /// and is handled as a special case. All other units use a
-  /// linear multiplier to/from km/L.
   static double _convertFuelEconomy(
     double value,
     UnitModel from,
     UnitModel to,
   ) {
-    // Step 1: convert the input to km/L.
     final double kmPerL = _toKmPerL(value, from);
-
-    // Step 2: convert from km/L to the target unit.
     return _fromKmPerL(kmPerL, to);
   }
 
-  /// Converts [value] in [from] to km/L.
   static double _toKmPerL(double value, UnitModel from) {
     if (from.name == 'Liters per 100km') {
       if (value == 0) return double.nan;
@@ -164,12 +146,183 @@ class ConversionService {
     return value * from.toBase;
   }
 
-  /// Converts a km/L value to the unit identified by [to].
   static double _fromKmPerL(double kmPerL, UnitModel to) {
     if (to.name == 'Liters per 100km') {
       if (kmPerL == 0) return double.nan;
       return 100 / kmPerL;
     }
     return kmPerL / to.toBase;
+  }
+
+  // ── Cooking (volume vs weight groups) ─────────────────────────
+
+  /// Converts a cooking measurement. Cross-group (volume → weight)
+  /// conversions return [double.nan] with an error message.
+  static double _convertCooking(
+    double value,
+    UnitModel from,
+    UnitModel to,
+  ) {
+    if (from.group != to.group) {
+      return double.nan;
+    }
+    return (value * from.toBase) / to.toBase;
+  }
+
+  /// Returns a cross-group error message when volume/weight mismatch.
+  static String? cookingGroupError(UnitModel? from, UnitModel? to) {
+    if (from == null || to == null) return null;
+    if (from.group == to.group) return null;
+    return 'Cannot convert ${from.group} to ${to.group}';
+  }
+
+  // ── Shoe Size (via CM intermediate, 0.5 rounding) ─────────────
+
+  /// Converts a shoe size using CM as intermediate reference.
+  /// Results are rounded to the nearest 0.5 increment.
+  static double _convertShoeSize(
+    double value,
+    UnitModel from,
+    UnitModel to,
+  ) {
+    final double cm = _shoeToCm(value, from.name);
+    if (cm.isNaN) return double.nan;
+    final double result = _cmToShoe(cm, to.name);
+    if (result.isNaN) return double.nan;
+    return (result * 2).roundToDouble() / 2;
+  }
+
+  static double _shoeToCm(double value, String fromName) {
+    switch (fromName) {
+      case 'CM':
+        return value;
+      case 'EU':
+        return (value - 1.5) / 1.5;
+      case 'UK':
+        return (value + 31.5) / 1.5;
+      case 'US Men':
+        return (value + 30.5) / 1.5;
+      case 'US Women':
+        return (value + 29) / 1.5;
+      default:
+        return double.nan;
+    }
+  }
+
+  static double _cmToShoe(double cm, String toName) {
+    switch (toName) {
+      case 'CM':
+        return cm;
+      case 'EU':
+        return cm * 1.5 + 1.5;
+      case 'UK':
+        return cm * 1.5 - 31.5;
+      case 'US Men':
+        return cm * 1.5 - 30.5;
+      case 'US Women':
+        return cm * 1.5 - 29;
+      default:
+        return double.nan;
+    }
+  }
+
+  // ── Clothing Size (via US numeric, men/women) ────────────────
+
+  /// Converts clothing size using US as intermediate.
+  /// Defaults to men's sizing when called without extra state.
+  static double _convertClothingSize(
+    double value,
+    UnitModel from,
+    UnitModel to,
+  ) {
+    final double us = _clothingToUs(value, from.name, true);
+    if (us.isNaN) return double.nan;
+    return _usToClothing(us, to.name, true);
+  }
+
+  static double _clothingToUs(double value, String fromName, bool isMen) {
+    switch (fromName) {
+      case 'US':
+        return value;
+      case 'EU':
+        return isMen ? value - 10 : value - 30;
+      case 'UK':
+        return isMen ? value + 1 : value - 4;
+      case 'Asian':
+        return value - 5;
+      default:
+        return double.nan;
+    }
+  }
+
+  static double _usToClothing(double us, String toName, bool isMen) {
+    switch (toName) {
+      case 'US':
+        return us;
+      case 'EU':
+        return isMen ? us + 10 : us + 30;
+      case 'UK':
+        return isMen ? us - 1 : us + 4;
+      case 'Asian':
+        return us + 5;
+      default:
+        return double.nan;
+    }
+  }
+
+  // ── Typography (px base, em/rem via baseFontSize) ────────────
+
+  /// Converts a typographic value using px as the base.
+  /// Uses 16px default base font when called without extra state.
+  static double _convertTypography(
+    double value,
+    UnitModel from,
+    UnitModel to,
+  ) {
+    final double px = _typoToPx(value, from, 16.0);
+    if (px.isNaN) return double.nan;
+    return _pxToTypo(px, to, 16.0);
+  }
+
+  static double _typoToPx(double value, UnitModel from, double baseFontSize) {
+    switch (from.name) {
+      case 'Pixels':
+      case 'DP':
+      case 'Points':
+      case 'Inch':
+      case 'Centimeter':
+      case 'Millimeter':
+      case 'Pica':
+        return value * from.toBase;
+      case 'EM':
+        return value * baseFontSize;
+      case 'REM':
+        return value * baseFontSize;
+      case 'Percent':
+        return (value / 100) * baseFontSize;
+      default:
+        return double.nan;
+    }
+  }
+
+  static double _pxToTypo(double px, UnitModel to, double baseFontSize) {
+    switch (to.name) {
+      case 'Pixels':
+      case 'DP':
+      case 'Points':
+      case 'Inch':
+      case 'Centimeter':
+      case 'Millimeter':
+      case 'Pica':
+        return px / to.toBase;
+      case 'EM':
+        return px / baseFontSize;
+      case 'REM':
+        return px / baseFontSize;
+      case 'Percent':
+        return (px / baseFontSize) * 100;
+      default:
+        return double.nan;
+    }
   }
 }

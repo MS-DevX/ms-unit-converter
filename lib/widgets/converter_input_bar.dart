@@ -12,6 +12,7 @@ class ConverterInputBar extends StatelessWidget {
   final List<UnitModel> units;
   final ValueChanged<String> onInputChanged;
   final ValueChanged<UnitModel> onUnitChanged;
+  final TextInputType? keyboardType;
 
   const ConverterInputBar({
     super.key,
@@ -21,6 +22,7 @@ class ConverterInputBar extends StatelessWidget {
     required this.units,
     required this.onInputChanged,
     required this.onUnitChanged,
+    this.keyboardType,
   });
 
   Future<void> _openUnitSearch(BuildContext context) async {
@@ -43,25 +45,31 @@ class ConverterInputBar extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final hasInput = controller.text.isNotEmpty;
     final Color borderColor =
-        isDark ? AppColors.borderDark : AppColors.borderLight;
+        isDark ? AppColors.inputBorderDark : AppColors.inputBorderLight;
+    final bgColor = isDark ? AppColors.darkSurface : AppColors.lightSurface;
 
-    return Container(
-      height: 52,
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: borderColor, width: 1),
-      ),
-      child: Row(
-        children: [
-          Expanded(
+    return Row(
+      children: [
+        Expanded(
+          flex: 3,
+          child: Container(
+            height: 52,
+            decoration: BoxDecoration(
+              color: bgColor,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: borderColor, width: 1),
+            ),
             child: TextField(
               controller: controller,
               focusNode: focusNode,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-                signed: true,
-              ),
+              keyboardType: keyboardType ??
+                  const TextInputType.numberWithOptions(
+                    decimal: true,
+                    signed: true,
+                  ),
+              textCapitalization: keyboardType == TextInputType.text
+                  ? TextCapitalization.characters
+                  : TextCapitalization.none,
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.w600,
@@ -105,17 +113,21 @@ class ConverterInputBar extends StatelessWidget {
               onChanged: onInputChanged,
             ),
           ),
-          Container(
-            width: 1,
-            height: 32,
-            color: borderColor,
-          ),
-          Expanded(
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          flex: 2,
+          child: Container(
+            height: 52,
+            decoration: BoxDecoration(
+              color: bgColor,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: borderColor, width: 1),
+            ),
             child: GestureDetector(
               onTap: () => _openUnitSearch(context),
               behavior: HitTestBehavior.opaque,
-              child: Container(
-                height: 52,
+              child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 child: Row(
                   children: [
@@ -142,8 +154,8 @@ class ConverterInputBar extends StatelessWidget {
               ),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

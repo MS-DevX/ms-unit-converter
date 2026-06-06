@@ -1,320 +1,213 @@
-/// Custom-painted compass rose with rotating arrow, 16 tick marks,
-/// and bold cardinal labels (N/E/S/W). No intermediate labels on the arrow.
+/// Custom-painted compass rose with rotating dial, tick marks, degree labels,
+/// cardinal markers, fixed red heading needle, and centre heading display.
 ///
-/// Always shows:
-/// - Outer circle with thin rim
-/// - 16 tick marks at 22.5° intervals
-/// - 4 cardinal labels (N, E, S, W) — large, bold, theme-aware black/white
-/// - Arrow/needle rotating to the current heading
-/// - Highlighted arc (22.5°) on the rim showing the active segment
+/// The entire dial (ticks, numbers, cardinals, triangle) rotates so that the
+/// current heading aligns with the top of the screen. A fixed red needle
+/// at the top acts as the lubber line / heading indicator.
 library;
 
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-/// Compass data for a single 16-point direction.
-class CompassPoint {
-  final String label;
-  final double bearing;
-
-  const CompassPoint(this.label, this.bearing);
-}
-
-/// All 16 principal compass points with their bearings in degrees.
-const List<CompassPoint> compassPoints = [
-  CompassPoint('N', 0),
-  CompassPoint('NNE', 22.5),
-  CompassPoint('NE', 45),
-  CompassPoint('ENE', 67.5),
-  CompassPoint('E', 90),
-  CompassPoint('ESE', 112.5),
-  CompassPoint('SE', 135),
-  CompassPoint('SSE', 157.5),
-  CompassPoint('S', 180),
-  CompassPoint('SSW', 202.5),
-  CompassPoint('SW', 225),
-  CompassPoint('WSW', 247.5),
-  CompassPoint('W', 270),
-  CompassPoint('WNW', 292.5),
-  CompassPoint('NW', 315),
-  CompassPoint('NNW', 337.5),
-];
-
-/// Returns the nearest compass point for a given [bearing] (0–360).
-CompassPoint nearestCompassPoint(double bearing) {
-  var best = compassPoints[0];
-  var minDiff = 360.0;
-  for (final p in compassPoints) {
-    var diff = (p.bearing - bearing).abs();
-    if (diff > 180) diff = 360 - diff;
-    if (diff < minDiff) {
-      minDiff = diff;
-      best = p;
-    }
-  }
-  return best;
-}
-
 /// Custom-painted compass rose widget.
 class CompassRose extends StatelessWidget {
-  /// The current heading the arrow points at (0–360). Set to `null` to
-  /// show the arrow pointing North with no selection label.
-  final double? heading;
-
-  /// When non-null, the 16-point label that appears near the rim.
-  final String? selectedLabel;
-
-  /// Whether the compass is in live sensor mode.
-  final bool isLive;
+  /// Current true heading in degrees (0–360).
+  final double heading;
 
   /// Whether the device is using dark theme.
   final bool isDark;
 
-  /// Called when the user taps a point on the compass face.
-  final ValueChanged<double>? onBearingSelected;
-
   const CompassRose({
     super.key,
-    this.heading,
-    this.selectedLabel,
-    this.isLive = false,
+    required this.heading,
     this.isDark = false,
-    this.onBearingSelected,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapUp: (details) {
-        if (onBearingSelected == null) return;
-        final size = context.size;
-        if (size == null) return;
-        final center = Offset(size.width / 2, size.height / 2);
-        final dx = details.localPosition.dx - center.dx;
-        final dy = details.localPosition.dy - center.dy;
-        var angle =
-            math.atan2(-dx, -dy) * 180.0 / math.pi;
-        if (angle < 0) angle += 360;
-        onBearingSelected!(angle);
-      },
-      child: CustomPaint(
-        size: Size.infinite,
-        painter: _CompassRosePainter(
-          heading: heading,
-          selectedLabel: selectedLabel,
-          isLive: isLive,
-          isDark: isDark,
-        ),
+    return CustomPaint(
+      size: Size.infinite,
+      painter: _CompassRosePainter(
+        heading: heading,
+        isDark: isDark,
       ),
     );
   }
 }
 
 class _CompassRosePainter extends CustomPainter {
-  final double? heading;
-  final String? selectedLabel;
-  final bool isLive;
+  final double heading;
   final bool isDark;
 
   _CompassRosePainter({
-    this.heading,
-    this.selectedLabel,
-    this.isLive = false,
+    required this.heading,
     this.isDark = false,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
+    // Pure black background
+    canvas.drawRect(
+      Rect.fromLTWH(0, 0, size.width, size.height),
+      Paint()..color = const Color(0xFF000000),
+    );
+
     final center = Offset(size.width / 2, size.height / 2);
     final radius = math.min(size.width, size.height) / 2 - 16;
     if (radius <= 0) return;
 
-    final paint = Paint()
+    // ── Save & rotate so heading° moves to top ─────────────────────
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+    canvas.rotate(-heading * math.pi / 180);
+
+    // ── Outer ring ─────────────────────────────────────────────────
+    final ringPaint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
+      ..strokeWidth = 1.5
+      ..color = Colors.grey.withValues(alpha: 0.4);
+    canvas.drawCircle(Offset.zero, radius, ringPaint);
 
-    // ── Outer circle ──────────────────────────────────────────────
-    paint.color = Colors.grey.withValues(alpha: 0.3);
-    canvas.drawCircle(center, radius, paint);
+    // ── Tick marks: 1°/5°/10° intervals ────────────────────────────
+    for (int i = 0; i < 360; i++) {
+      final angle = (i - 90) * math.pi / 180;
+      final isEvery10 = i % 10 == 0;
+      final isEvery5 = i % 5 == 0;
 
-    // ── Inner circle (subtle) ──────────────────────────────────────
-    paint.color = Colors.grey.withValues(alpha: 0.12);
-    paint.strokeWidth = 0.5;
-    canvas.drawCircle(center, radius * 0.92, paint);
+      double innerR, strokeWidth;
+      Color color;
 
-    // ── Tick marks at 22.5° intervals ─────────────────────────────
-    for (int i = 0; i < 16; i++) {
-      final angle = (i * 22.5 - 90) * math.pi / 180;
-      final isCardinal = i % 4 == 0;
-      final innerR = isCardinal ? radius * 0.88 : radius * 0.90;
-      final outerR = radius * 0.96;
+      if (isEvery10) {
+        innerR = radius - radius * 0.14;
+        strokeWidth = 2.0;
+        color = Colors.white.withValues(alpha: 0.7);
+      } else if (isEvery5) {
+        innerR = radius - radius * 0.08;
+        strokeWidth = 1.2;
+        color = Colors.white.withValues(alpha: 0.4);
+      } else {
+        innerR = radius - radius * 0.04;
+        strokeWidth = 0.8;
+        color = Colors.grey.withValues(alpha: 0.25);
+      }
+
       final inner = Offset(
-        center.dx + innerR * math.cos(angle),
-        center.dy + innerR * math.sin(angle),
+        innerR * math.cos(angle),
+        innerR * math.sin(angle),
       );
       final outer = Offset(
-        center.dx + outerR * math.cos(angle),
-        center.dy + outerR * math.sin(angle),
+        radius * math.cos(angle),
+        radius * math.sin(angle),
       );
-      paint.color = Colors.grey.withValues(alpha: isCardinal ? 0.6 : 0.25);
-      paint.strokeWidth = isCardinal ? 2.5 : 1.0;
-      canvas.drawLine(inner, outer, paint);
-    }
 
-    // ── Cardinal labels: N, E, S, W (bold, theme-aware) ────────────
-    final labelOffset = radius * 0.75;
-    _drawLabel(canvas, center, labelOffset, -90, 'N',
-        _labelStyle(radius, isDark, 'N'));
-    _drawLabel(canvas, center, labelOffset, 0, 'E',
-        _labelStyle(radius, isDark, 'E'));
-    _drawLabel(canvas, center, labelOffset, 90, 'S',
-        _labelStyle(radius, isDark, 'S'));
-    _drawLabel(canvas, center, labelOffset, 180, 'W',
-        _labelStyle(radius, isDark, 'W'));
-
-    // ── Highlighted arc for selected direction ────────────────────
-    if (heading != null) {
-      final arcPaint = Paint()
+      final tickPaint = Paint()
+        ..color = color
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 3
-        ..strokeCap = StrokeCap.round;
-
-      final startAngle = (heading! - 90 - 11.25) * math.pi / 180;
-      final sweepAngle = 22.5 * math.pi / 180;
-
-      arcPaint.color = isLive
-          ? const Color(0xFF10B981).withValues(alpha: 0.7)
-          : const Color(0xFF3B82F6).withValues(alpha: 0.7);
-      canvas.drawArc(
-        Rect.fromCircle(center: center, radius: radius * 0.97),
-        startAngle,
-        sweepAngle,
-        false,
-        arcPaint,
-      );
+        ..strokeWidth = strokeWidth;
+      canvas.drawLine(inner, outer, tickPaint);
     }
 
-    // ── Arrow / Needle ────────────────────────────────────────────
-    if (heading != null) {
-      _drawArrow(canvas, center, radius * 0.70, heading!, isLive);
-    } else {
-      _drawArrow(canvas, center, radius * 0.70, 0, false);
+    // ── Degree labels at 30° intervals (outside ring) ──────────────
+    final labelR = radius + 22;
+    for (int i = 0; i < 360; i += 30) {
+      final angle = (i - 90) * math.pi / 180;
+      final x = labelR * math.cos(angle);
+      final y = labelR * math.sin(angle);
+      final tp = TextPainter(
+        text: TextSpan(
+          text: '$i',
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.white.withValues(alpha: 0.6),
+            fontWeight: FontWeight.w400,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      tp.paint(canvas, Offset(x - tp.width / 2, y - tp.height / 2));
     }
 
-    // ── Centre dot ────────────────────────────────────────────────
-    final dotPaint = Paint()
-      ..color = Colors.grey.withValues(alpha: 0.6)
+    // ── Cardinal labels N / E / S / W ──────────────────────────────
+    final cardR = radius * 0.68;
+    _drawCardinal(canvas, 0, -cardR, 'N');
+    _drawCardinal(canvas, cardR, 0, 'E');
+    _drawCardinal(canvas, 0, cardR, 'S');
+    _drawCardinal(canvas, -cardR, 0, 'W');
+
+    // ── Red triangle at N (rotates with dial), tip pointing outward ──────────
+    final triY = -(radius * 0.78);
+    final triSize = radius * 0.05;
+    final triPath = Path()
+      ..moveTo(0, triY - triSize * 1.2)            // tip toward ring (outward)
+      ..lineTo(-triSize * 0.7, triY + triSize)      // left base toward centre
+      ..lineTo(triSize * 0.7, triY + triSize);      // right base toward centre
+    final triPaint = Paint()
+      ..color = const Color(0xFFFF3333)
       ..style = PaintingStyle.fill;
-    canvas.drawCircle(center, radius * 0.035, dotPaint);
-  }
+    canvas.drawPath(triPath, triPaint);
 
-  void _drawArrow(Canvas canvas, Offset center, double length,
-      double headingDeg, bool isLive) {
-    final radians = (headingDeg - 90) * math.pi / 180;
-    final tip = Offset(
-      center.dx + length * math.cos(radians),
-      center.dy + length * math.sin(radians),
-    );
+    // ── Restore (everything drawn after this is fixed) ─────────────
+    canvas.restore();
 
-    final shaftPaint = Paint()
+    // ── Fixed red vertical needle (lubber line) at top ─────────────
+    final needlePaint = Paint()
+      ..color = const Color(0xFFFF0000)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.5
       ..strokeCap = StrokeCap.round;
-    shaftPaint.color = isLive
-        ? const Color(0xFF10B981).withValues(alpha: 0.9)
-        : const Color(0xFF3B82F6).withValues(alpha: 0.9);
-    canvas.drawLine(center, tip, shaftPaint);
+    canvas.drawLine(
+      Offset(center.dx, 0),
+      Offset(center.dx, center.dy - radius * 0.80),
+      needlePaint,
+    );
 
-    // Arrow head (triangle).
-    final headLength = length * 0.12;
-    final headAngle = 25.0 * math.pi / 180;
-    final leftWing = Offset(
-      tip.dx - headLength * math.cos(radians - headAngle),
-      tip.dy - headLength * math.sin(radians - headAngle),
+    // Small filled red dot at needle tip
+    final dotPaint = Paint()
+      ..color = const Color(0xFFFF0000)
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(
+      Offset(center.dx, center.dy - radius * 0.80),
+      3,
+      dotPaint,
     );
-    final rightWing = Offset(
-      tip.dx - headLength * math.cos(radians + headAngle),
-      tip.dy - headLength * math.sin(radians + headAngle),
-    );
-    final headPaint = Paint()
-      ..style = PaintingStyle.fill
-      ..color = isLive
-          ? const Color(0xFF10B981)
-          : const Color(0xFF3B82F6);
-    final path = Path()
-      ..moveTo(tip.dx, tip.dy)
-      ..lineTo(leftWing.dx, leftWing.dy)
-      ..lineTo(rightWing.dx, rightWing.dy)
-      ..close();
-    canvas.drawPath(path, headPaint);
-  }
 
-  void _drawLabel(
-    Canvas canvas,
-    Offset center,
-    double distance,
-    double angleDeg,
-    String label,
-    TextStyle style,
-  ) {
-    final radians = angleDeg * math.pi / 180;
-    final pos = Offset(
-      center.dx + distance * math.cos(radians),
-      center.dy + distance * math.sin(radians),
-    );
-    final tp = TextPainter(
-      text: TextSpan(text: label, style: style),
+    // ── Centre heading text ────────────────────────────────────────
+    final headingText = '${heading.round()}°';
+    final headingTp = TextPainter(
+      text: TextSpan(
+        text: headingText,
+        style: const TextStyle(
+          fontSize: 48,
+          fontWeight: FontWeight.w700,
+          color: Colors.white,
+        ),
+      ),
       textDirection: TextDirection.ltr,
     )..layout();
-    tp.paint(
+    headingTp.paint(
       canvas,
-      pos - Offset(tp.width / 2, tp.height / 2),
+      center - Offset(headingTp.width / 2, headingTp.height / 2),
     );
   }
 
-  /// Returns the [TextStyle] for a cardinal label at the given [radius].
-  ///
-  /// On light theme all cardinals share a single dark style.
-  /// On dark theme each cardinal gets a distinct bright colour:
-  /// N = amber, E = green, S = blue, W = pink.
-  static TextStyle _labelStyle(double radius, bool dark, String label) {
-    final double size = radius * 0.16;
-
-    if (!dark) {
-      return TextStyle(
-        fontSize: size,
-        fontWeight: FontWeight.w900,
-        color: Colors.black.withValues(alpha: 0.85),
-      );
-    }
-
-    final Color color;
-    switch (label) {
-      case 'N':
-        color = const Color(0xFFF59E0B); // amber
-      case 'E':
-        color = const Color(0xFF10B981); // green
-      case 'S':
-        color = const Color(0xFF3B82F6); // blue
-      case 'W':
-        color = const Color(0xFFEC4899); // pink
-      default:
-        color = Colors.white;
-    }
-
-    return TextStyle(
-      fontSize: size,
-      fontWeight: FontWeight.w900,
-      color: color,
-    );
+  void _drawCardinal(Canvas canvas, double x, double y, String label) {
+    final tp = TextPainter(
+      text: TextSpan(
+        text: label,
+        style: const TextStyle(
+          fontSize: 28,
+          fontWeight: FontWeight.w900,
+          color: Colors.white,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    tp.paint(canvas, Offset(x - tp.width / 2, y - tp.height / 2));
   }
 
   @override
   bool shouldRepaint(_CompassRosePainter oldDelegate) {
-    return oldDelegate.heading != heading ||
-        oldDelegate.selectedLabel != selectedLabel ||
-        oldDelegate.isLive != isLive ||
-        oldDelegate.isDark != isDark;
+    return oldDelegate.heading != heading || oldDelegate.isDark != isDark;
   }
 }

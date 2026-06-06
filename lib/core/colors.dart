@@ -30,6 +30,8 @@ class AppColors {
   // Borders & chips
   static const Color borderLight = Color(0xFFE2E8F0);
   static const Color borderDark = Color(0xFF334155);
+  static const Color inputBorderLight = Color(0xFFCBD5E1);
+  static const Color inputBorderDark = Color(0xFF475569);
 
   static const Color chipInactive = Color(0xFFE2E8F0);
   static const Color chipActive = Color(0xFF2563EB);

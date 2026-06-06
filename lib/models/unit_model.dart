@@ -23,12 +23,17 @@ class UnitModel {
   /// other unit whose conversion cannot be expressed as a simple multiply.
   final bool isSpecialCase;
 
+  /// Optional group identifier for sub-categorisation (e.g. 'volume' vs
+  /// 'weight' in Cooking). Cross-group conversions return an error.
+  final String? group;
+
   /// Creates a [UnitModel] with the given properties.
   const UnitModel({
     required this.name,
     required this.symbol,
     required this.toBase,
     this.isSpecialCase = false,
+    this.group,
   });
 
   /// Returns a copy of this [UnitModel] with the given fields replaced.
@@ -37,19 +42,21 @@ class UnitModel {
     String? symbol,
     double? toBase,
     bool? isSpecialCase,
+    String? group,
   }) {
     return UnitModel(
       name: name ?? this.name,
       symbol: symbol ?? this.symbol,
       toBase: toBase ?? this.toBase,
       isSpecialCase: isSpecialCase ?? this.isSpecialCase,
+      group: group ?? this.group,
     );
   }
 
   @override
   String toString() {
     return 'UnitModel(name: $name, symbol: $symbol, '
-        'toBase: $toBase, isSpecialCase: $isSpecialCase)';
+        'toBase: $toBase, isSpecialCase: $isSpecialCase, group: $group)';
   }
 
   @override
@@ -59,11 +66,12 @@ class UnitModel {
         other.name == name &&
         other.symbol == symbol &&
         other.toBase == toBase &&
-        other.isSpecialCase == isSpecialCase;
+        other.isSpecialCase == isSpecialCase &&
+        other.group == group;
   }
 
   @override
   int get hashCode {
-    return Object.hash(name, symbol, toBase, isSpecialCase);
+    return Object.hash(name, symbol, toBase, isSpecialCase, group);
   }
 }

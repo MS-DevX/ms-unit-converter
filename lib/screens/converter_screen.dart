@@ -89,6 +89,10 @@ class _ConverterScreenState extends State<ConverterScreen> {
     context.read<ConverterProvider>().setInput(value);
   }
 
+  void _onRawInputChanged(String value) {
+    context.read<ConverterProvider>().setRawInput(value);
+  }
+
   void _onUnitChanged(UnitModel unit) {
     context.read<ConverterProvider>().setFromUnit(unit);
   }
@@ -118,16 +122,67 @@ class _ConverterScreenState extends State<ConverterScreen> {
     );
   }
 
+  void _onBaseFontSizeChanged(String value, ConverterProvider converter) {
+    final parsed = double.tryParse(value);
+    if (parsed != null && parsed > 0) {
+      converter.setBaseFontSize(parsed);
+    }
+  }
+
+  int? _radixForUnit(String name) {
+    switch (name) {
+      case 'Binary': return 2;
+      case 'Octal': return 8;
+      case 'Decimal': return 10;
+      case 'Hexadecimal': return 16;
+      default: return null;
+    }
+  }
+
   List<({UnitModel unit, ConversionResult? result})> _computeAllResults(
     ConverterProvider converter,
   ) {
     final input = converter.inputValue;
+    final rawInput = converter.rawInput;
     final from = converter.fromUnit;
     final category = converter.selectedCategory;
     final units = converter.currentUnits;
 
-    if (input.isEmpty || from == null) {
+    if (input.isEmpty && rawInput.isEmpty || from == null) {
       return units.map((u) => (unit: u, result: null)).toList();
+    }
+
+    // ── Number Base: pass raw text ──────────────────────────────────
+    if (category == UnitCategory.numberBase) {
+      final inputStr = rawInput.isEmpty ? input : rawInput;
+      if (inputStr.isEmpty) {
+        return units.map((u) => (unit: u, result: null)).toList();
+      }
+      final fromRadix = _radixForUnit(from.name);
+      if (fromRadix == null) {
+        return units.map((u) => (unit: u, result: ConversionResult.failure('Invalid'))).toList();
+      }
+      final parsedValue = int.tryParse(inputStr, radix: fromRadix);
+      if (parsedValue == null) {
+        return units.map((u) => (unit: u, result: ConversionResult.failure('Invalid'))).toList();
+      }
+      return units.map((u) {
+        if (u == from) {
+          return (unit: u, result: ConversionResult.success(
+            result: 0, formattedResult: inputStr, formula: '',
+          ));
+        }
+        final toRadix = _radixForUnit(u.name);
+        if (toRadix == null) {
+          return (unit: u, result: ConversionResult.failure('Invalid'));
+        }
+        final resultStr = parsedValue.toRadixString(toRadix).toUpperCase();
+        return (unit: u, result: ConversionResult.success(
+          result: parsedValue.toDouble(),
+          formattedResult: '$resultStr (base $toRadix)',
+          formula: '$inputStr (base $fromRadix) = $resultStr (base $toRadix)',
+        ));
+      }).toList();
     }
 
     final value = double.tryParse(input);
@@ -152,11 +207,108 @@ class _ConverterScreenState extends State<ConverterScreen> {
           ),
         );
       }
+
+      // ── Cooking: check cross-group error ────────────────────────
+      if (category == UnitCategory.cooking) {
+        final err = ConversionService.cookingGroupError(from, u);
+        if (err != null) {
+          return (unit: u, result: ConversionResult.failure(err));
+        }
+      }
+
+      // ── Clothing: pass isMenSize ────────────────────────────────
+      if (category == UnitCategory.clothingSize) {
+        final result = _clothingResult(value, from, u, converter.isMenSize);
+        return (unit: u, result: result);
+      }
+
+      // ── Typography: pass baseFontSize ────────────────────────────
+      if (category == UnitCategory.typography) {
+        final result = _typographyResult(value, from, u, converter.baseFontSize);
+        return (unit: u, result: result);
+      }
+
       return (
         unit: u,
         result: ConversionService.convert(value, from, u, category),
       );
     }).toList();
+  }
+
+  ConversionResult _clothingResult(double value, UnitModel from, UnitModel to, bool isMen) {
+    if (to.isSpecialCase || from.isSpecialCase) {
+      final result = _convertClothingDirect(value, from, to, isMen);
+      if (result.isNaN || result.isInfinite) {
+        return ConversionResult.failure('Invalid');
+      }
+      final formatted = Formatters.formatResult(result);
+      return ConversionResult.success(
+        result: result,
+        formattedResult: formatted,
+        formula: '${Formatters.formatResult(value)} ${from.symbol} = $formatted ${to.symbol}',
+      );
+    }
+    return ConversionService.convert(value, from, to, UnitCategory.clothingSize);
+  }
+
+  static double _convertClothingDirect(double value, UnitModel from, UnitModel to, bool isMen) {
+    if (from.name == to.name) return value;
+    double us;
+    switch (from.name) {
+      case 'US': us = value; break;
+      case 'EU': us = isMen ? value - 10 : value - 30; break;
+      case 'UK': us = isMen ? value + 1 : value - 4; break;
+      case 'Asian': us = value - 5; break;
+      default: return double.nan;
+    }
+    switch (to.name) {
+      case 'US': return us;
+      case 'EU': return isMen ? us + 10 : us + 30;
+      case 'UK': return isMen ? us - 1 : us + 4;
+      case 'Asian': return us + 5;
+      default: return double.nan;
+    }
+  }
+
+  ConversionResult _typographyResult(double value, UnitModel from, UnitModel to, double baseFontSize) {
+    if (to.isSpecialCase || from.isSpecialCase) {
+      final result = _convertTypographyDirect(value, from, to, baseFontSize);
+      if (result.isNaN || result.isInfinite) {
+        return ConversionResult.failure('Invalid');
+      }
+      final formatted = Formatters.formatResult(result);
+      return ConversionResult.success(
+        result: result,
+        formattedResult: formatted,
+        formula: '${Formatters.formatResult(value)} ${from.symbol} = $formatted ${to.symbol}',
+      );
+    }
+    return ConversionService.convert(value, from, to, UnitCategory.typography);
+  }
+
+  static double _convertTypographyDirect(double value, UnitModel from, UnitModel to, double baseFontSize) {
+    if (from.name == to.name) return value;
+    double px;
+    switch (from.name) {
+      case 'Pixels': case 'DP': case 'Points': case 'Inch':
+      case 'Centimeter': case 'Millimeter': case 'Pica':
+        px = value * from.toBase; break;
+      case 'EM': case 'REM':
+        px = value * baseFontSize; break;
+      case 'Percent':
+        px = (value / 100) * baseFontSize; break;
+      default: return double.nan;
+    }
+    switch (to.name) {
+      case 'Pixels': case 'DP': case 'Points': case 'Inch':
+      case 'Centimeter': case 'Millimeter': case 'Pica':
+        return px / to.toBase;
+      case 'EM': case 'REM':
+        return px / baseFontSize;
+      case 'Percent':
+        return (px / baseFontSize) * 100;
+      default: return double.nan;
+    }
   }
 
   static const Map<UnitCategory, List<Color>> _categoryGradients = {
@@ -175,6 +327,11 @@ class _ConverterScreenState extends State<ConverterScreen> {
     UnitCategory.force: [Color(0xFF84CC16), Color(0xFF4D7C0F)],
     UnitCategory.frequency: [Color(0xFFEC4899), Color(0xFF9D174D)],
     UnitCategory.fuelEconomy: [Color(0xFF22D3EE), Color(0xFF0E7490)],
+    UnitCategory.cooking: [Color(0xFFF97316), Color(0xFFC2410C)],
+    UnitCategory.shoeSize: [Color(0xFF8B5CF6), Color(0xFF6D28D9)],
+    UnitCategory.clothingSize: [Color(0xFF06B6D4), Color(0xFF0891B2)],
+    UnitCategory.numberBase: [Color(0xFF10B981), Color(0xFF047857)],
+    UnitCategory.typography: [Color(0xFF6366F1), Color(0xFF4338CA)],
   };
 
   @override
@@ -184,6 +341,9 @@ class _ConverterScreenState extends State<ConverterScreen> {
         final isDark = Theme.of(context).brightness == Brightness.dark;
         final bool canPop = Navigator.of(context).canPop();
         final results = _computeAllResults(converter);
+        final isNumberBase = converter.selectedCategory == UnitCategory.numberBase;
+        final isClothing = converter.selectedCategory == UnitCategory.clothingSize;
+        final isTypography = converter.selectedCategory == UnitCategory.typography;
 
         return GestureDetector(
           onTap: () => FocusScope.of(context).unfocus(),
@@ -191,11 +351,9 @@ class _ConverterScreenState extends State<ConverterScreen> {
             body: SafeArea(
               child: Column(
                 children: [
-                  // ── Premium gradient header (when pushed) ────────────
                   if (canPop)
                     _buildPremiumHeader(context, converter),
 
-                  // ── Category chip bar (only as tab) ──────────────────
                   if (!canPop)
                     Padding(
                       padding: const EdgeInsets.only(top: 16, bottom: 12),
@@ -207,27 +365,103 @@ class _ConverterScreenState extends State<ConverterScreen> {
                       ),
                     ),
 
-                  // ── Input bar: value + source unit ───────────────────
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: ConverterInputBar(
                       controller: _inputController,
                       focusNode: _inputFocusNode,
                       sourceUnit: converter.fromUnit,
                       units: converter.currentUnits,
-                      onInputChanged: _onInputChanged,
+                      onInputChanged:
+                          isNumberBase ? _onRawInputChanged : _onInputChanged,
                       onUnitChanged: _onUnitChanged,
+                      keyboardType: isNumberBase
+                          ? TextInputType.text
+                          : null,
                     ),
                   ),
 
-                  // ── Gradient connector bar ────────────────────────────
+                  // ── Clothing: Men/Women toggle ─────────────────────
+                  if (isClothing)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(
+                        children: [
+                          _buildToggleChip('Men', true, converter),
+                          const SizedBox(width: 8),
+                          _buildToggleChip('Women', false, converter),
+                        ],
+                      ),
+                    ),
+
+                  // ── Typography: base font size input ───────────────
+                  if (isTypography)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      child: Row(
+                        children: [
+                          Text(
+                            'Base font:',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: isDark
+                                  ? AppColors.darkTextSecondary
+                                  : AppColors.lightTextSecondary,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          SizedBox(
+                            width: 60,
+                            child: TextField(
+                              keyboardType: TextInputType.numberWithOptions(decimal: true),
+                              decoration: InputDecoration(
+                                isDense: true,
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 6,
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: BorderSide(
+                                    color: isDark
+                                        ? AppColors.inputBorderDark
+                                        : AppColors.inputBorderLight,
+                                  ),
+                                ),
+                              ),
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: isDark
+                                    ? AppColors.darkTextPrimary
+                                    : AppColors.lightTextPrimary,
+                              ),
+                              controller: TextEditingController(
+                                text: converter.baseFontSize.toStringAsFixed(0),
+                              )..selection = TextSelection.collapsed(
+                                  offset: converter.baseFontSize.toStringAsFixed(0).length,
+                                ),
+                              onChanged: (v) => _onBaseFontSizeChanged(v, converter),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'px',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: isDark
+                                  ? AppColors.darkTextSecondary
+                                  : AppColors.lightTextSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
                   ConverterConnectorBar(
                     gradientColors: _categoryGradients[converter.selectedCategory] ??
                         [AppColors.primary, AppColors.primaryDark],
                     onSwap: converter.swapUnits,
                   ),
 
-                  // ── Results list ─────────────────────────────────────
                   Expanded(
                     child: ConversionResultsList(
                       results: results,
@@ -250,7 +484,35 @@ class _ConverterScreenState extends State<ConverterScreen> {
     );
   }
 
-  /// Premium gradient header bar shown when screen is pushed via Navigator.
+  Widget _buildToggleChip(String label, bool isMen, ConverterProvider converter) {
+    final selected = converter.isMenSize == isMen;
+    return GestureDetector(
+      onTap: () => converter.setIsMenSize(isMen),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        decoration: BoxDecoration(
+          color: selected
+              ? AppColors.primary
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: selected
+                ? AppColors.primary
+                : AppColors.inputBorderDark,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: selected ? Colors.white : AppColors.darkTextSecondary,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildPremiumHeader(BuildContext context, ConverterProvider converter) {
     final category = widget.initialCategory ?? converter.selectedCategory;
     final gradientColors = _categoryGradients[category] ??

@@ -43,6 +43,11 @@ class _HomeScreenState extends State<HomeScreen> {
     UnitCategory.force: [Color(0xFF84CC16), Color(0xFF4D7C0F)],
     UnitCategory.frequency: [Color(0xFFEC4899), Color(0xFF9D174D)],
     UnitCategory.fuelEconomy: [Color(0xFF22D3EE), Color(0xFF0E7490)],
+    UnitCategory.cooking: [Color(0xFFF97316), Color(0xFFC2410C)],
+    UnitCategory.shoeSize: [Color(0xFF8B5CF6), Color(0xFF6D28D9)],
+    UnitCategory.clothingSize: [Color(0xFF06B6D4), Color(0xFF0891B2)],
+    UnitCategory.numberBase: [Color(0xFF10B981), Color(0xFF047857)],
+    UnitCategory.typography: [Color(0xFF6366F1), Color(0xFF4338CA)],
   };
 
   static const List<_PresetConversion> _quickPresets = [
@@ -52,6 +57,11 @@ class _HomeScreenState extends State<HomeScreen> {
     _PresetConversion(category: UnitCategory.temperature, value: 0, fromUnitName: 'Celsius', toUnitName: 'Fahrenheit'),
     _PresetConversion(category: UnitCategory.volume, value: 1, fromUnitName: 'Liter', toUnitName: 'Gallon (US)'),
     _PresetConversion(category: UnitCategory.speed, value: 1, fromUnitName: 'Kilometers per Hour', toUnitName: 'Miles per Hour'),
+    _PresetConversion(category: UnitCategory.cooking, value: 1, fromUnitName: 'Cup (US)', toUnitName: 'Tablespoon'),
+    _PresetConversion(category: UnitCategory.shoeSize, value: 42, fromUnitName: 'EU', toUnitName: 'US Men'),
+    _PresetConversion(category: UnitCategory.clothingSize, value: 32, fromUnitName: 'US', toUnitName: 'EU'),
+    _PresetConversion(category: UnitCategory.numberBase, value: 255, fromUnitName: 'Decimal', toUnitName: 'Hexadecimal'),
+    _PresetConversion(category: UnitCategory.typography, value: 16, fromUnitName: 'Pixels', toUnitName: 'Points'),
   ];
 
   @override

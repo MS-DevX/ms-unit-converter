@@ -42,6 +42,8 @@ dependencies:
   package_info_plus: ^6.0.0
   url_launcher: ^6.2.0
   sensors_plus: ^6.1.0
+  geolocator: ^12.0.0
+  geomag: ^0.3.0
 
 dev_dependencies:
   flutter_test:
@@ -61,7 +63,7 @@ flutter_launcher_icons:
   image_path: "assets/icon.png"
   min_sdk_android: 21
   adaptive_icon_background: "#0D1117"
-  adaptive_icon_foreground: "assets/icon.png"
+  adaptive_icon_foreground: "assets/adaptive_icon_foreground.png"
   web:
     generate: false
   windows:
@@ -79,6 +81,7 @@ flutter:
 
   assets:
     - assets/icon.png
+    - assets/adaptive_icon_foreground.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

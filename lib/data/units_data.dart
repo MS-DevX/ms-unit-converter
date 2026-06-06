@@ -19,6 +19,11 @@ enum UnitCategory {
   force,
   frequency,
   fuelEconomy,
+  cooking,
+  shoeSize,
+  clothingSize,
+  numberBase,
+  typography,
 }
 
 /// Display helpers for [UnitCategory].
@@ -56,6 +61,16 @@ extension UnitCategoryExtension on UnitCategory {
         return 'Frequency';
       case UnitCategory.fuelEconomy:
         return 'Fuel Economy';
+      case UnitCategory.cooking:
+        return 'Cooking';
+      case UnitCategory.shoeSize:
+        return 'Shoe Size';
+      case UnitCategory.clothingSize:
+        return 'Clothing Size';
+      case UnitCategory.numberBase:
+        return 'Number Base';
+      case UnitCategory.typography:
+        return 'Typography';
     }
   }
 
@@ -92,6 +107,16 @@ extension UnitCategoryExtension on UnitCategory {
         return 'Hertz, kHz, MHz \u2014 frequency conversions';
       case UnitCategory.fuelEconomy:
         return 'km/L, MPG \u2014 fuel efficiency';
+      case UnitCategory.cooking:
+        return 'Cups, tbsp, grams \u2014 recipe conversions';
+      case UnitCategory.shoeSize:
+        return 'EU, UK, US, CM \u2014 shoe sizing';
+      case UnitCategory.clothingSize:
+        return 'US, EU, UK \u2014 clothing sizes';
+      case UnitCategory.numberBase:
+        return 'Binary, Hex, Decimal \u2014 base conversion';
+      case UnitCategory.typography:
+        return 'px, pt, em, rem \u2014 type scaling';
     }
   }
 
@@ -196,6 +221,36 @@ extension UnitCategoryExtension on UnitCategory {
           (value: 10, fromUnitName: 'Liters per 100km', toUnitName: 'MPG (US)'),
           (value: 1, fromUnitName: 'MPG (US)', toUnitName: 'Kilometers per Liter'),
         ];
+      case UnitCategory.cooking:
+        return [
+          (value: 1, fromUnitName: 'Cup (US)', toUnitName: 'Tablespoon'),
+          (value: 1, fromUnitName: 'Cup (US)', toUnitName: 'Milliliter'),
+          (value: 1, fromUnitName: 'Ounce', toUnitName: 'Gram'),
+        ];
+      case UnitCategory.shoeSize:
+        return [
+          (value: 42, fromUnitName: 'EU', toUnitName: 'US Men'),
+          (value: 39, fromUnitName: 'EU', toUnitName: 'CM'),
+          (value: 42, fromUnitName: 'EU', toUnitName: 'UK'),
+        ];
+      case UnitCategory.clothingSize:
+        return [
+          (value: 32, fromUnitName: 'US', toUnitName: 'EU'),
+          (value: 38, fromUnitName: 'US', toUnitName: 'UK'),
+          (value: 32, fromUnitName: 'US', toUnitName: 'Asian'),
+        ];
+      case UnitCategory.numberBase:
+        return [
+          (value: 255, fromUnitName: 'Decimal', toUnitName: 'Hexadecimal'),
+          (value: 255, fromUnitName: 'Decimal', toUnitName: 'Binary'),
+          (value: 255, fromUnitName: 'Decimal', toUnitName: 'Octal'),
+        ];
+      case UnitCategory.typography:
+        return [
+          (value: 16, fromUnitName: 'Pixels', toUnitName: 'Points'),
+          (value: 1, fromUnitName: 'Inch', toUnitName: 'Pixels'),
+          (value: 16, fromUnitName: 'Pixels', toUnitName: 'DP'),
+        ];
     }
   }
 
@@ -232,6 +287,16 @@ extension UnitCategoryExtension on UnitCategory {
         return '\u{1F501}';
       case UnitCategory.fuelEconomy:
         return '\u{26FD}';
+      case UnitCategory.cooking:
+        return '\u{1F373}';
+      case UnitCategory.shoeSize:
+        return '\u{1F460}';
+      case UnitCategory.clothingSize:
+        return '\u{1F455}';
+      case UnitCategory.numberBase:
+        return '\u{1F522}';
+      case UnitCategory.typography:
+        return '\u{1F4D6}';
     }
   }
 }
@@ -429,6 +494,58 @@ const Map<UnitCategory, List<UnitModel>> unitsData = {
       symbol: 'mpg (UK)',
       toBase: 0.354006,
     ),
+  ],
+
+  // ── Cooking (volume + weight groups, no cross-conversion) ─────
+  UnitCategory.cooking: [
+    UnitModel(name: 'Cup (US)', symbol: 'cup', toBase: 237, group: 'volume'),
+    UnitModel(name: 'Tablespoon', symbol: 'tbsp', toBase: 14.787, group: 'volume'),
+    UnitModel(name: 'Teaspoon', symbol: 'tsp', toBase: 4.929, group: 'volume'),
+    UnitModel(name: 'Fluid Ounce', symbol: 'fl oz', toBase: 29.574, group: 'volume'),
+    UnitModel(name: 'Milliliter', symbol: 'mL', toBase: 1, group: 'volume'),
+    UnitModel(name: 'Gram', symbol: 'g', toBase: 1, group: 'weight'),
+    UnitModel(name: 'Kilogram', symbol: 'kg', toBase: 1000, group: 'weight'),
+    UnitModel(name: 'Ounce', symbol: 'oz', toBase: 28.35, group: 'weight'),
+    UnitModel(name: 'Pound', symbol: 'lb', toBase: 453.592, group: 'weight'),
+  ],
+
+  // ── Shoe Size (special formula via CM, 0.5 rounding) ──────────
+  UnitCategory.shoeSize: [
+    UnitModel(name: 'EU', symbol: 'EU', toBase: 1, isSpecialCase: true),
+    UnitModel(name: 'UK', symbol: 'UK', toBase: 1, isSpecialCase: true),
+    UnitModel(name: 'US Men', symbol: 'US (M)', toBase: 1, isSpecialCase: true),
+    UnitModel(name: 'US Women', symbol: 'US (W)', toBase: 1, isSpecialCase: true),
+    UnitModel(name: 'CM', symbol: 'cm', toBase: 1, isSpecialCase: true),
+  ],
+
+  // ── Clothing Size (special formula via US numeric, men/women) ─
+  UnitCategory.clothingSize: [
+    UnitModel(name: 'US', symbol: 'US', toBase: 1, isSpecialCase: true),
+    UnitModel(name: 'EU', symbol: 'EU', toBase: 1, isSpecialCase: true),
+    UnitModel(name: 'UK', symbol: 'UK', toBase: 1, isSpecialCase: true),
+    UnitModel(name: 'Asian', symbol: 'AS', toBase: 1, isSpecialCase: true),
+  ],
+
+  // ── Number Base (int-parsed via radix) ────────────────────────
+  UnitCategory.numberBase: [
+    UnitModel(name: 'Binary', symbol: 'bin', toBase: 1, isSpecialCase: true),
+    UnitModel(name: 'Octal', symbol: 'oct', toBase: 1, isSpecialCase: true),
+    UnitModel(name: 'Decimal', symbol: 'dec', toBase: 1, isSpecialCase: true),
+    UnitModel(name: 'Hexadecimal', symbol: 'hex', toBase: 1, isSpecialCase: true),
+  ],
+
+  // ── Typography (base: px) ─────────────────────────────────────
+  UnitCategory.typography: [
+    UnitModel(name: 'Pixels', symbol: 'px', toBase: 1),
+    UnitModel(name: 'DP', symbol: 'dp', toBase: 0.6),
+    UnitModel(name: 'Points', symbol: 'pt', toBase: 1.333),
+    UnitModel(name: 'EM', symbol: 'em', toBase: 1, isSpecialCase: true),
+    UnitModel(name: 'REM', symbol: 'rem', toBase: 1, isSpecialCase: true),
+    UnitModel(name: 'Percent', symbol: '%', toBase: 1, isSpecialCase: true),
+    UnitModel(name: 'Inch', symbol: 'in', toBase: 96),
+    UnitModel(name: 'Centimeter', symbol: 'cm', toBase: 37.8),
+    UnitModel(name: 'Millimeter', symbol: 'mm', toBase: 3.78),
+    UnitModel(name: 'Pica', symbol: 'pc', toBase: 16),
   ],
 };
 
