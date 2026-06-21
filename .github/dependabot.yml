@@ -1,0 +1,40 @@
+# Dependabot configuration for MS Unit Converter.
+#
+# Updates:
+#   - pub (Dart/Flutter) dependencies — weekly
+#   - GitHub Actions — weekly
+#
+# Minor and patch updates are grouped into single PRs
+# to reduce notification noise.
+
+version: 2
+updates:
+  - package-ecosystem: pub
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '09:00'
+      timezone: America/New_York
+    groups:
+      flutter-minor-patch:
+        patterns:
+          - '*'
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '09:00'
+      timezone: America/New_York
+    groups:
+      actions-minor-patch:
+        patterns:
+          - '*'
+        update-types:
+          - minor
+          - patch

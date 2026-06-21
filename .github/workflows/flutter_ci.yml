@@ -1,0 +1,80 @@
+# Flutter validation and security scanning for MS Unit Converter.
+#
+# Runs Flutter static analysis, unit tests, debug build, Python
+# conversion validation, and Gitleaks secret scanning.
+#
+# No release signing, no Play Store upload, no secrets exposed.
+
+name: flutter_ci
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - upgrade/security-currency-ui-v2-1
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── Flutter validation ──────────────────────────────────────────
+  flutter:
+    name: Flutter CI
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter stable
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Check formatting
+        run: dart format --set-exit-if-changed .
+
+      - name: Static analysis
+        run: flutter analyze
+
+      - name: Run unit tests
+        run: flutter test
+
+      - name: Validate conversion formulas (Python)
+        run: |
+          python3 -m pip install markdown-it-py --quiet
+          python3 tools/conversion_validation/validate_units.py
+
+      - name: Check PDF tooling help
+        run: python3 tools/docs_export/build_release_pdf.py --help
+        continue-on-error: true
+
+      - name: Build debug APK
+        run: flutter build apk --debug
+
+  # ── Secret detection ────────────────────────────────────────────
+  security:
+    name: Secret scanning
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Gitleaks secret scan
+        uses: gitleaks/gitleaks-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          redact: 'true'
+          fail: 'true'
