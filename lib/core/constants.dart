@@ -24,8 +24,7 @@ class AppConstants {
       'ca-app-pub-8684958562988579/2956999697';
 
   /// In-app purchase product ID for removing ads.
-  static const String removeAdsProductId =
-      'com.msdevx.unitconverter.removeads';
+  static const String removeAdsProductId = 'com.msdevx.unitconverter.removeads';
 
   /// Price of the remove-ads IAP.
   static const String removeAdsPrice = r'$1.99';
@@ -53,6 +52,12 @@ class AppConstants {
 
   /// SharedPreferences key for the last AppOpenAd show timestamp.
   static const String lastAdShownTimestampKey = 'last_ad_shown_timestamp';
+
+  /// SharedPreferences key for storing the decimal precision setting.
+  static const String decimalPrecisionKey = 'decimal_precision';
+
+  /// SharedPreferences key for storing favorite category indices.
+  static const String favoritesStorageKey = 'favorite_categories';
 
   /// Maximum number of history entries persisted locally.
   static const int maxHistoryEntries = 20;

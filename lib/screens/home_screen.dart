@@ -4,10 +4,20 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'package:provider/provider.dart';
+
 import '../core/colors.dart';
 import '../core/constants.dart';
+import '../data/currencies_data.dart';
 import '../data/units_data.dart';
+import '../providers/favorites_provider.dart';
+import '../services/conversion_service.dart';
+import '../services/smart_parse_service.dart';
+import '../utils/formatters.dart';
+import '../utils/search_helper.dart';
+import '../widgets/empty_state_widget.dart';
 import 'converter_screen.dart';
+import 'currency_screen.dart';
 
 /// A premium grid showing all conversion categories as styled cards
 /// with quick conversion presets below.
@@ -20,6 +30,24 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _refreshKey = 0;
+  bool _isSearching = false;
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(() {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _searchFocusNode.dispose();
+    super.dispose();
+  }
 
   Future<void> _onRefresh() async {
     setState(() => _refreshKey++);
@@ -51,68 +79,79 @@ class _HomeScreenState extends State<HomeScreen> {
   };
 
   static const List<_PresetConversion> _quickPresets = [
-    _PresetConversion(category: UnitCategory.length, value: 1, fromUnitName: 'Kilometer', toUnitName: 'Mile'),
-    _PresetConversion(category: UnitCategory.length, value: 1, fromUnitName: 'Meter', toUnitName: 'Foot'),
-    _PresetConversion(category: UnitCategory.weight, value: 1, fromUnitName: 'Kilogram', toUnitName: 'Pound'),
-    _PresetConversion(category: UnitCategory.temperature, value: 0, fromUnitName: 'Celsius', toUnitName: 'Fahrenheit'),
-    _PresetConversion(category: UnitCategory.volume, value: 1, fromUnitName: 'Liter', toUnitName: 'Gallon (US)'),
-    _PresetConversion(category: UnitCategory.speed, value: 1, fromUnitName: 'Kilometers per Hour', toUnitName: 'Miles per Hour'),
-    _PresetConversion(category: UnitCategory.cooking, value: 1, fromUnitName: 'Cup (US)', toUnitName: 'Tablespoon'),
-    _PresetConversion(category: UnitCategory.shoeSize, value: 42, fromUnitName: 'EU', toUnitName: 'US Men'),
-    _PresetConversion(category: UnitCategory.clothingSize, value: 32, fromUnitName: 'US', toUnitName: 'EU'),
-    _PresetConversion(category: UnitCategory.numberBase, value: 255, fromUnitName: 'Decimal', toUnitName: 'Hexadecimal'),
-    _PresetConversion(category: UnitCategory.typography, value: 16, fromUnitName: 'Pixels', toUnitName: 'Points'),
+    _PresetConversion(
+      category: UnitCategory.length,
+      value: 1,
+      fromUnitName: 'Kilometer',
+      toUnitName: 'Mile',
+    ),
+    _PresetConversion(
+      category: UnitCategory.length,
+      value: 1,
+      fromUnitName: 'Meter',
+      toUnitName: 'Foot',
+    ),
+    _PresetConversion(
+      category: UnitCategory.weight,
+      value: 1,
+      fromUnitName: 'Kilogram',
+      toUnitName: 'Pound',
+    ),
+    _PresetConversion(
+      category: UnitCategory.temperature,
+      value: 0,
+      fromUnitName: 'Celsius',
+      toUnitName: 'Fahrenheit',
+    ),
+    _PresetConversion(
+      category: UnitCategory.volume,
+      value: 1,
+      fromUnitName: 'Liter',
+      toUnitName: 'Gallon (US)',
+    ),
+    _PresetConversion(
+      category: UnitCategory.speed,
+      value: 1,
+      fromUnitName: 'Kilometers per Hour',
+      toUnitName: 'Miles per Hour',
+    ),
+    _PresetConversion(
+      category: UnitCategory.cooking,
+      value: 1,
+      fromUnitName: 'Cup (US)',
+      toUnitName: 'Tablespoon',
+    ),
+    _PresetConversion(
+      category: UnitCategory.shoeSize,
+      value: 42,
+      fromUnitName: 'EU',
+      toUnitName: 'US Men',
+    ),
+    _PresetConversion(
+      category: UnitCategory.clothingSize,
+      value: 32,
+      fromUnitName: 'US',
+      toUnitName: 'EU',
+    ),
+    _PresetConversion(
+      category: UnitCategory.numberBase,
+      value: 255,
+      fromUnitName: 'Decimal',
+      toUnitName: 'Hexadecimal',
+    ),
+    _PresetConversion(
+      category: UnitCategory.typography,
+      value: 16,
+      fromUnitName: 'Pixels',
+      toUnitName: 'Points',
+    ),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          AppConstants.appName,
-          style: TextStyle(fontWeight: FontWeight.w700),
-        ),
-        centerTitle: false,
-      ),
-      body: RefreshIndicator(
-        onRefresh: _onRefresh,
-        displacement: 60,
-        child: CustomScrollView(
-          key: ValueKey(_refreshKey),
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-              sliver: SliverGrid(
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: MediaQuery.of(context).size.width > 600 ? 4 : 2,
-                  crossAxisSpacing: 14,
-                  mainAxisSpacing: 14,
-                  childAspectRatio: MediaQuery.of(context).size.width > 600 ? 1.2 : 1.1,
-                ),
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final category = UnitCategory.values[index];
-                    return _CategoryCard(
-                      category: category,
-                      gradients: _categoryGradients[category]!,
-                      onTap: () => _openConverter(context, category),
-                      onLongPress: () => _showCategoryPresets(context, category),
-                    );
-                  },
-                  childCount: UnitCategory.values.length,
-                ),
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: _QuickConversions(
-                presets: _quickPresets,
-                onPresetTapped: (preset) => _openConverterWithPreset(context, preset),
-              ),
-            ),
-          ],
-        ),
-      ),
+      appBar: _isSearching ? _buildSearchAppBar() : _buildNormalAppBar(),
+      body: _isSearching ? _buildSearchBody() : _buildNormalBody(),
     );
   }
 
@@ -128,10 +167,7 @@ class _HomeScreenState extends State<HomeScreen> {
             opacity: animation,
             child: ScaleTransition(
               scale: Tween<double>(begin: 0.92, end: 1.0).animate(
-                CurvedAnimation(
-                  parent: animation,
-                  curve: Curves.easeOutCubic,
-                ),
+                CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
               ),
               child: child,
             ),
@@ -153,117 +189,149 @@ class _HomeScreenState extends State<HomeScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 40,
-                  height: 4,
-                  margin: const EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                  alignment: Alignment.center,
-                ),
-                Row(
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            final favProv = context.read<FavoritesProvider>();
+            final isFav = favProv.isFavorite(category);
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(category.icon, style: const TextStyle(fontSize: 20)),
-                    const SizedBox(width: 8),
+                    Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                      alignment: Alignment.center,
+                    ),
+                    Row(
+                      children: [
+                        Text(
+                          category.icon,
+                          style: const TextStyle(fontSize: 20),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          category.displayName,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const Spacer(),
+                        GestureDetector(
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            favProv.toggleFavorite(category);
+                            setSheetState(() {});
+                          },
+                          child: Icon(
+                            isFav
+                                ? Icons.star_rounded
+                                : Icons.star_outline_rounded,
+                            color: isFav ? Colors.amber : null,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
                     Text(
-                      category.displayName,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
+                      'Long-press a conversion to jump in',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Theme.of(
+                          context,
+                        ).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    ...presets.map(
+                      (p) => Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.of(ctx).pop();
+                            _openConverterWithPreset(
+                              context,
+                              _PresetConversion(
+                                category: category,
+                                value: p.value,
+                                fromUnitName: p.fromUnitName,
+                                toUnitName: p.toUnitName,
+                              ),
+                            );
+                          },
+                          child: Container(
+                            height: 48,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: gradients,
+                                begin: Alignment.centerLeft,
+                                end: Alignment.centerRight,
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 14),
+                            child: Row(
+                              children: [
+                                Text(
+                                  '${p.value == p.value.roundToDouble() ? p.value.toInt() : p.value} ${p.fromUnitName}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                  ),
+                                  child: Icon(
+                                    Icons.arrow_forward_rounded,
+                                    color: Colors.white.withValues(alpha: 0.6),
+                                    size: 16,
+                                  ),
+                                ),
+                                Text(
+                                  p.toUnitName,
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.85),
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const Spacer(),
+                                Icon(
+                                  Icons.arrow_forward_ios_rounded,
+                                  color: Colors.white.withValues(alpha: 0.4),
+                                  size: 12,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  'Long-press a conversion to jump in',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                ...presets.map((p) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: GestureDetector(
-                    onTap: () {
-                      Navigator.of(ctx).pop();
-                      _openConverterWithPreset(
-                        context,
-                        _PresetConversion(
-                          category: category,
-                          value: p.value,
-                          fromUnitName: p.fromUnitName,
-                          toUnitName: p.toUnitName,
-                        ),
-                      );
-                    },
-                    child: Container(
-                      height: 48,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: gradients,
-                          begin: Alignment.centerLeft,
-                          end: Alignment.centerRight,
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 14),
-                      child: Row(
-                        children: [
-                          Text(
-                            '${p.value == p.value.roundToDouble() ? p.value.toInt() : p.value} ${p.fromUnitName}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                            child: Icon(
-                              Icons.arrow_forward_rounded,
-                              color: Colors.white.withValues(alpha: 0.6),
-                              size: 16,
-                            ),
-                          ),
-                          Text(
-                            p.toUnitName,
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.85),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const Spacer(),
-                          Icon(
-                            Icons.arrow_forward_ios_rounded,
-                            color: Colors.white.withValues(alpha: 0.4),
-                            size: 12,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                )),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
     );
   }
 
-  void _openConverterWithPreset(BuildContext context, _PresetConversion preset) {
+  void _openConverterWithPreset(
+    BuildContext context,
+    _PresetConversion preset,
+  ) {
     HapticFeedback.lightImpact();
     Navigator.of(context).push(
       PageRouteBuilder(
@@ -280,10 +348,7 @@ class _HomeScreenState extends State<HomeScreen> {
             opacity: animation,
             child: ScaleTransition(
               scale: Tween<double>(begin: 0.92, end: 1.0).animate(
-                CurvedAnimation(
-                  parent: animation,
-                  curve: Curves.easeOutCubic,
-                ),
+                CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
               ),
               child: child,
             ),
@@ -292,6 +357,297 @@ class _HomeScreenState extends State<HomeScreen> {
         transitionDuration: const Duration(milliseconds: 300),
       ),
     );
+  }
+
+  // ── Search mode ─────────────────────────────────────────────────
+
+  AppBar _buildNormalAppBar() {
+    return AppBar(
+      title: const Text(
+        AppConstants.appName,
+        style: TextStyle(fontWeight: FontWeight.w700),
+      ),
+      centerTitle: false,
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.search_rounded),
+          onPressed: () {
+            setState(() {
+              _isSearching = true;
+            });
+            _searchFocusNode.requestFocus();
+          },
+          tooltip: 'Search conversions',
+        ),
+      ],
+    );
+  }
+
+  AppBar _buildSearchAppBar() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return AppBar(
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back_rounded),
+        onPressed: () {
+          _searchController.clear();
+          setState(() => _isSearching = false);
+        },
+        tooltip: 'Close search',
+      ),
+      title: TextField(
+        controller: _searchController,
+        focusNode: _searchFocusNode,
+        autofocus: true,
+        decoration: InputDecoration(
+          hintText: 'Search categories and units\u2026',
+          hintStyle: TextStyle(
+            color: isDark
+                ? AppColors.darkTextSecondary.withValues(alpha: 0.6)
+                : AppColors.lightTextSecondary.withValues(alpha: 0.6),
+          ),
+          border: InputBorder.none,
+          filled: false,
+          isDense: true,
+        ),
+        style: TextStyle(
+          fontSize: 18,
+          color: isDark
+              ? AppColors.darkTextPrimary
+              : AppColors.lightTextPrimary,
+        ),
+        textInputAction: TextInputAction.search,
+      ),
+      actions: [
+        if (_searchController.text.isNotEmpty)
+          IconButton(
+            icon: const Icon(Icons.clear_rounded),
+            onPressed: () {
+              _searchController.clear();
+              _searchFocusNode.requestFocus();
+            },
+            tooltip: 'Clear search',
+          ),
+      ],
+    );
+  }
+
+  Widget _buildNormalBody() {
+    return Consumer<FavoritesProvider>(
+      builder: (context, favProv, _) {
+        final favoriteList = favProv.favorites.toList();
+        return RefreshIndicator(
+          onRefresh: _onRefresh,
+          displacement: 60,
+          child: CustomScrollView(
+            key: ValueKey(_refreshKey),
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              if (favoriteList.isNotEmpty)
+                SliverToBoxAdapter(child: _buildFavoritesSection(favoriteList)),
+              SliverPadding(
+                padding: EdgeInsets.fromLTRB(
+                  16,
+                  favoriteList.isNotEmpty ? 4 : 8,
+                  16,
+                  12,
+                ),
+                sliver: SliverGrid(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: MediaQuery.of(context).size.width > 600
+                        ? 4
+                        : 2,
+                    crossAxisSpacing: 14,
+                    mainAxisSpacing: 14,
+                    childAspectRatio: MediaQuery.of(context).size.width > 600
+                        ? 1.2
+                        : 1.1,
+                  ),
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    final category = UnitCategory.values[index];
+                    return _CategoryCard(
+                      category: category,
+                      gradients: _categoryGradients[category]!,
+                      onTap: () => _openConverter(context, category),
+                      onLongPress: () =>
+                          _showCategoryPresets(context, category),
+                    );
+                  }, childCount: UnitCategory.values.length),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: _QuickConversions(
+                  presets: _quickPresets,
+                  onPresetTapped: (preset) =>
+                      _openConverterWithPreset(context, preset),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildFavoritesSection(List<UnitCategory> favorites) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.star_rounded, size: 16, color: Colors.amber),
+              const SizedBox(width: 6),
+              Text(
+                'Favorites',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: isDark
+                      ? AppColors.darkTextSecondary
+                      : AppColors.lightTextSecondary,
+                  letterSpacing: 0.3,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            height: 44,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: favorites.length,
+              separatorBuilder: (_, _) => const SizedBox(width: 10),
+              itemBuilder: (_, index) {
+                final category = favorites[index];
+                return GestureDetector(
+                  onTap: () => _openConverter(context, category),
+                  child: Container(
+                    height: 44,
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      gradient: LinearGradient(
+                        colors: _categoryGradients[category]!,
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Text(
+                          category.icon,
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          category.displayName,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSearchBody() {
+    final query = _searchController.text;
+    final smartResult = query.isNotEmpty
+        ? SmartParseService.parse(query)
+        : null;
+    final showSmart = smartResult?.isRecognized == true;
+    final results = query.isNotEmpty
+        ? SearchHelper.search(query)
+        : <UnitCategory>[];
+
+    if (query.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.search_rounded,
+              size: 64,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? AppColors.darkTextSecondary.withValues(alpha: 0.3)
+                  : AppColors.lightTextSecondary.withValues(alpha: 0.3),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Type a conversion like "10 km to miles"',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? AppColors.darkTextSecondary
+                    : AppColors.lightTextSecondary,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      children: [
+        if (showSmart)
+          _SmartConvertCard(
+            result: smartResult!,
+            onTap: () => _onSmartResultTap(smartResult),
+          ),
+        if (!showSmart && results.isEmpty)
+          EmptyStateWidget(
+            icon: Icons.search_off_rounded,
+            message: 'No conversions found',
+            subtitle: 'Try searching for a category or unit name',
+          ),
+        if (results.isNotEmpty)
+          ...results.map(
+            (category) => _SearchResultCard(
+              category: category,
+              gradients: _categoryGradients[category]!,
+              onTap: () {
+                HapticFeedback.lightImpact();
+                _openConverter(context, category);
+              },
+            ),
+          ),
+      ],
+    );
+  }
+
+  void _onSmartResultTap(SmartParseResult result) {
+    HapticFeedback.lightImpact();
+    if (result.isCurrency) {
+      Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (_) => const CurrencyScreen()));
+    } else if (result.category != null &&
+        result.fromUnitName != null &&
+        result.toUnitName != null) {
+      _openConverterWithPreset(
+        context,
+        _PresetConversion(
+          category: result.category!,
+          value: result.amount!,
+          fromUnitName: result.fromUnitName!,
+          toUnitName: result.toUnitName!,
+        ),
+      );
+    }
   }
 }
 
@@ -308,7 +664,8 @@ class _PresetConversion {
     required this.toUnitName,
   });
 
-  String get label => '${value == value.roundToDouble() ? value.toInt() : value} $fromUnitName → $toUnitName';
+  String get label =>
+      '${value == value.roundToDouble() ? value.toInt() : value} $fromUnitName → $toUnitName';
 }
 
 class _QuickConversions extends StatelessWidget {
@@ -323,7 +680,9 @@ class _QuickConversions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
+    final textColor = isDark
+        ? AppColors.darkTextSecondary
+        : AppColors.lightTextSecondary;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
@@ -332,11 +691,7 @@ class _QuickConversions extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(
-                Icons.flash_on_rounded,
-                size: 16,
-                color: AppColors.warning,
-              ),
+              Icon(Icons.flash_on_rounded, size: 16, color: AppColors.warning),
               const SizedBox(width: 6),
               Text(
                 'Quick Conversions',
@@ -350,13 +705,15 @@ class _QuickConversions extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 10),
-          ...presets.map((preset) => Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: _PresetChip(
-              preset: preset,
-              onTap: () => onPresetTapped(preset),
+          ...presets.map(
+            (preset) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: _PresetChip(
+                preset: preset,
+                onTap: () => onPresetTapped(preset),
+              ),
             ),
-          )),
+          ),
         ],
       ),
     );
@@ -367,10 +724,7 @@ class _PresetChip extends StatelessWidget {
   final _PresetConversion preset;
   final VoidCallback onTap;
 
-  const _PresetChip({
-    required this.preset,
-    required this.onTap,
-  });
+  const _PresetChip({required this.preset, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -398,10 +752,7 @@ class _PresetChip extends StatelessWidget {
         child: Row(
           children: [
             const SizedBox(width: 14),
-            Text(
-              preset.category.icon,
-              style: const TextStyle(fontSize: 16),
-            ),
+            Text(preset.category.icon, style: const TextStyle(fontSize: 16)),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
@@ -475,84 +826,335 @@ class _CategoryCard extends StatelessWidget {
               ),
             ],
           ),
-            child: Material(
+          child: Material(
             color: Colors.transparent,
             child: InkWell(
               borderRadius: BorderRadius.circular(16),
               onTap: onTap,
               onLongPress: onLongPress,
-                child: Padding(
-                  padding: const EdgeInsets.all(14),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        category.icon,
-                        style: const TextStyle(fontSize: 26),
+              child: Padding(
+                padding: const EdgeInsets.all(14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(category.icon, style: const TextStyle(fontSize: 26)),
+                    const Spacer(),
+                    Text(
+                      category.displayName,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        height: 1.2,
                       ),
-                      const Spacer(),
-                      Text(
-                        category.displayName,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          height: 1.2,
-                        ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      category.description,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.85),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w400,
+                        height: 1.3,
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        category.description,
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.85),
-                          fontSize: 11,
-                          fontWeight: FontWeight.w400,
-                          height: 1.3,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 6),
-                      Wrap(
-                        spacing: 4,
-                        runSpacing: 4,
-                        children: [
-                          ...category.unitSymbols.take(4).map(
-                                (s) => Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 5,
-                                    vertical: 1,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withValues(alpha: 0.15),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: Text(
-                                    s,
-                                    style: TextStyle(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.9,
-                                      ),
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w500,
-                                    ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 4,
+                      runSpacing: 4,
+                      children: [
+                        ...category.unitSymbols
+                            .take(4)
+                            .map(
+                              (s) => Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 5,
+                                  vertical: 1,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  s,
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.9),
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
                               ),
-                          if (category.unitSymbols.length > 4)
-                            Text(
-                              '+${category.unitSymbols.length - 4}',
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.6),
-                                fontSize: 10,
-                                fontWeight: FontWeight.w500,
-                              ),
                             ),
+                        if (category.unitSymbols.length > 4)
+                          Text(
+                            '+${category.unitSymbols.length - 4}',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.6),
+                              fontSize: 10,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A search result card showing a matched category with gradient styling.
+/// A card shown at the top of search results when a smart-parsed conversion
+/// query is detected (e.g. "10 km to miles").
+class _SmartConvertCard extends StatelessWidget {
+  final SmartParseResult result;
+  final VoidCallback onTap;
+
+  const _SmartConvertCard({required this.result, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            gradient: const LinearGradient(
+              colors: [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF1D4ED8).withValues(alpha: 0.3),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(14),
+              onTap: onTap,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 14,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          result.isCurrency
+                              ? Icons.currency_exchange_rounded
+                              : Icons.swap_horiz_rounded,
+                          color: Colors.white.withValues(alpha: 0.9),
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          result.isCurrency
+                              ? 'Currency Conversion'
+                              : 'Unit Conversion',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.85),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      _previewLabel(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        height: 1.3,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Text(
+                          'Tap to open converter',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.7),
+                            fontSize: 12,
+                          ),
+                        ),
+                        const Spacer(),
+                        Icon(
+                          Icons.arrow_forward_ios_rounded,
+                          color: Colors.white.withValues(alpha: 0.5),
+                          size: 12,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _previewLabel() {
+    final amount = result.amount ?? 0;
+    final fromLabel = result.isCurrency
+        ? (result.fromCurrencyCode ?? '?')
+        : (result.fromUnitName ?? '?');
+    final toLabel = result.isCurrency
+        ? (result.toCurrencyCode ?? '?')
+        : (result.toUnitName ?? '?');
+    final displayAmount = amount == amount.roundToDouble()
+        ? amount.toInt().toString()
+        : amount.toString();
+
+    // Compute approximate conversion for preview.
+    String converted;
+    if (result.isCurrency) {
+      converted = _currencyPreview(amount);
+    } else if (result.category != null &&
+        result.fromUnitName != null &&
+        result.toUnitName != null) {
+      final units = getUnits(result.category!);
+      final from = units
+          .where((u) => u.name == result.fromUnitName)
+          .firstOrNull;
+      final to = units.where((u) => u.name == result.toUnitName).firstOrNull;
+      if (from != null && to != null) {
+        final conv = ConversionService.convert(
+          amount,
+          from,
+          to,
+          result.category!,
+        );
+        if (conv.isValid) {
+          converted = conv.formattedResult;
+        } else {
+          converted = '?';
+        }
+      } else {
+        converted = '?';
+      }
+    } else {
+      converted = '?';
+    }
+
+    return '$displayAmount $fromLabel = $converted $toLabel';
+  }
+
+  String _currencyPreview(double amount) {
+    final fromCode = result.fromCurrencyCode;
+    final toCode = result.toCurrencyCode;
+    if (fromCode == null || toCode == null) return '?';
+    final fromRate = fallbackRatesToUsd[fromCode];
+    final toRate = fallbackRatesToUsd[toCode];
+    if (fromRate == null || toRate == null) return '?';
+    final converted = amount * (1 / fromRate) * toRate;
+    return Formatters.formatResult(converted);
+  }
+}
+
+class _SearchResultCard extends StatelessWidget {
+  final UnitCategory category;
+  final List<Color> gradients;
+  final VoidCallback onTap;
+
+  const _SearchResultCard({
+    required this.category,
+    required this.gradients,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            gradient: LinearGradient(
+              colors: gradients,
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: gradients.last.withValues(alpha: 0.3),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(14),
+              onTap: onTap,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
+                child: Row(
+                  children: [
+                    Text(category.icon, style: const TextStyle(fontSize: 24)),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            category.displayName,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              height: 1.2,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            category.description,
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.85),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w400,
+                              height: 1.3,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ],
                       ),
-                    ],
-                  ),
+                    ),
+                    Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      color: Colors.white.withValues(alpha: 0.5),
+                      size: 14,
+                    ),
+                  ],
                 ),
+              ),
             ),
           ),
         ),

@@ -29,10 +29,7 @@ class ConverterInputBar extends StatelessWidget {
     final selected = await showDialog<UnitModel>(
       context: context,
       useSafeArea: false,
-      builder: (_) => UnitSearchDialog(
-        units: units,
-        selectedUnit: sourceUnit,
-      ),
+      builder: (_) => UnitSearchDialog(units: units, selectedUnit: sourceUnit),
     );
     if (selected != null && context.mounted) {
       onUnitChanged(selected);
@@ -44,8 +41,9 @@ class ConverterInputBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final hasInput = controller.text.isNotEmpty;
-    final Color borderColor =
-        isDark ? AppColors.inputBorderDark : AppColors.inputBorderLight;
+    final Color borderColor = isDark
+        ? AppColors.inputBorderDark
+        : AppColors.inputBorderLight;
     final bgColor = isDark ? AppColors.darkSurface : AppColors.lightSurface;
 
     return Row(
@@ -62,7 +60,8 @@ class ConverterInputBar extends StatelessWidget {
             child: TextField(
               controller: controller,
               focusNode: focusNode,
-              keyboardType: keyboardType ??
+              keyboardType:
+                  keyboardType ??
                   const TextInputType.numberWithOptions(
                     decimal: true,
                     signed: true,
@@ -83,14 +82,17 @@ class ConverterInputBar extends StatelessWidget {
                 hintStyle: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.w300,
-                  color: (isDark
-                          ? AppColors.darkTextSecondary
-                          : AppColors.lightTextSecondary)
-                      .withValues(alpha: 0.35),
+                  color:
+                      (isDark
+                              ? AppColors.darkTextSecondary
+                              : AppColors.lightTextSecondary)
+                          .withValues(alpha: 0.35),
                 ),
                 border: InputBorder.none,
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
                 isDense: true,
                 suffixIcon: hasInput
                     ? GestureDetector(

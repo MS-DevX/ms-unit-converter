@@ -26,13 +26,9 @@ class HistoryScreen extends StatelessWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Clear History?'),
-        content: const Text(
-          'This will remove all conversion history.',
-        ),
+        content: const Text('This will remove all conversion history.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
@@ -40,9 +36,7 @@ class HistoryScreen extends StatelessWidget {
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            style: TextButton.styleFrom(
-              foregroundColor: AppColors.error,
-            ),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
             child: const Text('Delete'),
           ),
         ],
@@ -278,10 +272,7 @@ class _HistoryCard extends StatelessWidget {
   final HistoryEntry entry;
   final VoidCallback onLongPress;
 
-  const _HistoryCard({
-    required this.entry,
-    required this.onLongPress,
-  });
+  const _HistoryCard({required this.entry, required this.onLongPress});
 
   /// Formats a [DateTime] to a short human-readable string.
   String _formatTimestamp(DateTime dt) {
@@ -300,14 +291,18 @@ class _HistoryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final Color bgColor =
-        isDark ? AppColors.darkSurface : AppColors.lightSurface;
-    final Color borderColor =
-        isDark ? AppColors.borderDark : AppColors.borderLight;
-    final Color primaryText =
-        isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary;
-    final Color secondaryText =
-        isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
+    final Color bgColor = isDark
+        ? AppColors.darkSurface
+        : AppColors.lightSurface;
+    final Color borderColor = isDark
+        ? AppColors.borderDark
+        : AppColors.borderLight;
+    final Color primaryText = isDark
+        ? AppColors.darkTextPrimary
+        : AppColors.lightTextPrimary;
+    final Color secondaryText = isDark
+        ? AppColors.darkTextSecondary
+        : AppColors.lightTextSecondary;
 
     final String conversionLine =
         '${Formatters.formatResult(entry.inputValue)} ${entry.fromUnit}'

@@ -82,20 +82,20 @@ class _CategoryChip extends StatelessWidget {
     final Color bgColor = isSelected
         ? AppColors.primary
         : isDark
-            ? AppColors.darkSurface
-            : AppColors.lightBackground;
+        ? AppColors.darkSurface
+        : AppColors.lightBackground;
 
     final Color borderColor = isSelected
         ? AppColors.primary
         : isDark
-            ? AppColors.borderDark
-            : AppColors.borderLight;
+        ? AppColors.borderDark
+        : AppColors.borderLight;
 
     final Color textColor = isSelected
         ? Colors.white
         : isDark
-            ? AppColors.darkTextSecondary
-            : AppColors.lightTextSecondary;
+        ? AppColors.darkTextSecondary
+        : AppColors.lightTextSecondary;
 
     void handleTap() {
       HapticFeedback.selectionClick();
@@ -127,17 +127,13 @@ class _CategoryChip extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                category.icon,
-                style: const TextStyle(fontSize: 14),
-              ),
+              Text(category.icon, style: const TextStyle(fontSize: 14)),
               const SizedBox(width: 6),
               AnimatedDefaultTextStyle(
                 duration: const Duration(milliseconds: 200),
                 style: TextStyle(
                   fontSize: 13,
-                  fontWeight:
-                      isSelected ? FontWeight.w600 : FontWeight.w400,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                   color: textColor,
                   letterSpacing: 0.1,
                 ),

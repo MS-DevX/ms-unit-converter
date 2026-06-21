@@ -149,4 +149,31 @@ void main() {
       expect(gb.toBase, 1073741824);
     });
   });
+
+  group('formulaExplanation', () {
+    test('every category has a non-empty explanation', () {
+      for (final cat in UnitCategory.values) {
+        expect(
+          cat.formulaExplanation,
+          isNotEmpty,
+          reason: '${cat.displayName} has an empty formulaExplanation',
+        );
+      }
+    });
+
+    test('explanation contains category-specific keywords', () {
+      expect(UnitCategory.length.formulaExplanation, contains('meter'));
+      expect(UnitCategory.temperature.formulaExplanation, contains('\u00B0F'));
+      expect(UnitCategory.data.formulaExplanation, contains('byte'));
+      expect(UnitCategory.fuelEconomy.formulaExplanation, contains('L/100km'));
+      expect(UnitCategory.cooking.formulaExplanation, contains('cross-group'));
+      expect(UnitCategory.numberBase.formulaExplanation, contains('Binary'));
+      expect(UnitCategory.typography.formulaExplanation, contains('px'));
+      expect(UnitCategory.shoeSize.formulaExplanation, contains('approximate'));
+      expect(
+        UnitCategory.clothingSize.formulaExplanation,
+        contains('approximate'),
+      );
+    });
+  });
 }

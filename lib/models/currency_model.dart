@@ -4,7 +4,7 @@ library;
 import 'package:flutter/foundation.dart';
 
 /// A fiat currency with its ISO code, display name, symbol, flag emoji,
-/// and number of decimal digits for typical display.
+/// number of decimal digits for typical display, and pinned status.
 @immutable
 class CurrencyModel {
   /// ISO 4217 three-letter code (e.g. "USD", "EUR").
@@ -22,6 +22,9 @@ class CurrencyModel {
   /// Number of decimal places typically shown for this currency.
   final int decimalDigits;
 
+  /// Whether this currency is pinned to appear first in lists.
+  final bool isPinned;
+
   /// Creates a [CurrencyModel].
   const CurrencyModel({
     required this.code,
@@ -29,6 +32,7 @@ class CurrencyModel {
     required this.symbol,
     required this.flag,
     this.decimalDigits = 2,
+    this.isPinned = false,
   });
 
   @override

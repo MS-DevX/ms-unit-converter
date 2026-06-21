@@ -3,20 +3,56 @@
 /// All methods are stateless and deterministic. No Flutter UI
 /// dependency is required, making this file safe for use in
 /// the data layer and tests.
+///
+/// The global precision can be set via [setPrecision] to override
+/// the default auto-behaviour with a fixed number of decimal places.
 class Formatters {
   Formatters._();
 
+  static DecimalPrecision? _precision;
+
+  /// Returns the current global precision override, or `null` for auto.
+  static DecimalPrecision? get precision => _precision;
+
+  /// Sets the global precision override for [formatResult].
+  ///
+  /// Pass `null` or [DecimalPrecision.auto] to restore auto-behaviour
+  /// (trailing-zero trimming, no fixed decimal count).
+  static void setPrecision(DecimalPrecision? value) {
+    _precision = (value == DecimalPrecision.auto) ? null : value;
+  }
+
   /// Formats [value] for result display.
   ///
-  /// Rules:
+  /// When a global precision is set (via [setPrecision]), the value is
+  /// formatted to exactly that many decimal places using
+  /// [toStringAsFixed].
+  ///
+  /// When [currencyDecimals] is provided and no global precision is set,
+  /// the value is formatted to that many decimal places (useful for
+  /// currency-specific decimal digits like JPY with 0).
+  ///
+  /// Otherwise, the auto behaviour applies:
   /// - Max 8 significant digits.
   /// - Never uses scientific notation.
   /// - Values between 0.000001 and 999999999 get up to 6
   ///   decimal places with trailing zeros stripped.
   /// - Integer values display without a decimal point.
   /// - NaN and Infinity return `"Invalid"`.
-  static String formatResult(double value) {
+  static String formatResult(double value, {int? currencyDecimals}) {
     if (value.isNaN || value.isInfinite) return 'Invalid';
+
+    // Global fixed precision takes highest priority.
+    if (_precision != null) {
+      return value.toStringAsFixed(_precision!.decimals);
+    }
+
+    // Currency-specific decimals (used when global precision is auto).
+    if (currencyDecimals != null) {
+      return value.toStringAsFixed(currencyDecimals);
+    }
+
+    // ── Auto mode (original behaviour) ──
     if (value == 0) return '0';
 
     // Obtain at most 8 significant digits (may use scientific notation).
@@ -36,8 +72,6 @@ class Formatters {
     // For values >= 1 in the normal display range, cap at 6 decimal
     // places. Values below 1 have decimal places that *are* their
     // significant digits, so capping would lose information.
-    // Values outside the normal range are extreme and should not be
-    // further truncated.
     if (abs >= 1 && abs <= 999999999) {
       final dotIndex = raw.indexOf('.');
       if (dotIndex != -1) {
@@ -98,18 +132,13 @@ class Formatters {
       end--;
     }
     if (end == dotIndex) {
-      // All decimals were zeros → drop the decimal point entirely.
       return value.substring(0, dotIndex);
     }
     return value.substring(0, end + 1);
   }
 
   /// Expands a scientific-notation string to a fixed-point decimal string.
-  ///
-  /// Accepts lowercase `e` or uppercase `E` and handles optional `+`
-  /// in the exponent (e.g. `"1.23e+2"`, `"5E-3"`).
   static String _expandScientific(String value) {
-    // Normalise to lowercase for parsing.
     final lower = value.toLowerCase();
     final parts = lower.split('e');
     if (parts.length != 2) return value;
@@ -129,7 +158,6 @@ class Formatters {
 
     String result;
     if (exponent >= 0) {
-      // Right shift.
       final int currentDecimals = dotIndex == -1
           ? 0
           : mantissa.length - dotIndex - 1;
@@ -141,7 +169,6 @@ class Formatters {
             '${digits.substring(0, insertAt)}.${digits.substring(insertAt)}';
       }
     } else {
-      // Left shift.
       final int absExp = -exponent;
       if (dotIndex == -1) {
         result = '0.${_zeroes(absExp - 1)}$digits';
@@ -160,4 +187,33 @@ class Formatters {
 
     return negative ? '-$result' : result;
   }
+}
+
+/// Controls how many decimal places [Formatters.formatResult] displays.
+///
+/// [auto] preserves the original behaviour (trim trailing zeros, no
+/// fixed count). The other values enforce exactly that many decimals.
+enum DecimalPrecision {
+  /// No fixed decimal count — trailing zeros are trimmed.
+  auto('Auto', 0),
+
+  /// Exactly 2 decimal places.
+  two('2 decimals', 2),
+
+  /// Exactly 4 decimal places.
+  four('4 decimals', 4),
+
+  /// Exactly 6 decimal places.
+  six('6 decimals', 6),
+
+  /// Exactly 8 decimal places.
+  eight('8 decimals', 8);
+
+  /// Human-readable label for UI display.
+  final String label;
+
+  /// The number of decimal places for [toStringAsFixed].
+  final int decimals;
+
+  const DecimalPrecision(this.label, this.decimals);
 }

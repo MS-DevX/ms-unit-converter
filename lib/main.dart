@@ -13,6 +13,7 @@ import 'package:provider/provider.dart';
 import 'core/theme.dart';
 import 'providers/converter_provider.dart';
 import 'providers/currency_provider.dart';
+import 'providers/favorites_provider.dart';
 import 'providers/history_provider.dart';
 import 'providers/settings_provider.dart';
 import 'screens/splash_screen.dart';
@@ -57,6 +58,7 @@ class _MyAppState extends State<MyApp> {
   final ConverterProvider _converter = ConverterProvider();
   final CurrencyProvider _currency = CurrencyProvider();
   final HistoryProvider _history = HistoryProvider();
+  final FavoritesProvider _favorites = FavoritesProvider();
 
   @override
   void initState() {
@@ -64,6 +66,7 @@ class _MyAppState extends State<MyApp> {
     // Load persisted settings and history without blocking the first frame.
     _settings.loadSettings();
     _history.loadHistory();
+    _favorites.loadFavorites();
 
     // Dynamically unlock premium in the provider when purchases complete.
     IapService.instance.onPremiumUnlocked = () {
@@ -86,6 +89,7 @@ class _MyAppState extends State<MyApp> {
         ChangeNotifierProvider<ConverterProvider>.value(value: _converter),
         ChangeNotifierProvider<CurrencyProvider>.value(value: _currency),
         ChangeNotifierProvider<HistoryProvider>.value(value: _history),
+        ChangeNotifierProvider<FavoritesProvider>.value(value: _favorites),
       ],
       // Consumer here so themeMode updates re-render MaterialApp only.
       child: Consumer<SettingsProvider>(

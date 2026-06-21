@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../core/colors.dart';
 import '../data/units_data.dart';
+import '../providers/favorites_provider.dart';
 import '../models/conversion_result.dart';
 import '../models/history_entry.dart';
 import '../models/unit_model.dart';
@@ -39,6 +40,7 @@ class _ConverterScreenState extends State<ConverterScreen> {
   final FocusNode _inputFocusNode = FocusNode();
 
   bool _initialized = false;
+  bool _formulaExpanded = false;
 
   @override
   void dispose() {
@@ -73,7 +75,9 @@ class _ConverterScreenState extends State<ConverterScreen> {
     if (matchedFrom.isNotEmpty) converter.setFromUnit(matchedFrom.first);
     if (matchedTo.isNotEmpty) converter.setToUnit(matchedTo.first);
 
-    final text = value == value.roundToDouble() ? value.toInt().toString() : value.toString();
+    final text = value == value.roundToDouble()
+        ? value.toInt().toString()
+        : value.toString();
     _inputController.text = text;
     converter.setInput(text);
   }
@@ -131,11 +135,16 @@ class _ConverterScreenState extends State<ConverterScreen> {
 
   int? _radixForUnit(String name) {
     switch (name) {
-      case 'Binary': return 2;
-      case 'Octal': return 8;
-      case 'Decimal': return 10;
-      case 'Hexadecimal': return 16;
-      default: return null;
+      case 'Binary':
+        return 2;
+      case 'Octal':
+        return 8;
+      case 'Decimal':
+        return 10;
+      case 'Hexadecimal':
+        return 16;
+      default:
+        return null;
     }
   }
 
@@ -160,38 +169,47 @@ class _ConverterScreenState extends State<ConverterScreen> {
       }
       final fromRadix = _radixForUnit(from.name);
       if (fromRadix == null) {
-        return units.map((u) => (unit: u, result: ConversionResult.failure('Invalid'))).toList();
+        return units
+            .map((u) => (unit: u, result: ConversionResult.failure('Invalid')))
+            .toList();
       }
       final parsedValue = int.tryParse(inputStr, radix: fromRadix);
       if (parsedValue == null) {
-        return units.map((u) => (unit: u, result: ConversionResult.failure('Invalid'))).toList();
+        return units
+            .map((u) => (unit: u, result: ConversionResult.failure('Invalid')))
+            .toList();
       }
       return units.map((u) {
         if (u == from) {
-          return (unit: u, result: ConversionResult.success(
-            result: 0, formattedResult: inputStr, formula: '',
-          ));
+          return (
+            unit: u,
+            result: ConversionResult.success(
+              result: 0,
+              formattedResult: inputStr,
+              formula: '',
+            ),
+          );
         }
         final toRadix = _radixForUnit(u.name);
         if (toRadix == null) {
           return (unit: u, result: ConversionResult.failure('Invalid'));
         }
         final resultStr = parsedValue.toRadixString(toRadix).toUpperCase();
-        return (unit: u, result: ConversionResult.success(
-          result: parsedValue.toDouble(),
-          formattedResult: '$resultStr (base $toRadix)',
-          formula: '$inputStr (base $fromRadix) = $resultStr (base $toRadix)',
-        ));
+        return (
+          unit: u,
+          result: ConversionResult.success(
+            result: parsedValue.toDouble(),
+            formattedResult: '$resultStr (base $toRadix)',
+            formula: '$inputStr (base $fromRadix) = $resultStr (base $toRadix)',
+          ),
+        );
       }).toList();
     }
 
     final value = double.tryParse(input);
     if (value == null || value.isNaN || value.isInfinite) {
       return units
-          .map((u) => (
-                unit: u,
-                result: ConversionResult.failure('Invalid'),
-              ))
+          .map((u) => (unit: u, result: ConversionResult.failure('Invalid')))
           .toList();
     }
 
@@ -224,7 +242,12 @@ class _ConverterScreenState extends State<ConverterScreen> {
 
       // ── Typography: pass baseFontSize ────────────────────────────
       if (category == UnitCategory.typography) {
-        final result = _typographyResult(value, from, u, converter.baseFontSize);
+        final result = _typographyResult(
+          value,
+          from,
+          u,
+          converter.baseFontSize,
+        );
         return (unit: u, result: result);
       }
 
@@ -235,7 +258,12 @@ class _ConverterScreenState extends State<ConverterScreen> {
     }).toList();
   }
 
-  ConversionResult _clothingResult(double value, UnitModel from, UnitModel to, bool isMen) {
+  ConversionResult _clothingResult(
+    double value,
+    UnitModel from,
+    UnitModel to,
+    bool isMen,
+  ) {
     if (to.isSpecialCase || from.isSpecialCase) {
       final result = _convertClothingDirect(value, from, to, isMen);
       if (result.isNaN || result.isInfinite) {
@@ -245,32 +273,62 @@ class _ConverterScreenState extends State<ConverterScreen> {
       return ConversionResult.success(
         result: result,
         formattedResult: formatted,
-        formula: '${Formatters.formatResult(value)} ${from.symbol} = $formatted ${to.symbol}',
+        formula:
+            '${Formatters.formatResult(value)} ${from.symbol} = $formatted ${to.symbol}',
       );
     }
-    return ConversionService.convert(value, from, to, UnitCategory.clothingSize);
+    return ConversionService.convert(
+      value,
+      from,
+      to,
+      UnitCategory.clothingSize,
+    );
   }
 
-  static double _convertClothingDirect(double value, UnitModel from, UnitModel to, bool isMen) {
+  static double _convertClothingDirect(
+    double value,
+    UnitModel from,
+    UnitModel to,
+    bool isMen,
+  ) {
     if (from.name == to.name) return value;
     double us;
     switch (from.name) {
-      case 'US': us = value; break;
-      case 'EU': us = isMen ? value - 10 : value - 30; break;
-      case 'UK': us = isMen ? value + 1 : value - 4; break;
-      case 'Asian': us = value - 5; break;
-      default: return double.nan;
+      case 'US':
+        us = value;
+        break;
+      case 'EU':
+        us = isMen ? value - 10 : value - 30;
+        break;
+      case 'UK':
+        us = isMen ? value + 1 : value - 4;
+        break;
+      case 'Asian':
+        us = value - 5;
+        break;
+      default:
+        return double.nan;
     }
     switch (to.name) {
-      case 'US': return us;
-      case 'EU': return isMen ? us + 10 : us + 30;
-      case 'UK': return isMen ? us - 1 : us + 4;
-      case 'Asian': return us + 5;
-      default: return double.nan;
+      case 'US':
+        return us;
+      case 'EU':
+        return isMen ? us + 10 : us + 30;
+      case 'UK':
+        return isMen ? us - 1 : us + 4;
+      case 'Asian':
+        return us + 5;
+      default:
+        return double.nan;
     }
   }
 
-  ConversionResult _typographyResult(double value, UnitModel from, UnitModel to, double baseFontSize) {
+  ConversionResult _typographyResult(
+    double value,
+    UnitModel from,
+    UnitModel to,
+    double baseFontSize,
+  ) {
     if (to.isSpecialCase || from.isSpecialCase) {
       final result = _convertTypographyDirect(value, from, to, baseFontSize);
       if (result.isNaN || result.isInfinite) {
@@ -280,34 +338,57 @@ class _ConverterScreenState extends State<ConverterScreen> {
       return ConversionResult.success(
         result: result,
         formattedResult: formatted,
-        formula: '${Formatters.formatResult(value)} ${from.symbol} = $formatted ${to.symbol}',
+        formula:
+            '${Formatters.formatResult(value)} ${from.symbol} = $formatted ${to.symbol}',
       );
     }
     return ConversionService.convert(value, from, to, UnitCategory.typography);
   }
 
-  static double _convertTypographyDirect(double value, UnitModel from, UnitModel to, double baseFontSize) {
+  static double _convertTypographyDirect(
+    double value,
+    UnitModel from,
+    UnitModel to,
+    double baseFontSize,
+  ) {
     if (from.name == to.name) return value;
     double px;
     switch (from.name) {
-      case 'Pixels': case 'DP': case 'Points': case 'Inch':
-      case 'Centimeter': case 'Millimeter': case 'Pica':
-        px = value * from.toBase; break;
-      case 'EM': case 'REM':
-        px = value * baseFontSize; break;
+      case 'Pixels':
+      case 'DP':
+      case 'Points':
+      case 'Inch':
+      case 'Centimeter':
+      case 'Millimeter':
+      case 'Pica':
+        px = value * from.toBase;
+        break;
+      case 'EM':
+      case 'REM':
+        px = value * baseFontSize;
+        break;
       case 'Percent':
-        px = (value / 100) * baseFontSize; break;
-      default: return double.nan;
+        px = (value / 100) * baseFontSize;
+        break;
+      default:
+        return double.nan;
     }
     switch (to.name) {
-      case 'Pixels': case 'DP': case 'Points': case 'Inch':
-      case 'Centimeter': case 'Millimeter': case 'Pica':
+      case 'Pixels':
+      case 'DP':
+      case 'Points':
+      case 'Inch':
+      case 'Centimeter':
+      case 'Millimeter':
+      case 'Pica':
         return px / to.toBase;
-      case 'EM': case 'REM':
+      case 'EM':
+      case 'REM':
         return px / baseFontSize;
       case 'Percent':
         return (px / baseFontSize) * 100;
-      default: return double.nan;
+      default:
+        return double.nan;
     }
   }
 
@@ -341,9 +422,12 @@ class _ConverterScreenState extends State<ConverterScreen> {
         final isDark = Theme.of(context).brightness == Brightness.dark;
         final bool canPop = Navigator.of(context).canPop();
         final results = _computeAllResults(converter);
-        final isNumberBase = converter.selectedCategory == UnitCategory.numberBase;
-        final isClothing = converter.selectedCategory == UnitCategory.clothingSize;
-        final isTypography = converter.selectedCategory == UnitCategory.typography;
+        final isNumberBase =
+            converter.selectedCategory == UnitCategory.numberBase;
+        final isClothing =
+            converter.selectedCategory == UnitCategory.clothingSize;
+        final isTypography =
+            converter.selectedCategory == UnitCategory.typography;
 
         return GestureDetector(
           onTap: () => FocusScope.of(context).unfocus(),
@@ -351,8 +435,7 @@ class _ConverterScreenState extends State<ConverterScreen> {
             body: SafeArea(
               child: Column(
                 children: [
-                  if (canPop)
-                    _buildPremiumHeader(context, converter),
+                  if (canPop) _buildPremiumHeader(context, converter),
 
                   if (!canPop)
                     Padding(
@@ -360,24 +443,25 @@ class _ConverterScreenState extends State<ConverterScreen> {
                       child: CategoryChipBar(
                         categories: UnitCategory.values,
                         selected: converter.selectedCategory,
-                        onSelected: (cat) =>
-                            _onCategorySelected(context, cat),
+                        onSelected: (cat) => _onCategorySelected(context, cat),
                       ),
                     ),
 
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     child: ConverterInputBar(
                       controller: _inputController,
                       focusNode: _inputFocusNode,
                       sourceUnit: converter.fromUnit,
                       units: converter.currentUnits,
-                      onInputChanged:
-                          isNumberBase ? _onRawInputChanged : _onInputChanged,
+                      onInputChanged: isNumberBase
+                          ? _onRawInputChanged
+                          : _onInputChanged,
                       onUnitChanged: _onUnitChanged,
-                      keyboardType: isNumberBase
-                          ? TextInputType.text
-                          : null,
+                      keyboardType: isNumberBase ? TextInputType.text : null,
                     ),
                   ),
 
@@ -397,7 +481,10 @@ class _ConverterScreenState extends State<ConverterScreen> {
                   // ── Typography: base font size input ───────────────
                   if (isTypography)
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 4,
+                      ),
                       child: Row(
                         children: [
                           Text(
@@ -413,11 +500,14 @@ class _ConverterScreenState extends State<ConverterScreen> {
                           SizedBox(
                             width: 60,
                             child: TextField(
-                              keyboardType: TextInputType.numberWithOptions(decimal: true),
+                              keyboardType: TextInputType.numberWithOptions(
+                                decimal: true,
+                              ),
                               decoration: InputDecoration(
                                 isDense: true,
                                 contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 6,
+                                  horizontal: 8,
+                                  vertical: 6,
                                 ),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(8),
@@ -434,12 +524,18 @@ class _ConverterScreenState extends State<ConverterScreen> {
                                     ? AppColors.darkTextPrimary
                                     : AppColors.lightTextPrimary,
                               ),
-                              controller: TextEditingController(
-                                text: converter.baseFontSize.toStringAsFixed(0),
-                              )..selection = TextSelection.collapsed(
-                                  offset: converter.baseFontSize.toStringAsFixed(0).length,
-                                ),
-                              onChanged: (v) => _onBaseFontSizeChanged(v, converter),
+                              controller:
+                                  TextEditingController(
+                                      text: converter.baseFontSize
+                                          .toStringAsFixed(0),
+                                    )
+                                    ..selection = TextSelection.collapsed(
+                                      offset: converter.baseFontSize
+                                          .toStringAsFixed(0)
+                                          .length,
+                                    ),
+                              onChanged: (v) =>
+                                  _onBaseFontSizeChanged(v, converter),
                             ),
                           ),
                           const SizedBox(width: 6),
@@ -457,10 +553,13 @@ class _ConverterScreenState extends State<ConverterScreen> {
                     ),
 
                   ConverterConnectorBar(
-                    gradientColors: _categoryGradients[converter.selectedCategory] ??
+                    gradientColors:
+                        _categoryGradients[converter.selectedCategory] ??
                         [AppColors.primary, AppColors.primaryDark],
                     onSwap: converter.swapUnits,
                   ),
+
+                  _buildFormulaCard(context, converter),
 
                   Expanded(
                     child: ConversionResultsList(
@@ -484,21 +583,21 @@ class _ConverterScreenState extends State<ConverterScreen> {
     );
   }
 
-  Widget _buildToggleChip(String label, bool isMen, ConverterProvider converter) {
+  Widget _buildToggleChip(
+    String label,
+    bool isMen,
+    ConverterProvider converter,
+  ) {
     final selected = converter.isMenSize == isMen;
     return GestureDetector(
       onTap: () => converter.setIsMenSize(isMen),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         decoration: BoxDecoration(
-          color: selected
-              ? AppColors.primary
-              : Colors.transparent,
+          color: selected ? AppColors.primary : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: selected
-                ? AppColors.primary
-                : AppColors.inputBorderDark,
+            color: selected ? AppColors.primary : AppColors.inputBorderDark,
           ),
         ),
         child: Text(
@@ -513,11 +612,17 @@ class _ConverterScreenState extends State<ConverterScreen> {
     );
   }
 
-  Widget _buildPremiumHeader(BuildContext context, ConverterProvider converter) {
+  Widget _buildPremiumHeader(
+    BuildContext context,
+    ConverterProvider converter,
+  ) {
     final category = widget.initialCategory ?? converter.selectedCategory;
-    final gradientColors = _categoryGradients[category] ??
+    final gradientColors =
+        _categoryGradients[category] ??
         [AppColors.primary, AppColors.primaryDark];
     final units = getUnits(category);
+    final favProv = context.read<FavoritesProvider>();
+    final isFav = favProv.isFavorite(category);
 
     return Container(
       decoration: BoxDecoration(
@@ -539,8 +644,11 @@ class _ConverterScreenState extends State<ConverterScreen> {
         child: Row(
           children: [
             IconButton(
-              icon: const Icon(Icons.arrow_back_rounded,
-                  color: Colors.white, size: 24),
+              icon: const Icon(
+                Icons.arrow_back_rounded,
+                color: Colors.white,
+                size: 24,
+              ),
               onPressed: () {
                 HapticFeedback.lightImpact();
                 Navigator.of(context).pop();
@@ -548,10 +656,7 @@ class _ConverterScreenState extends State<ConverterScreen> {
               tooltip: 'Back',
             ),
             const SizedBox(width: 4),
-            Text(
-              category.icon,
-              style: const TextStyle(fontSize: 28),
-            ),
+            Text(category.icon, style: const TextStyle(fontSize: 28)),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
@@ -579,7 +684,122 @@ class _ConverterScreenState extends State<ConverterScreen> {
                 ],
               ),
             ),
+            IconButton(
+              icon: Icon(
+                isFav ? Icons.star_rounded : Icons.star_outline_rounded,
+                color: isFav ? Colors.amber : Colors.white,
+              ),
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                favProv.toggleFavorite(category);
+              },
+              tooltip: isFav ? 'Remove from favorites' : 'Add to favorites',
+            ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFormulaCard(BuildContext context, ConverterProvider converter) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final category = widget.initialCategory ?? converter.selectedCategory;
+    final explanation = category.formulaExplanation;
+    final textColor = isDark
+        ? AppColors.darkTextSecondary
+        : AppColors.lightTextSecondary;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: GestureDetector(
+        onTap: () {
+          setState(() => _formulaExpanded = !_formulaExpanded);
+          HapticFeedback.selectionClick();
+        },
+        child: AnimatedCrossFade(
+          firstChild: Container(
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: isDark ? AppColors.borderDark : AppColors.borderLight,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.info_outline_rounded,
+                  size: 16,
+                  color: AppColors.primary,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'How it works',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: textColor,
+                    ),
+                  ),
+                ),
+                Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  size: 18,
+                  color: textColor,
+                ),
+              ],
+            ),
+          ),
+          secondChild: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: isDark ? AppColors.borderDark : AppColors.borderLight,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline_rounded,
+                      size: 16,
+                      color: AppColors.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'How it works',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: textColor,
+                      ),
+                    ),
+                    const Spacer(),
+                    Icon(
+                      Icons.keyboard_arrow_up_rounded,
+                      size: 18,
+                      color: textColor,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  explanation,
+                  style: TextStyle(fontSize: 13, color: textColor, height: 1.5),
+                ),
+              ],
+            ),
+          ),
+          crossFadeState: _formulaExpanded
+              ? CrossFadeState.showSecond
+              : CrossFadeState.showFirst,
+          duration: const Duration(milliseconds: 200),
         ),
       ),
     );

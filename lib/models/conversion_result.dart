@@ -105,12 +105,6 @@ class ConversionResult {
 
   @override
   int get hashCode {
-    return Object.hash(
-      result,
-      formattedResult,
-      formula,
-      isValid,
-      errorMessage,
-    );
+    return Object.hash(result, formattedResult, formula, isValid, errorMessage);
   }
 }

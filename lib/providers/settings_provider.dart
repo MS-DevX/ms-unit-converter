@@ -10,8 +10,10 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/constants.dart';
+import '../utils/formatters.dart';
 
-/// Manages persistent user settings: [themeMode] and [isPremium].
+/// Manages persistent user settings: [themeMode], [isPremium], and
+/// [decimalPrecision].
 ///
 /// Call [loadSettings] once at app startup (before rendering the first
 /// frame) and then use [setThemeMode], [toggleTheme], and [setPremium]
@@ -22,6 +24,9 @@ class SettingsProvider extends ChangeNotifier {
 
   /// Whether the user has purchased the "Remove Ads" upgrade.
   bool isPremium = false;
+
+  /// Current decimal precision; defaults to [DecimalPrecision.auto].
+  DecimalPrecision decimalPrecision = DecimalPrecision.auto;
 
   /// Whether [loadSettings] has completed at least once.
   ///
@@ -58,15 +63,22 @@ class SettingsProvider extends ChangeNotifier {
   // ─── Public API ───────────────────────────────────────────────────────────
 
   /// Reads all persisted settings from [SharedPreferences] and populates
-  /// [themeMode] and [isPremium].
+  /// [themeMode], [isPremium], and [decimalPrecision].
   ///
   /// Sets [isLoaded] to `true` when done and calls [notifyListeners].
   /// Safe to call multiple times; subsequent calls simply re-sync state.
   Future<void> loadSettings() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      themeMode = _modeFromString(prefs.getString(AppConstants.themeModeStorageKey));
+      themeMode = _modeFromString(
+        prefs.getString(AppConstants.themeModeStorageKey),
+      );
       isPremium = prefs.getBool(AppConstants.premiumStorageKey) ?? false;
+
+      final precisionIndex =
+          prefs.getInt(AppConstants.decimalPrecisionKey) ?? 0;
+      decimalPrecision = DecimalPrecision.values[precisionIndex];
+      Formatters.setPrecision(decimalPrecision);
     } catch (_) {
       // Degrade gracefully — defaults remain in place.
     } finally {
@@ -97,7 +109,10 @@ class SettingsProvider extends ChangeNotifier {
     notifyListeners();
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(AppConstants.themeModeStorageKey, _modeToString(mode));
+      await prefs.setString(
+        AppConstants.themeModeStorageKey,
+        _modeToString(mode),
+      );
     } catch (_) {
       // Storage failure does not revert in-memory state.
     }
@@ -110,6 +125,20 @@ class SettingsProvider extends ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool(AppConstants.premiumStorageKey, value);
+    } catch (_) {
+      // Storage failure does not revert in-memory state.
+    }
+  }
+
+  /// Sets [decimalPrecision] to [precision], persists it, updates the
+  /// global formatter, and calls [notifyListeners].
+  Future<void> setDecimalPrecision(DecimalPrecision precision) async {
+    decimalPrecision = precision;
+    Formatters.setPrecision(precision);
+    notifyListeners();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt(AppConstants.decimalPrecisionKey, precision.index);
     } catch (_) {
       // Storage failure does not revert in-memory state.
     }

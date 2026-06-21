@@ -32,13 +32,12 @@ class ConversionResultRow extends StatelessWidget {
 
   Color _valueColor(ThemeData theme) {
     return switch (result) {
-      null => isDark
-          ? AppColors.darkTextSecondary.withValues(alpha: 0.35)
-          : AppColors.lightTextSecondary.withValues(alpha: 0.35),
+      null =>
+        isDark
+            ? AppColors.darkTextSecondary.withValues(alpha: 0.35)
+            : AppColors.lightTextSecondary.withValues(alpha: 0.35),
       final r when !r.isValid => AppColors.error,
-      _ => isDark
-          ? AppColors.darkTextPrimary
-          : AppColors.lightTextPrimary,
+      _ => isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
     };
   }
 
@@ -57,9 +56,7 @@ class ConversionResultRow extends StatelessWidget {
           ),
           behavior: SnackBarBehavior.floating,
           duration: const Duration(seconds: 1),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         ),
@@ -70,23 +67,21 @@ class ConversionResultRow extends StatelessWidget {
     if (result == null || !result!.isValid) return;
     HapticFeedback.lightImpact();
     final text = '$_displayValue ${unit.symbol}';
-    Share.share(
-      text,
-      subject: 'Conversion result',
-    );
+    Share.share(text, subject: 'Conversion result');
   }
 
   @override
   Widget build(BuildContext context) {
     final Color bgColor = isSelected
         ? (isDark
-            ? AppColors.primary.withValues(alpha: 0.12)
-            : AppColors.primary.withValues(alpha: 0.08))
+              ? AppColors.primary.withValues(alpha: 0.12)
+              : AppColors.primary.withValues(alpha: 0.08))
         : Colors.transparent;
 
     final Color valueColor = _valueColor(Theme.of(context));
-    final Color unitColor =
-        isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
+    final Color unitColor = isDark
+        ? AppColors.darkTextSecondary
+        : AppColors.lightTextSecondary;
 
     return GestureDetector(
       onTap: () => _onTap(context),
@@ -102,10 +97,7 @@ class ConversionResultRow extends StatelessWidget {
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 200),
                 transitionBuilder: (child, animation) {
-                  return FadeTransition(
-                    opacity: animation,
-                    child: child,
-                  );
+                  return FadeTransition(opacity: animation, child: child);
                 },
                 child: Text(
                   _displayValue,

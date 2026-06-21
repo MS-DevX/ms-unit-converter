@@ -18,20 +18,13 @@ class CompassRose extends StatelessWidget {
   /// Whether the device is using dark theme.
   final bool isDark;
 
-  const CompassRose({
-    super.key,
-    required this.heading,
-    this.isDark = false,
-  });
+  const CompassRose({super.key, required this.heading, this.isDark = false});
 
   @override
   Widget build(BuildContext context) {
     return CustomPaint(
       size: Size.infinite,
-      painter: _CompassRosePainter(
-        heading: heading,
-        isDark: isDark,
-      ),
+      painter: _CompassRosePainter(heading: heading, isDark: isDark),
     );
   }
 }
@@ -40,10 +33,7 @@ class _CompassRosePainter extends CustomPainter {
   final double heading;
   final bool isDark;
 
-  _CompassRosePainter({
-    required this.heading,
-    this.isDark = false,
-  });
+  _CompassRosePainter({required this.heading, this.isDark = false});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -92,14 +82,8 @@ class _CompassRosePainter extends CustomPainter {
         color = Colors.grey.withValues(alpha: 0.25);
       }
 
-      final inner = Offset(
-        innerR * math.cos(angle),
-        innerR * math.sin(angle),
-      );
-      final outer = Offset(
-        radius * math.cos(angle),
-        radius * math.sin(angle),
-      );
+      final inner = Offset(innerR * math.cos(angle), innerR * math.sin(angle));
+      final outer = Offset(radius * math.cos(angle), radius * math.sin(angle));
 
       final tickPaint = Paint()
         ..color = color
@@ -139,9 +123,9 @@ class _CompassRosePainter extends CustomPainter {
     final triY = -(radius * 0.78);
     final triSize = radius * 0.05;
     final triPath = Path()
-      ..moveTo(0, triY - triSize * 1.2)            // tip toward ring (outward)
-      ..lineTo(-triSize * 0.7, triY + triSize)      // left base toward centre
-      ..lineTo(triSize * 0.7, triY + triSize);      // right base toward centre
+      ..moveTo(0, triY - triSize * 1.2) // tip toward ring (outward)
+      ..lineTo(-triSize * 0.7, triY + triSize) // left base toward centre
+      ..lineTo(triSize * 0.7, triY + triSize); // right base toward centre
     final triPaint = Paint()
       ..color = const Color(0xFFFF3333)
       ..style = PaintingStyle.fill;

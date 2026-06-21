@@ -65,6 +65,17 @@ gitleaks detect --source . --verbose
 
 To add Dependabot secret scanning to this repo, create `.github/dependabot.yml` and enable the "Secret scanning" toggle in the repo Settings > Security.
 
+## Privacy: Location Data
+
+- **Purpose**: Location (GPS) is used **only** for:
+  - Displaying the device's geographic coordinates on the Compass screen.
+  - Computing magnetic declination (via [GeoMag](https://pub.dev/packages/geomag), WMM model) to correct magnetic heading to true north.
+- **No account required**: The app has no accounts, no sign-in, and no user profiles.
+- **No transmission**: Location data is processed entirely on-device. The app code does **not** send location (or any other data) to any server.
+- **Optional**: Location is never requested on startup. The magnetic compass works fully without location permission. GPS is activated only after an explicit user tap on *Enable True North / GPS Coordinates*.
+- **Session denial**: If the user taps *Not Allow* once, the system permission dialog will not be shown again in the same app session. The magnetic compass continues working.
+- **No background use**: Sensor streams and GPS timers are stopped when the Compass screen is disposed (user leaves the tab).
+
 ## Summary
 
 - **Passwords redacted from docs**: ✅

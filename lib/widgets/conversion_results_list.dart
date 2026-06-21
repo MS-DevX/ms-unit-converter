@@ -9,8 +9,7 @@ class ConversionResultsList extends StatelessWidget {
   final List<({UnitModel unit, ConversionResult? result})> results;
   final UnitModel? sourceUnit;
   final bool isDark;
-  final void Function(UnitModel unit, ConversionResult? result)?
-      onResultTapped;
+  final void Function(UnitModel unit, ConversionResult? result)? onResultTapped;
 
   const ConversionResultsList({
     super.key,

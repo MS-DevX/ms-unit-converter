@@ -57,10 +57,7 @@ class _SwapButtonState extends State<SwapButton>
         child: AnimatedBuilder(
           animation: _rotation,
           builder: (context, child) {
-            return Transform.rotate(
-              angle: _rotation.value,
-              child: child,
-            );
+            return Transform.rotate(angle: _rotation.value, child: child);
           },
           child: Container(
             width: 48,

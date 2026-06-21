@@ -1,7 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Network access required for AdMob ads -->
     <uses-permission android:name="android.permission.INTERNET"/>
-    <!-- Location access required for compass GPS coordinates -->
+    <!-- Location access for optional compass GPS coordinates and true north.
+         Only requested when the user explicitly taps "Enable True North".
+         If denied, the magnetic compass still works. No location is transmitted. -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
 

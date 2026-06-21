@@ -1,9 +1,11 @@
-/// Currency converter screen — shows all 30 currencies as a scrollable list.
+/// Currency converter screen — shows all supported currencies as a scrollable
+/// list with search, pinned quick pairs, data-source attribution, and share.
 library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../core/colors.dart';
 import '../data/currencies_data.dart';
@@ -21,6 +23,8 @@ class CurrencyScreen extends StatefulWidget {
 class _CurrencyScreenState extends State<CurrencyScreen> {
   final TextEditingController _inputController = TextEditingController();
   final FocusNode _inputFocusNode = FocusNode();
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
 
   @override
   void initState() {
@@ -32,6 +36,8 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
   void dispose() {
     _inputController.dispose();
     _inputFocusNode.dispose();
+    _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
@@ -57,13 +63,18 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
           content: Text('Copied ${row.currency.code} — $text'),
           behavior: SnackBarBehavior.floating,
           duration: const Duration(seconds: 2),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         ),
       );
+  }
+
+  void _shareValue(CurrencyResultRow row, double amount, String sourceCode) {
+    HapticFeedback.lightImpact();
+    final text =
+        '$amount $sourceCode = ${row.formattedResult} ${row.currency.code}';
+    Share.share(text, subject: 'Currency conversion');
   }
 
   Future<void> _onRefresh() async {
@@ -80,13 +91,32 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
     return '${dt.day}/${dt.month}/${dt.year}';
   }
 
+  /// Quick preset conversion pairs shown as chips.
+  static const List<(String source, String target)> _quickPairs = [
+    ('USD', 'PKR'),
+    ('PKR', 'USD'),
+    ('AED', 'PKR'),
+    ('SAR', 'PKR'),
+    ('GBP', 'PKR'),
+    ('EUR', 'PKR'),
+  ];
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Consumer<CurrencyProvider>(
       builder: (context, provider, _) {
-        final results = provider.getAllResults();
+        final allResults = provider.getAllResults();
+        final query = _searchController.text.toLowerCase().trim();
+        final results = query.isEmpty
+            ? allResults
+            : allResults.where((r) {
+                final c = r.currency;
+                return c.code.toLowerCase().contains(query) ||
+                    c.name.toLowerCase().contains(query) ||
+                    c.symbol.toLowerCase().contains(query);
+              }).toList();
 
         return GestureDetector(
           onTap: () => FocusScope.of(context).unfocus(),
@@ -130,12 +160,17 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                                     child: TextField(
                                       controller: _inputController,
                                       focusNode: _inputFocusNode,
-                                      keyboardType: TextInputType.number,
+                                      keyboardType:
+                                          TextInputType.numberWithOptions(
+                                            decimal: true,
+                                          ),
                                       onChanged: _onInputChanged,
                                       style: TextStyle(
                                         fontSize: 36,
                                         fontWeight: FontWeight.w600,
-                                        color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                                        color: isDark
+                                            ? AppColors.darkTextPrimary
+                                            : AppColors.lightTextPrimary,
                                         height: 1.2,
                                       ),
                                       decoration: InputDecoration(
@@ -144,8 +179,10 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                                           fontSize: 36,
                                           fontWeight: FontWeight.w600,
                                           color: isDark
-                                              ? AppColors.darkTextSecondary.withValues(alpha: 0.3)
-                                              : AppColors.lightTextSecondary.withValues(alpha: 0.3),
+                                              ? AppColors.darkTextSecondary
+                                                    .withValues(alpha: 0.3)
+                                              : AppColors.lightTextSecondary
+                                                    .withValues(alpha: 0.3),
                                         ),
                                         border: InputBorder.none,
                                         isDense: true,
@@ -158,7 +195,7 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                                     flex: 2,
                                     child: _SourceDropdown(
                                       value: provider.fromCurrency,
-                                      currencies: allCurrencies,
+                                      currencies: provider.currencies,
                                       onChanged: _onSourceChanged,
                                       isDark: isDark,
                                     ),
@@ -167,7 +204,7 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                               ),
                             ),
 
-                            // ── Base rate indicator ────────────────────
+                            // ── Status row ────────────────────────────
                             Padding(
                               padding: const EdgeInsets.fromLTRB(16, 2, 16, 0),
                               child: Row(
@@ -178,34 +215,81 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                                       height: 10,
                                       child: CircularProgressIndicator(
                                         strokeWidth: 1.5,
-                                        color: (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary)
-                                            .withValues(alpha: 0.5),
+                                        color:
+                                            (isDark
+                                                    ? AppColors
+                                                          .darkTextSecondary
+                                                    : AppColors
+                                                          .lightTextSecondary)
+                                                .withValues(alpha: 0.5),
                                       ),
                                     )
-                                  else ...[
+                                  else if (provider.isOffline)
+                                    Icon(
+                                      Icons.wifi_off_rounded,
+                                      size: 10,
+                                      color: AppColors.warning.withValues(
+                                        alpha: 0.6,
+                                      ),
+                                    )
+                                  else
                                     Icon(
                                       Icons.check_circle_rounded,
                                       size: 10,
-                                      color: AppColors.success.withValues(alpha: 0.5),
+                                      color: AppColors.success.withValues(
+                                        alpha: 0.5,
+                                      ),
                                     ),
-                                    const SizedBox(width: 3),
-                                  ],
                                   const SizedBox(width: 3),
                                   Text(
-                                    provider.isLoading ? 'Updating...' : 'Updated ${_formatLastUpdated(provider.lastUpdated)}',
+                                    provider.isLoading
+                                        ? 'Updating...'
+                                        : provider.isUsingCached
+                                        ? 'Using cached rates'
+                                        : 'Updated ${_formatLastUpdated(provider.lastUpdated)}',
                                     style: TextStyle(
                                       fontSize: 10,
-                                      color: (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary)
-                                          .withValues(alpha: 0.45),
+                                      color:
+                                          provider.isOffline &&
+                                              !provider.isLoading
+                                          ? AppColors.warning.withValues(
+                                              alpha: 0.8,
+                                            )
+                                          : (isDark
+                                                    ? AppColors
+                                                          .darkTextSecondary
+                                                    : AppColors
+                                                          .lightTextSecondary)
+                                                .withValues(alpha: 0.45),
                                     ),
                                   ),
-                                  if (!provider.isLoading && provider.baseRateDisplay != '\u2014') ...[
+                                  if (!provider.isLoading &&
+                                      !provider.isOffline &&
+                                      provider.baseRateDisplay != '\u2014') ...[
                                     Text(
                                       '  ·  ${provider.baseRateDisplay}',
                                       style: TextStyle(
                                         fontSize: 10,
-                                        color: (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary)
-                                            .withValues(alpha: 0.45),
+                                        color:
+                                            (isDark
+                                                    ? AppColors
+                                                          .darkTextSecondary
+                                                    : AppColors
+                                                          .lightTextSecondary)
+                                                .withValues(alpha: 0.45),
+                                      ),
+                                    ),
+                                  ],
+                                  if (!provider.isLoading &&
+                                      provider.isOffline &&
+                                      provider.baseRateDisplay != '\u2014') ...[
+                                    Text(
+                                      '  ·  ${provider.baseRateDisplay}',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: AppColors.warning.withValues(
+                                          alpha: 0.6,
+                                        ),
                                       ),
                                     ),
                                   ],
@@ -226,44 +310,224 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                               ),
                             ),
 
-                            // ── Quick source switches ──────────────────
+                            // ── Data source label ─────────────────────
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 1, 16, 0),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.link_rounded,
+                                    size: 9,
+                                    color:
+                                        (isDark
+                                                ? AppColors.darkTextSecondary
+                                                : AppColors.lightTextSecondary)
+                                            .withValues(alpha: 0.35),
+                                  ),
+                                  const SizedBox(width: 3),
+                                  Text(
+                                    'Free exchange rates by Frankfurter',
+                                    style: TextStyle(
+                                      fontSize: 9,
+                                      color:
+                                          (isDark
+                                                  ? AppColors.darkTextSecondary
+                                                  : AppColors
+                                                        .lightTextSecondary)
+                                              .withValues(alpha: 0.35),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            // ── Search field ──────────────────────────
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                              child: SizedBox(
+                                height: 36,
+                                child: TextField(
+                                  controller: _searchController,
+                                  focusNode: _searchFocusNode,
+                                  onChanged: (_) => setState(() {}),
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: isDark
+                                        ? AppColors.darkTextPrimary
+                                        : AppColors.lightTextPrimary,
+                                  ),
+                                  decoration: InputDecoration(
+                                    hintText: 'Search currencies…',
+                                    hintStyle: TextStyle(
+                                      fontSize: 13,
+                                      color:
+                                          (isDark
+                                                  ? AppColors.darkTextSecondary
+                                                  : AppColors
+                                                        .lightTextSecondary)
+                                              .withValues(alpha: 0.5),
+                                    ),
+                                    prefixIcon: Icon(
+                                      Icons.search_rounded,
+                                      size: 18,
+                                      color:
+                                          (isDark
+                                                  ? AppColors.darkTextSecondary
+                                                  : AppColors
+                                                        .lightTextSecondary)
+                                              .withValues(alpha: 0.5),
+                                    ),
+                                    suffixIcon:
+                                        _searchController.text.isNotEmpty
+                                        ? GestureDetector(
+                                            onTap: () {
+                                              _searchController.clear();
+                                              setState(() {});
+                                            },
+                                            child: Icon(
+                                              Icons.clear_rounded,
+                                              size: 18,
+                                              color:
+                                                  (isDark
+                                                          ? AppColors
+                                                                .darkTextSecondary
+                                                          : AppColors
+                                                                .lightTextSecondary)
+                                                      .withValues(alpha: 0.5),
+                                            ),
+                                          )
+                                        : null,
+                                    filled: true,
+                                    fillColor: isDark
+                                        ? AppColors.darkSurface
+                                        : AppColors.lightSurface,
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                      borderSide: BorderSide(
+                                        color: isDark
+                                            ? AppColors.borderDark
+                                            : AppColors.borderLight,
+                                      ),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                      borderSide: BorderSide(
+                                        color: isDark
+                                            ? AppColors.borderDark
+                                            : AppColors.borderLight,
+                                      ),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                      borderSide: const BorderSide(
+                                        color: AppColors.primary,
+                                      ),
+                                    ),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      vertical: 0,
+                                    ),
+                                    isDense: true,
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            // ── Quick conversion pairs ────────────────
                             Padding(
                               padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
                               child: SizedBox(
                                 height: 32,
                                 child: ListView(
                                   scrollDirection: Axis.horizontal,
-                                  children: [
-                                    'USD', 'EUR', 'GBP', 'JPY', 'CNY', 'INR', 'AUD', 'CAD', 'CHF', 'BRL',
-                                  ].map((code) {
-                                    final currency = currencyByCode(code);
-                                    final isSelected = provider.fromCurrency?.code == code;
+                                  children: _quickPairs.map((pair) {
+                                    final (source, target) = pair;
+                                    final cSource = currencyByCode(source);
+                                    final isSelected =
+                                        provider.fromCurrency?.code == source;
                                     return Padding(
                                       padding: const EdgeInsets.only(right: 6),
                                       child: GestureDetector(
-                                        onTap: currency == null
+                                        onTap: cSource == null
                                             ? null
-                                            : () => _onSourceChanged(currency),
+                                            : () => _onSourceChanged(cSource),
                                         child: Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 10,
+                                          ),
                                           decoration: BoxDecoration(
                                             color: isSelected
                                                 ? AppColors.primary
-                                                : (isDark ? AppColors.darkSurface : AppColors.lightSurface),
-                                            borderRadius: BorderRadius.circular(16),
+                                                : (isDark
+                                                      ? AppColors.darkSurface
+                                                      : AppColors.lightSurface),
+                                            borderRadius: BorderRadius.circular(
+                                              16,
+                                            ),
                                             border: Border.all(
                                               color: isSelected
                                                   ? AppColors.primary
-                                                  : (isDark ? AppColors.borderDark : AppColors.borderLight),
+                                                  : (isDark
+                                                        ? AppColors.borderDark
+                                                        : AppColors
+                                                              .borderLight),
                                             ),
                                           ),
                                           alignment: Alignment.center,
-                                          child: Text(
-                                            code,
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                                              color: isSelected ? Colors.white : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
+                                          child: RichText(
+                                            text: TextSpan(
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: isSelected
+                                                    ? FontWeight.w700
+                                                    : FontWeight.w500,
+                                                color: isSelected
+                                                    ? Colors.white
+                                                    : (isDark
+                                                          ? AppColors
+                                                                .darkTextSecondary
+                                                          : AppColors
+                                                                .lightTextSecondary),
+                                              ),
+                                              children: [
+                                                TextSpan(text: source),
+                                                TextSpan(
+                                                  text: ' → ',
+                                                  style: TextStyle(
+                                                    color: isSelected
+                                                        ? Colors.white
+                                                              .withValues(
+                                                                alpha: 0.7,
+                                                              )
+                                                        : (isDark
+                                                                  ? AppColors
+                                                                        .darkTextSecondary
+                                                                  : AppColors
+                                                                        .lightTextSecondary)
+                                                              .withValues(
+                                                                alpha: 0.5,
+                                                              ),
+                                                  ),
+                                                ),
+                                                TextSpan(
+                                                  text: target,
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.w400,
+                                                    color: isSelected
+                                                        ? Colors.white
+                                                              .withValues(
+                                                                alpha: 0.85,
+                                                              )
+                                                        : (isDark
+                                                                  ? AppColors
+                                                                        .darkTextSecondary
+                                                                  : AppColors
+                                                                        .lightTextSecondary)
+                                                              .withValues(
+                                                                alpha: 0.6,
+                                                              ),
+                                                  ),
+                                                ),
+                                              ],
                                             ),
                                           ),
                                         ),
@@ -286,19 +550,31 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                                 child: Text(
                                   provider.isLoading
                                       ? 'Loading rates...'
+                                      : query.isNotEmpty
+                                      ? 'No currency found'
                                       : 'Enter an amount to convert',
                                   style: TextStyle(
                                     fontSize: 14,
-                                    color: (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary)
-                                        .withValues(alpha: 0.5),
+                                    color:
+                                        (isDark
+                                                ? AppColors.darkTextSecondary
+                                                : AppColors.lightTextSecondary)
+                                            .withValues(alpha: 0.5),
                                   ),
                                 ),
                               )
                             : _CurrencyResultsList(
                                 results: results,
                                 sourceCode: provider.fromCurrency?.code,
+                                inputAmount: () {
+                                  final parsed = double.tryParse(
+                                    provider.inputValue,
+                                  );
+                                  return parsed ?? 0;
+                                }(),
                                 isDark: isDark,
                                 onRowTapped: _copyValue,
+                                onShareTapped: _shareValue,
                               ),
                       ),
                     ],
@@ -362,12 +638,16 @@ class _SourceDropdown extends StatelessWidget {
           icon: Icon(
             Icons.expand_more_rounded,
             size: 18,
-            color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+            color: isDark
+                ? AppColors.darkTextSecondary
+                : AppColors.lightTextSecondary,
           ),
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+            color: isDark
+                ? AppColors.darkTextPrimary
+                : AppColors.lightTextPrimary,
           ),
           items: currencies.map((c) {
             return DropdownMenuItem<CurrencyModel>(
@@ -391,14 +671,19 @@ class _SourceDropdown extends StatelessWidget {
 class _CurrencyResultsList extends StatelessWidget {
   final List<CurrencyResultRow> results;
   final String? sourceCode;
+  final double inputAmount;
   final bool isDark;
   final void Function(CurrencyResultRow row) onRowTapped;
+  final void Function(CurrencyResultRow row, double amount, String sourceCode)
+  onShareTapped;
 
   const _CurrencyResultsList({
     required this.results,
     required this.sourceCode,
+    required this.inputAmount,
     required this.isDark,
     required this.onRowTapped,
+    required this.onShareTapped,
   });
 
   @override
@@ -424,15 +709,12 @@ class _CurrencyResultsList extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12),
             color: isSource
                 ? (isDark
-                    ? AppColors.primary.withValues(alpha: 0.1)
-                    : AppColors.primary.withValues(alpha: 0.06))
+                      ? AppColors.primary.withValues(alpha: 0.1)
+                      : AppColors.primary.withValues(alpha: 0.06))
                 : Colors.transparent,
             child: Row(
               children: [
-                Text(
-                  row.currency.flag,
-                  style: const TextStyle(fontSize: 18),
-                ),
+                Text(row.currency.flag, style: const TextStyle(fontSize: 18)),
                 const SizedBox(width: 10),
                 SizedBox(
                   width: 42,
@@ -441,7 +723,9 @@ class _CurrencyResultsList extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                      color: isDark
+                          ? AppColors.darkTextSecondary
+                          : AppColors.lightTextSecondary,
                     ),
                   ),
                 ),
@@ -450,8 +734,11 @@ class _CurrencyResultsList extends StatelessWidget {
                     row.currency.name,
                     style: TextStyle(
                       fontSize: 12,
-                      color: (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary)
-                          .withValues(alpha: 0.6),
+                      color:
+                          (isDark
+                                  ? AppColors.darkTextSecondary
+                                  : AppColors.lightTextSecondary)
+                              .withValues(alpha: 0.6),
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -464,7 +751,9 @@ class _CurrencyResultsList extends StatelessWidget {
                     fontWeight: FontWeight.w700,
                     color: isSource
                         ? AppColors.primary
-                        : (isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary),
+                        : (isDark
+                              ? AppColors.darkTextPrimary
+                              : AppColors.lightTextPrimary),
                     height: 1.2,
                   ),
                 ),
@@ -473,8 +762,38 @@ class _CurrencyResultsList extends StatelessWidget {
                   row.currency.symbol,
                   style: TextStyle(
                     fontSize: 12,
-                    color: (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary)
-                        .withValues(alpha: 0.5),
+                    color:
+                        (isDark
+                                ? AppColors.darkTextSecondary
+                                : AppColors.lightTextSecondary)
+                            .withValues(alpha: 0.5),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // ── Share button ──────────────────────────────
+                GestureDetector(
+                  onTap: () =>
+                      onShareTapped(row, inputAmount, sourceCode ?? ''),
+                  child: Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? AppColors.darkTextSecondary.withValues(alpha: 0.15)
+                          : AppColors.lightTextSecondary.withValues(
+                              alpha: 0.12,
+                            ),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.share_outlined,
+                      size: 14,
+                      color:
+                          (isDark
+                                  ? AppColors.darkTextSecondary
+                                  : AppColors.lightTextSecondary)
+                              .withValues(alpha: 0.7),
+                    ),
                   ),
                 ),
               ],
