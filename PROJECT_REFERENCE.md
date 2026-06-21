@@ -351,14 +351,14 @@ Complete file-by-file reference. Each entry lists the file path, its purpose, ke
 ### `android/key.properties`
 - **Purpose:** Keystore credentials for release signing (**gitignored**)
 - **Content:** `storePassword`, `keyPassword`, `keyAlias`, `storeFile`
-- **Current values:** `storePassword=MSDevX@2024!Secure`, `keyAlias=upload`, `storeFile=upload-keystore.jks`
+- **Current values:** `storePassword=<STORE_PASSWORD>`, `keyAlias=<KEY_ALIAS>`, `storeFile=<STORE_FILE>`
 - **⚠️ On fresh clone:** Must restore this file from backup
 
 ### `android/app/upload-keystore.jks`
 - **Purpose:** The actual release signing keystore (**gitignored**)
 - **⚠️ Must back up** to cloud + external drive. Loss = cannot publish app updates.
-- **Alias:** `upload`
-- **Password:** `MSDevX@2024!Secure`
+- **Alias:** `<KEY_ALIAS>`
+- **Password:** `<KEY_PASSWORD>`
 
 ### `android/upload_certificate.pem`
 - **Purpose:** Public certificate for Play Console App Integrity

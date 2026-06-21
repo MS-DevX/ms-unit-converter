@@ -122,10 +122,10 @@ unit_converter/
 
 Keystore credentials (`android/key.properties`):
 ```
-storePassword=MSDevX@2024!Secure
-keyPassword=MSDevX@2024!Secure
-keyAlias=upload
-storeFile=upload-keystore.jks
+storePassword=<STORE_PASSWORD>
+keyPassword=<KEY_PASSWORD>
+keyAlias=<KEY_ALIAS>
+storeFile=<STORE_FILE>
 ```
 
 ### 📢 AdMob & IAP IDs

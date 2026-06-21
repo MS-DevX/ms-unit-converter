@@ -31,9 +31,10 @@ Release signing is configured in `android/app/build.gradle.kts:36-41`:
 - ProGuard/R8 enabled for release: `isMinifyEnabled = true`, `isShrinkResources = true`
 
 **⚠️ CRITICAL — Signing passwords exposed in documentation:**
-- `RELEASE_GUIDE.md:125-126`: `storePassword=MSDevX@2024!Secure` and `keyPassword=MSDevX@2024!Secure`
-- `PROJECT_REFERENCE.md:354,361` (approximate): duplicates the same passwords
-- These files are committed to git history with the plaintext credentials
+- `RELEASE_GUIDE.md:125-126`: contained `storePassword` and `keyPassword` with a shared plaintext credential
+- `PROJECT_REFERENCE.md:354,361` (approximate): duplicated the same plaintext passwords
+- Both files have now been redacted to use `<STORE_PASSWORD>` and `<KEY_PASSWORD>` placeholders
+- These values were committed to git history; rotation of credentials is recommended
 
 ---
 
@@ -245,7 +246,7 @@ Hardcoded `fallbackRatesToUsd` map (currencies_data.dart:44-75). 30 entries. Rat
 
 | Finding | Location | Severity | Detail |
 |---|---|---|---|
-| Signing passwords in git-tracked docs | `RELEASE_GUIDE.md:125-126` | **CRITICAL** | `storePassword=MSDevX@2024!Secure`, `keyPassword=MSDevX@2024!Secure` |
+| Signing passwords in git-tracked docs | `RELEASE_GUIDE.md:125-126` | **CRITICAL** | `storePassword`, `keyPassword` with shared plaintext credential (now redacted) |
 | Signing passwords in git-tracked docs | `PROJECT_REFERENCE.md:354,361` | **CRITICAL** | Duplicates same passwords |
 | No .gitignore for key material | `.gitignore` | **HIGH** | Missing `**/*.jks`, `**/*.keystore`, `key.properties`, `.env` — these are NOT gitignored |
 | Real AdMob app ID in code | `lib/core/constants.dart:19-20` | MEDIUM | `ca-app-pub-8684958562988579~6766583891` — production ID in source |
@@ -340,7 +341,7 @@ This order prioritises security, build safety, and privacy fixes before feature 
 
 | Area | Current status | Risk level | Recommended action | Files involved |
 |---|---|---|---|---|
-| **Signing secrets** | Passwords `MSDevX@2024!Secure` in `RELEASE_GUIDE.md` + `PROJECT_REFERENCE.md` | 🔴 CRITICAL | Replace with `<STORE_PASSWORD>` / `<KEY_PASSWORD>` placeholders | `RELEASE_GUIDE.md`, `PROJECT_REFERENCE.md` |
+| **Signing secrets** | Plaintext passwords in `RELEASE_GUIDE.md` + `PROJECT_REFERENCE.md` | 🔴 CRITICAL | Replace with `<STORE_PASSWORD>` / `<KEY_PASSWORD>` placeholders ✅ DONE | `RELEASE_GUIDE.md`, `PROJECT_REFERENCE.md` |
 | **.gitignore** | Missing `**/*.jks`, `*.keystore`, `key.properties`, `.env` | 🔴 HIGH | Add missing patterns | `.gitignore` |
 | **Compass — location request** | `Geolocator.requestPermission()` called on screen open with no user opt-in | 🔴 HIGH | Gate behind explicit "Enable GPS" button; add session denial flag | `lib/services/compass_service.dart`, `lib/screens/compass_screen.dart` |
 | **Compass — denial re-request** | No `_locationDeniedThisSession` flag; pull-to-refresh re-requests | 🔴 HIGH | Add session flag, check before requesting | `lib/services/compass_service.dart` |

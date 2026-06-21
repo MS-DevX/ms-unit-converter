@@ -44,3 +44,22 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# ── Signing credentials and keystores ──────────────────────────────────
+android/key.properties
+**/key.properties
+**/*.jks
+**/*.keystore
+local.properties
+
+# ── Environment files ──────────────────────────────────────────────────
+.env
+.env.*
+
+# ── Google services / Firebase ─────────────────────────────────────────
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+
+# ── Secret scan reports ────────────────────────────────────────────────
+reports/
+*.sarif
