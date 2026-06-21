@@ -53,7 +53,21 @@ Repaired stale tests and added comprehensive test coverage for all 20 conversion
 | Extremely large input (1e12) | Returns correct scaled result |
 | Cooking cross-group error | Returns descriptive error message |
 
+### Python Conversion Validation
+| File | Purpose |
+|------|---------|
+| `tools/conversion_validation/validate_units.py` | Python re-implementation of conversion logic (stdlib only) |
+| `tools/conversion_validation/sample_cases.json` | 49 expected-input/output pairs across all 20 categories |
+| `tools/conversion_validation/README.md` | Usage and maintenance guide |
+
+The Python validator runs independently of Flutter/Dart:
+```bash
+python3 tools/conversion_validation/validate_units.py
+```
+Exit code 0 = all 49 cases pass. No internet, no signing files, no secrets.
+
 ## Test Infrastructure
 - `dart format .` — 46 files formatted, 0 errors
 - `flutter analyze` — 0 issues found
 - `flutter test` — 113/113 passed, 0 failures, 0 warnings
+- `python3 tools/conversion_validation/validate_units.py` — 49/49 passed, 0 failures

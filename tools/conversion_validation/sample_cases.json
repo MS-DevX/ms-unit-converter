@@ -1,0 +1,447 @@
+{
+  "_comment": "Sample conversion cases for the MS Unit Converter app.",
+  "_formulas": "Linear: result = (input * from.toBase) / to.toBase.  Special categories (temperature, fuelEconomy, cooking, shoeSize, clothingSize, numberBase, typography) use custom formulas matching the Dart implementation in conversion_service.dart.",
+  "cases": [
+    {
+      "category": "length",
+      "fromUnit": "Kilometer",
+      "toUnit": "Meter",
+      "input": 1,
+      "expected": 1000,
+      "tolerance": 1e-6,
+      "description": "1 km = 1000 m"
+    },
+    {
+      "category": "length",
+      "fromUnit": "Meter",
+      "toUnit": "Centimeter",
+      "input": 1,
+      "expected": 100,
+      "tolerance": 1e-6,
+      "description": "1 m = 100 cm"
+    },
+    {
+      "category": "length",
+      "fromUnit": "Mile",
+      "toUnit": "Kilometer",
+      "input": 1,
+      "expected": 1.60934,
+      "tolerance": 1e-4,
+      "description": "1 mile ≈ 1.60934 km"
+    },
+    {
+      "category": "length",
+      "fromUnit": "Foot",
+      "toUnit": "Meter",
+      "input": 1,
+      "expected": 0.3048,
+      "tolerance": 1e-6,
+      "description": "1 ft = 0.3048 m"
+    },
+    {
+      "category": "length",
+      "fromUnit": "Inch",
+      "toUnit": "Centimeter",
+      "input": 1,
+      "expected": 2.54,
+      "tolerance": 1e-4,
+      "description": "1 in = 2.54 cm"
+    },
+    {
+      "category": "weight",
+      "fromUnit": "Kilogram",
+      "toUnit": "Pound",
+      "input": 1,
+      "expected": 2.20462,
+      "tolerance": 1e-4,
+      "description": "1 kg ≈ 2.20462 lb"
+    },
+    {
+      "category": "weight",
+      "fromUnit": "Pound",
+      "toUnit": "Ounce",
+      "input": 1,
+      "expected": 16.0,
+      "tolerance": 1e-2,
+      "description": "1 lb = 16 oz"
+    },
+    {
+      "category": "weight",
+      "fromUnit": "Tonne",
+      "toUnit": "Kilogram",
+      "input": 1,
+      "expected": 1000,
+      "tolerance": 1e-6,
+      "description": "1 t = 1000 kg"
+    },
+    {
+      "category": "temperature",
+      "fromUnit": "Celsius",
+      "toUnit": "Fahrenheit",
+      "input": 0,
+      "expected": 32,
+      "tolerance": 1e-6,
+      "description": "0°C = 32°F"
+    },
+    {
+      "category": "temperature",
+      "fromUnit": "Celsius",
+      "toUnit": "Fahrenheit",
+      "input": 100,
+      "expected": 212,
+      "tolerance": 1e-6,
+      "description": "100°C = 212°F"
+    },
+    {
+      "category": "temperature",
+      "fromUnit": "Celsius",
+      "toUnit": "Kelvin",
+      "input": 0,
+      "expected": 273.15,
+      "tolerance": 1e-6,
+      "description": "0°C = 273.15 K"
+    },
+    {
+      "category": "temperature",
+      "fromUnit": "Fahrenheit",
+      "toUnit": "Celsius",
+      "input": 32,
+      "expected": 0,
+      "tolerance": 1e-6,
+      "description": "32°F = 0°C"
+    },
+    {
+      "category": "temperature",
+      "fromUnit": "Fahrenheit",
+      "toUnit": "Celsius",
+      "input": 212,
+      "expected": 100,
+      "tolerance": 1e-6,
+      "description": "212°F = 100°C"
+    },
+    {
+      "category": "temperature",
+      "fromUnit": "Kelvin",
+      "toUnit": "Celsius",
+      "input": 273.15,
+      "expected": 0,
+      "tolerance": 1e-6,
+      "description": "273.15 K = 0°C"
+    },
+    {
+      "category": "temperature",
+      "fromUnit": "Fahrenheit",
+      "toUnit": "Kelvin",
+      "input": 32,
+      "expected": 273.15,
+      "tolerance": 1e-4,
+      "description": "32°F = 273.15 K"
+    },
+    {
+      "category": "area",
+      "fromUnit": "Square Meter",
+      "toUnit": "Square Foot",
+      "input": 1,
+      "expected": 10.7639,
+      "tolerance": 1e-3,
+      "description": "1 m² ≈ 10.7639 ft²"
+    },
+    {
+      "category": "area",
+      "fromUnit": "Hectare",
+      "toUnit": "Acre",
+      "input": 1,
+      "expected": 2.47105,
+      "tolerance": 1e-3,
+      "description": "1 ha ≈ 2.47105 ac"
+    },
+    {
+      "category": "volume",
+      "fromUnit": "Liter",
+      "toUnit": "Gallon (US)",
+      "input": 1,
+      "expected": 0.264172,
+      "tolerance": 1e-3,
+      "description": "1 L ≈ 0.264172 gal (US)"
+    },
+    {
+      "category": "volume",
+      "fromUnit": "Liter",
+      "toUnit": "Cup",
+      "input": 1,
+      "expected": 4.22675,
+      "tolerance": 1e-3,
+      "description": "1 L ≈ 4.22675 cup"
+    },
+    {
+      "category": "speed",
+      "fromUnit": "Kilometers per Hour",
+      "toUnit": "Miles per Hour",
+      "input": 100,
+      "expected": 62.1371,
+      "tolerance": 1e-3,
+      "description": "100 km/h ≈ 62.1371 mph"
+    },
+    {
+      "category": "data",
+      "fromUnit": "Byte",
+      "toUnit": "Kilobyte",
+      "input": 1024,
+      "expected": 1,
+      "tolerance": 1e-6,
+      "description": "1024 B = 1 KB"
+    },
+    {
+      "category": "data",
+      "fromUnit": "Gigabyte",
+      "toUnit": "Megabyte",
+      "input": 1,
+      "expected": 1024,
+      "tolerance": 1e-6,
+      "description": "1 GB = 1024 MB"
+    },
+    {
+      "category": "time",
+      "fromUnit": "Hour",
+      "toUnit": "Minute",
+      "input": 1,
+      "expected": 60,
+      "tolerance": 1e-6,
+      "description": "1 hr = 60 min"
+    },
+    {
+      "category": "time",
+      "fromUnit": "Day",
+      "toUnit": "Hour",
+      "input": 1,
+      "expected": 24,
+      "tolerance": 1e-6,
+      "description": "1 day = 24 hr"
+    },
+    {
+      "category": "angle",
+      "fromUnit": "Degree",
+      "toUnit": "Radian",
+      "input": 180,
+      "expected": 3.141592653589793,
+      "tolerance": 1e-6,
+      "description": "180° = π rad"
+    },
+    {
+      "category": "angle",
+      "fromUnit": "Radian",
+      "toUnit": "Degree",
+      "input": 3.141592653589793,
+      "expected": 180,
+      "tolerance": 1e-4,
+      "description": "π rad = 180°"
+    },
+    {
+      "category": "energy",
+      "fromUnit": "Joule",
+      "toUnit": "Calorie",
+      "input": 1,
+      "expected": 0.239006,
+      "tolerance": 1e-3,
+      "description": "1 J ≈ 0.239 cal"
+    },
+    {
+      "category": "energy",
+      "fromUnit": "Kilowatt-hour",
+      "toUnit": "Joule",
+      "input": 1,
+      "expected": 3600000,
+      "tolerance": 1e-3,
+      "description": "1 kWh = 3,600,000 J"
+    },
+    {
+      "category": "power",
+      "fromUnit": "Watt",
+      "toUnit": "Horsepower",
+      "input": 745.7,
+      "expected": 1,
+      "tolerance": 1e-3,
+      "description": "745.7 W = 1 hp"
+    },
+    {
+      "category": "power",
+      "fromUnit": "Kilowatt",
+      "toUnit": "Horsepower",
+      "input": 1,
+      "expected": 1.34102,
+      "tolerance": 1e-3,
+      "description": "1 kW ≈ 1.341 hp"
+    },
+    {
+      "category": "pressure",
+      "fromUnit": "Bar",
+      "toUnit": "PSI",
+      "input": 1,
+      "expected": 14.5038,
+      "tolerance": 1e-3,
+      "description": "1 bar ≈ 14.5038 psi"
+    },
+    {
+      "category": "pressure",
+      "fromUnit": "Atmosphere",
+      "toUnit": "Kilopascal",
+      "input": 1,
+      "expected": 101.325,
+      "tolerance": 1e-3,
+      "description": "1 atm = 101.325 kPa"
+    },
+    {
+      "category": "force",
+      "fromUnit": "Newton",
+      "toUnit": "Pound-force",
+      "input": 1,
+      "expected": 0.224809,
+      "tolerance": 1e-4,
+      "description": "1 N ≈ 0.224809 lbf"
+    },
+    {
+      "category": "frequency",
+      "fromUnit": "Hertz",
+      "toUnit": "Kilohertz",
+      "input": 1000,
+      "expected": 1,
+      "tolerance": 1e-6,
+      "description": "1000 Hz = 1 kHz"
+    },
+    {
+      "category": "fuelEconomy",
+      "fromUnit": "MPG (US)",
+      "toUnit": "Kilometers per Liter",
+      "input": 20,
+      "expected": 8.50288,
+      "tolerance": 1e-3,
+      "description": "20 MPG (US) ≈ 8.50288 km/L"
+    },
+    {
+      "category": "fuelEconomy",
+      "fromUnit": "Kilometers per Liter",
+      "toUnit": "MPG (US)",
+      "input": 8.5,
+      "expected": 19.993,
+      "tolerance": 1e-2,
+      "description": "8.5 km/L ≈ 19.99 MPG (US)"
+    },
+    {
+      "category": "fuelEconomy",
+      "fromUnit": "MPG (US)",
+      "toUnit": "Liters per 100km",
+      "input": 20,
+      "expected": 11.7608,
+      "tolerance": 1e-2,
+      "description": "20 MPG (US) ≈ 11.76 L/100km"
+    },
+    {
+      "category": "fuelEconomy",
+      "fromUnit": "Liters per 100km",
+      "toUnit": "Kilometers per Liter",
+      "input": 10,
+      "expected": 10,
+      "tolerance": 1e-6,
+      "description": "10 L/100km = 10 km/L"
+    },
+    {
+      "category": "cooking",
+      "fromUnit": "Cup (US)",
+      "toUnit": "Tablespoon",
+      "input": 1,
+      "expected": 16.03,
+      "tolerance": 0.1,
+      "description": "1 cup ≈ 16 tbsp"
+    },
+    {
+      "category": "cooking",
+      "fromUnit": "Cup (US)",
+      "toUnit": "Milliliter",
+      "input": 1,
+      "expected": 237,
+      "tolerance": 0.5,
+      "description": "1 cup = 237 mL"
+    },
+    {
+      "category": "cooking",
+      "fromUnit": "Cup (US)",
+      "toUnit": "Gram",
+      "input": 1,
+      "expected": null,
+      "shouldFail": true,
+      "description": "Cross-group volume→weight should fail"
+    },
+    {
+      "category": "shoeSize",
+      "fromUnit": "EU",
+      "toUnit": "US Men",
+      "input": 42,
+      "expected": 10,
+      "tolerance": 0.5,
+      "description": "EU 42 ≈ US Men 10"
+    },
+    {
+      "category": "shoeSize",
+      "fromUnit": "EU",
+      "toUnit": "CM",
+      "input": 39,
+      "expected": 25,
+      "tolerance": 0.5,
+      "description": "EU 39 ≈ 25 CM"
+    },
+    {
+      "category": "clothingSize",
+      "fromUnit": "US",
+      "toUnit": "EU",
+      "input": 32,
+      "expected": 42,
+      "tolerance": 1,
+      "description": "US 32 ≈ EU 42"
+    },
+    {
+      "category": "numberBase",
+      "fromUnit": "Decimal",
+      "toUnit": "Binary",
+      "input": 255,
+      "expected": 11111111,
+      "tolerance": 1,
+      "description": "255 decimal = 11111111 binary"
+    },
+    {
+      "category": "numberBase",
+      "fromUnit": "Decimal",
+      "toUnit": "Octal",
+      "input": 255,
+      "expected": 377,
+      "tolerance": 1,
+      "description": "255 decimal = 377 octal"
+    },
+    {
+      "category": "numberBase",
+      "fromUnit": "Decimal",
+      "toUnit": "Hexadecimal",
+      "input": 255,
+      "expected": 255,
+      "tolerance": 1,
+      "description": "255 decimal = FF hex represented as decimal 255"
+    },
+    {
+      "category": "typography",
+      "fromUnit": "Pixels",
+      "toUnit": "Points",
+      "input": 16,
+      "expected": 12.0,
+      "tolerance": 0.5,
+      "description": "16 px ≈ 12 pt"
+    },
+    {
+      "category": "typography",
+      "fromUnit": "EM",
+      "toUnit": "Pixels",
+      "input": 2,
+      "expected": 32,
+      "tolerance": 0.5,
+      "description": "2 em = 32 px at 16px base"
+    }
+  ]
+}
