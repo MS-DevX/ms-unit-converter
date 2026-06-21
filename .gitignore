@@ -63,3 +63,5 @@ ios/Runner/GoogleService-Info.plist
 # ── Secret scan reports ────────────────────────────────────────────────
 reports/
 *.sarif
+docs/generated/
+reports/generated/
