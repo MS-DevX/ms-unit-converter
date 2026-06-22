@@ -104,9 +104,11 @@ unit_converter/
 ├── ios/
 │   └── Runner/Assets.xcassets/AppIcon.appiconset/  # All iOS icon sizes
 │
-├── test/                                # Unit tests (8 files)
+├── test/                                # Unit tests (17 files, 297+ tests)
 │
 ├── pubspec.yaml                         # Version + dependencies + launcher_icons config
+├── docs/
+│   └── privacy_data_safety_notes.md     # Play Store Data Safety form reference
 ├── RELEASE_GUIDE.md                     # This file
 ├── AGENTS.md                            # OpenCode agent rules
 └── README.md                            # Project README
@@ -189,8 +191,8 @@ Also mirrored in `android/app/src/main/AndroidManifest.xml:38` for AdMob App ID.
 - Premium status persisted in SharedPreferences, checked in `settings_provider.dart`
 
 ### 🔒 Privacy Policy URL
-`lib/core/constants.dart:34` → `https://msdevx.com/privacy`
-Hosted externally — publish generic MS DevX privacy policy there.
+`lib/core/constants.dart:34` → `https://msdevx.com/msunit-privacy`
+Hosted externally — see `docs/privacy_data_safety_notes.md` for what it must cover.
 
 ---
 
@@ -246,6 +248,8 @@ flutter clean && flutter pub get
 - [ ] Build release AAB: `flutter build appbundle --release`
 - [ ] Verify output at `build/app/outputs/bundle/release/app-release.aab`
 - [ ] Update `lib/core/constants.dart:13` appVersion if needed
+- [ ] Review `docs/privacy_data_safety_notes.md` — ensure Data Safety form matches current behaviour
+- [ ] Confirm privacy policy at `https://msdevx.com/msunit-privacy` is up to date
 
 ### First-Time Setup (one-time only)
 - [ ] Generate upload keystore:
