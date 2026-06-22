@@ -17,9 +17,67 @@ import '../services/iap_service.dart';
 import '../utils/formatters.dart';
 
 /// Shows appearance, premium, about, and action settings.
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   /// Creates a [SettingsScreen].
   const SettingsScreen({super.key});
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  bool _isPurchasing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Replace persistence-only callback with one that also shows feedback.
+    // Persistence is still handled (setPremium) so premium is never lost.
+    IapService.instance.onPremiumUnlocked = () {
+      if (!mounted) return;
+      context.read<SettingsProvider>().setPremium(true);
+      setState(() => _isPurchasing = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Premium unlocked \u2014 thank you for your support!'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    };
+    IapService.instance.onPurchaseError = () {
+      if (!mounted) return;
+      setState(() => _isPurchasing = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Something went wrong. Please try again.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    };
+  }
+
+  @override
+  void dispose() {
+    // Restore persistence-only callback for purchases made outside settings.
+    final settings = context.read<SettingsProvider>();
+    IapService.instance.onPremiumUnlocked = () {
+      settings.setPremium(true);
+    };
+    IapService.instance.onPurchaseError = null;
+    super.dispose();
+  }
+
+  void _purchaseRemoveAds() {
+    HapticFeedback.mediumImpact();
+    setState(() => _isPurchasing = true);
+    IapService.instance.purchase();
+  }
+
+  void _restorePurchases() {
+    HapticFeedback.mediumImpact();
+    setState(() => _isPurchasing = true);
+    IapService.instance.restore();
+  }
 
   // ─── Helpers ───────────────────────────────────────────────────────────────
 
@@ -180,27 +238,28 @@ class SettingsScreen extends StatelessWidget {
                     )
                   else ...[
                     _SettingsTile(
-                      icon: Icons.star_rounded,
+                      icon: _isPurchasing
+                          ? Icons.hourglass_empty_rounded
+                          : Icons.star_rounded,
                       iconColor: AppColors.warning,
                       title: 'Remove Ads',
-                      subtitle:
-                          'One-time purchase \u2014 ${AppConstants.removeAdsPrice}',
-                      onTap: () {
-                        HapticFeedback.mediumImpact();
-                        IapService.instance.purchase();
-                      },
+                      subtitle: _isPurchasing
+                          ? 'Connecting to Play Store\u2026'
+                          : 'One-time purchase \u2014 ${AppConstants.removeAdsPrice}',
+                      onTap: _isPurchasing ? null : _purchaseRemoveAds,
                     ),
                     _Divider(),
                   ],
                   _SettingsTile(
-                    icon: Icons.restore_rounded,
+                    icon: _isPurchasing
+                        ? Icons.hourglass_empty_rounded
+                        : Icons.restore_rounded,
                     iconColor: AppColors.primary,
                     title: 'Restore Purchases',
-                    subtitle: 'Already purchased? Tap to restore.',
-                    onTap: () {
-                      HapticFeedback.mediumImpact();
-                      IapService.instance.restore();
-                    },
+                    subtitle: _isPurchasing
+                        ? 'Please wait\u2026'
+                        : 'Already purchased? Tap to restore.',
+                    onTap: _isPurchasing ? null : _restorePurchases,
                   ),
                 ],
               ),

@@ -25,6 +25,9 @@ class IapService {
   /// Callback triggered when premium status is successfully verified and unlocked.
   void Function()? onPremiumUnlocked;
 
+  /// Callback triggered when a purchase or restore error occurs.
+  void Function()? onPurchaseError;
+
   /// Whether in-app purchases are available on this device/platform.
   bool get isAvailable => _isAvailable;
 
@@ -45,7 +48,7 @@ class IapService {
         _subscription = _iap!.purchaseStream.listen(
           _handlePurchaseUpdates,
           onError: (Object error) {
-            // Safe degradation without crashing or logging to console
+            onPurchaseError?.call();
           },
         );
       }
@@ -65,10 +68,16 @@ class IapService {
   /// listings gracefully.
   Future<void> purchase() async {
     final iap = _iap;
-    if (iap == null) return;
+    if (iap == null) {
+      onPurchaseError?.call();
+      return;
+    }
     try {
       final bool isAvailable = await iap.isAvailable();
-      if (!isAvailable) return;
+      if (!isAvailable) {
+        onPurchaseError?.call();
+        return;
+      }
 
       final ProductDetailsResponse response = await iap.queryProductDetails({
         AppConstants.removeAdsProductId,
@@ -76,6 +85,7 @@ class IapService {
 
       if (response.notFoundIDs.contains(AppConstants.removeAdsProductId) ||
           response.productDetails.isEmpty) {
+        onPurchaseError?.call();
         return;
       }
 
@@ -85,7 +95,7 @@ class IapService {
       );
       await iap.buyNonConsumable(purchaseParam: purchaseParam);
     } catch (_) {
-      // Degrade gracefully on billing errors
+      onPurchaseError?.call();
     }
   }
 
@@ -95,13 +105,19 @@ class IapService {
   /// to the purchase stream listened to in [initialize].
   Future<void> restore() async {
     final iap = _iap;
-    if (iap == null) return;
+    if (iap == null) {
+      onPurchaseError?.call();
+      return;
+    }
     try {
       final bool isAvailable = await iap.isAvailable();
-      if (!isAvailable) return;
+      if (!isAvailable) {
+        onPurchaseError?.call();
+        return;
+      }
       await iap.restorePurchases();
     } catch (_) {
-      // Degrade gracefully on billing or store errors
+      onPurchaseError?.call();
     }
   }
 

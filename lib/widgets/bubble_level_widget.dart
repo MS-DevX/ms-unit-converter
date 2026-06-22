@@ -101,17 +101,10 @@ class _BubbleLevelWidgetState extends State<BubbleLevelWidget> {
           flex: 4,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 4),
-            child: FittedBox(
-              fit: BoxFit.contain,
-              child: SizedBox(
-                width: 200,
-                height: 200,
-                child: CustomPaint(
-                  painter: _BubbleLevelPainter(
-                    pitch: _data.pitch,
-                    roll: _data.roll,
-                  ),
-                ),
+            child: CustomPaint(
+              painter: _BubbleLevelPainter(
+                pitch: _data.pitch,
+                roll: _data.roll,
               ),
             ),
           ),

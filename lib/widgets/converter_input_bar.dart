@@ -42,8 +42,8 @@ class ConverterInputBar extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final hasInput = controller.text.isNotEmpty;
     final Color borderColor = isDark
-        ? AppColors.inputBorderDark
-        : AppColors.inputBorderLight;
+        ? AppColors.borderDark
+        : AppColors.borderLight;
     final bgColor = isDark ? AppColors.darkSurface : AppColors.lightSurface;
 
     return Row(
@@ -78,6 +78,7 @@ class ConverterInputBar extends StatelessWidget {
                 height: 1.2,
               ),
               decoration: InputDecoration(
+                filled: false,
                 hintText: '0',
                 hintStyle: TextStyle(
                   fontSize: 28,
@@ -89,6 +90,10 @@ class ConverterInputBar extends StatelessWidget {
                           .withValues(alpha: 0.35),
                 ),
                 border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                disabledBorder: InputBorder.none,
+                errorBorder: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 10,

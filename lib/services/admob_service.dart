@@ -13,6 +13,7 @@ library;
 
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -38,8 +39,13 @@ class AdmobService {
   /// actually finished loading (or failed).
   ///
   /// Safe to call multiple times; only one load runs at a time.
+  /// Silently skips on non-mobile platforms where AdMob is unavailable.
   Future<void> loadAppOpenAd() async {
     if (_isLoading) return;
+    if (defaultTargetPlatform != TargetPlatform.android &&
+        defaultTargetPlatform != TargetPlatform.iOS) {
+      return;
+    }
     _isLoading = true;
 
     _appOpenAd?.dispose();

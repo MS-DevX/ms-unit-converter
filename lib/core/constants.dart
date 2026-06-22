@@ -30,7 +30,7 @@ class AppConstants {
   static const String removeAdsPrice = r'$1.99';
 
   /// URL to the privacy policy hosted by MS DevX.
-  static const String privacyPolicyUrl = 'https://msdevx.com/privacy';
+  static const String privacyPolicyUrl = 'https://msdevx.com/msunit-privacy';
 
   /// URL to the app listing on Google Play Store.
   static const String playStoreUrl =
