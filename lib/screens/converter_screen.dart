@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -42,8 +44,12 @@ class _ConverterScreenState extends State<ConverterScreen> {
   bool _initialized = false;
   bool _formulaExpanded = false;
 
+  Timer? _historyDebounce;
+  String _lastHistorySignature = '';
+
   @override
   void dispose() {
+    _historyDebounce?.cancel();
     _inputController.dispose();
     _inputFocusNode.dispose();
     super.dispose();
@@ -54,10 +60,11 @@ class _ConverterScreenState extends State<ConverterScreen> {
     super.didChangeDependencies();
     if (!_initialized && widget.initialCategory != null) {
       _initialized = true;
-      context.read<ConverterProvider>().setCategory(widget.initialCategory!);
 
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _applyPreset(context.read<ConverterProvider>());
+        final converter = context.read<ConverterProvider>();
+        converter.setCategory(widget.initialCategory!);
+        _applyPreset(converter);
       });
     }
   }
@@ -124,6 +131,39 @@ class _ConverterScreenState extends State<ConverterScreen> {
         timestamp: DateTime.now(),
       ),
     );
+  }
+
+  void _autoSaveHistory(ConverterProvider converter) {
+    final result = converter.result;
+    if (result == null || !result.isValid) return;
+
+    final inputDouble = double.tryParse(converter.inputValue);
+    if (inputDouble == null) return;
+
+    final fromUnit = converter.fromUnit;
+    final toUnit = converter.toUnit;
+    if (fromUnit == null || toUnit == null) return;
+
+    final signature =
+        '${converter.inputValue}|${fromUnit.name}|${toUnit.name}|${converter.selectedCategory.displayName}';
+    if (signature == _lastHistorySignature) return;
+
+    _historyDebounce?.cancel();
+    _historyDebounce = Timer(const Duration(milliseconds: 800), () {
+      if (!mounted) return;
+      _lastHistorySignature = signature;
+      context.read<HistoryProvider>().addEntry(
+        HistoryEntry(
+          id: DateTime.now().microsecondsSinceEpoch.toString(),
+          category: converter.selectedCategory.displayName,
+          inputValue: inputDouble,
+          fromUnit: fromUnit.name,
+          toUnit: toUnit.name,
+          result: result.result,
+          timestamp: DateTime.now(),
+        ),
+      );
+    });
   }
 
   void _onBaseFontSizeChanged(String value, ConverterProvider converter) {
@@ -422,6 +462,7 @@ class _ConverterScreenState extends State<ConverterScreen> {
         final isDark = Theme.of(context).brightness == Brightness.dark;
         final bool canPop = Navigator.of(context).canPop();
         final results = _computeAllResults(converter);
+        _autoSaveHistory(converter);
         final isNumberBase =
             converter.selectedCategory == UnitCategory.numberBase;
         final isClothing =

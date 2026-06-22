@@ -443,7 +443,10 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                                   scrollDirection: Axis.horizontal,
                                   children: _quickPairs.map((pair) {
                                     final (source, target) = pair;
-                                    final cSource = currencyByCode(source);
+                                    final cSource = currencyByCode(
+                                      source,
+                                      provider.currencies,
+                                    );
                                     final isSelected =
                                         provider.fromCurrency?.code == source;
                                     return Padding(
@@ -564,7 +567,7 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                                     : query.isNotEmpty
                                     ? 'Try a different search term'
                                     : provider.error ??
-                                        'Type an amount above to see conversions',
+                                          'Type an amount above to see conversions',
                               )
                             : _CurrencyResultsList(
                                 results: results,

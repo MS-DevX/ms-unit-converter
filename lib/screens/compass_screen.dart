@@ -43,6 +43,8 @@ class _CompassScreenState extends State<CompassScreen> {
   void initState() {
     super.initState();
     _startMagneticCompass();
+    // Request location permission on every app start if GPS isn't active
+    CompassService.instance.enableTrueNorth();
   }
 
   @override
@@ -266,7 +268,7 @@ class _CompassScreenState extends State<CompassScreen> {
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
               SliverFillRemaining(
-                hasScrollBody: false,
+                hasScrollBody: true,
                 child: Column(
                   children: [
                     // ── Mode toggle ─────────────────────────────────
@@ -288,15 +290,13 @@ class _CompassScreenState extends State<CompassScreen> {
                       // ── Bubble level takes remaining space ────────
                       Expanded(child: BubbleLevelWidget()),
                     ] else ...[
-                      const Spacer(flex: 1),
-
                       // ── Direction name ──────────────────────────────
                       Padding(
                         padding: const EdgeInsets.only(top: 16, bottom: 4),
                         child: Text(
                           _directionLabel,
                           style: const TextStyle(
-                            fontSize: 36,
+                            fontSize: 28,
                             fontWeight: FontWeight.w300,
                             color: Color(0xFF9CA3AF),
                             letterSpacing: 2,
@@ -310,7 +310,7 @@ class _CompassScreenState extends State<CompassScreen> {
                         child: Text(
                           compassStateLabel(_compassState),
                           style: TextStyle(
-                            fontSize: 15,
+                            fontSize: 13,
                             fontWeight: FontWeight.w500,
                             color: _statusColor(_compassState),
                             letterSpacing: 0.5,
@@ -343,7 +343,7 @@ class _CompassScreenState extends State<CompassScreen> {
 
                       // ── Compass rose ────────────────────────────────
                       Expanded(
-                        flex: 4,
+                        flex: 6,
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           child: CompassRose(
@@ -512,7 +512,7 @@ class _CoordinateColumn extends StatelessWidget {
         Text(
           value,
           style: const TextStyle(
-            fontSize: 24,
+            fontSize: 18,
             fontWeight: FontWeight.w600,
             color: Colors.white,
           ),

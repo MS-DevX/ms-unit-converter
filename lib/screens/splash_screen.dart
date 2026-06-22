@@ -59,22 +59,30 @@ class _SplashScreenState extends State<SplashScreen> {
     }
   }
 
-  /// Called once the minimum time has elapsed.
+  /// Called once the minimum time has elapsed and settings are loaded.
   void _onReady() {
     if (!mounted || _navigating) return;
+
+    // Wait for persisted settings (including premium status) to load
+    // before making the ad decision. Without this guard, a premium user
+    // could be shown an ad on a cold start.
+    final settings = context.read<SettingsProvider>();
+    if (!settings.isLoaded) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _onReady());
+      return;
+    }
+
     _navigating = true;
 
-    final isPremium = context.read<SettingsProvider>().isPremium;
-
-    if (isPremium || !_adReady) {
+    if (settings.isPremium || !_adReady) {
       _navigateToApp();
       return;
     }
 
     // Try to show the App Open Ad before navigating.
     AdmobService.instance
-        .showAdIfEligible(isPremium)
-        .then((shown) {
+        .showAdIfEligible(settings.isPremium)
+        .then((_) {
           if (mounted) _navigateToApp();
         })
         .catchError((_) {

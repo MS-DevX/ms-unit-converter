@@ -289,7 +289,9 @@ class SmartParseService {
 
   static Set<String> get _currencyCodes {
     if (_currencyCodeSet != null) return _currencyCodeSet!;
-    _currencyCodeSet = allCurrencies.map((c) => c.code.toLowerCase()).toSet();
+    _currencyCodeSet = buildFallbackCurrencies()
+        .map((c) => c.code.toLowerCase())
+        .toSet();
     return _currencyCodeSet!;
   }
 
@@ -305,7 +307,7 @@ class SmartParseService {
 
   static Map<String, String> _buildCurrencyAliases() {
     final map = <String, String>{};
-    for (final c in allCurrencies) {
+    for (final c in buildFallbackCurrencies()) {
       map[c.code.toLowerCase()] = c.code;
       map[c.name.toLowerCase()] = c.code;
     }

@@ -53,9 +53,10 @@ void main() {
         expect(fallbackRatesToUsd.containsKey('TEST'), isFalse);
       });
 
-      test('contains all currencies from allCurrencies', () {
+      test('contains all fallback currencies', () {
         final rates = CurrencyService.getFallbackRates();
-        for (final c in allCurrencies) {
+        final currencies = buildFallbackCurrencies();
+        for (final c in currencies) {
           expect(
             rates.containsKey(c.code),
             isTrue,
