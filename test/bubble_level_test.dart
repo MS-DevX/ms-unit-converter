@@ -23,11 +23,14 @@ void main() {
       expect(pitch, closeTo(-30, 1.0));
     });
 
-    test('tilted 90° forward (screen facing down, top toward floor) → ~-90°', () {
-      // ax = g = 9.8, ay=0, az≈0 (small epsilon to avoid zero in sqrt)
-      final pitch = calcPitch(9.8, 0, 0.01);
-      expect(pitch, closeTo(-90, 0.1));
-    });
+    test(
+      'tilted 90° forward (screen facing down, top toward floor) → ~-90°',
+      () {
+        // ax = g = 9.8, ay=0, az≈0 (small epsilon to avoid zero in sqrt)
+        final pitch = calcPitch(9.8, 0, 0.01);
+        expect(pitch, closeTo(-90, 0.1));
+      },
+    );
   });
 
   // ── calcRoll ───────────────────────────────────────────────────────

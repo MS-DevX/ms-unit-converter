@@ -20,6 +20,9 @@ const String _cacheKeyRates = 'currency_rates';
 /// Cache key for the ISO-8601 timestamp of the last successful fetch.
 const String _cacheKeyTimestamp = 'currency_rates_timestamp';
 
+/// Cache key for the currencies list (ISO code → name map).
+const String _cacheKeyCurrencies = 'currencies_cache';
+
 /// Service for fetching, caching, and applying exchange rates.
 class CurrencyService {
   CurrencyService._();
@@ -64,6 +67,68 @@ class CurrencyService {
       return rates;
     } finally {
       client.close();
+    }
+  }
+
+  /// Fetches the complete list of supported currencies from Frankfurter v2.
+  ///
+  /// Returns a list of maps with `iso_code`, `name`, and `symbol` keys.
+  /// Throws on network failure or non-200 response.
+  static Future<List<Map<String, String>>> fetchCurrencies() async {
+    final url = Uri.parse('$_apiBase/currencies');
+    final client = HttpClient();
+    client.connectionTimeout = _connectionTimeout;
+    try {
+      final request = await client.getUrl(url);
+      request.headers.set('Accept', 'application/json');
+      final response = await request.close().timeout(_responseTimeout);
+
+      if (response.statusCode != 200) {
+        throw HttpException('Frankfurter returned ${response.statusCode}');
+      }
+
+      final body = await response.transform(utf8.decoder).join();
+      final data = jsonDecode(body) as List<dynamic>;
+
+      return data.map((entry) {
+        final item = entry as Map<String, dynamic>;
+        return {
+          'code': item['iso_code'] as String,
+          'name': item['name'] as String,
+          'symbol': (item['symbol'] as String?) ?? '',
+        };
+      }).toList();
+    } finally {
+      client.close();
+    }
+  }
+
+  /// Caches the parsed currency list to [SharedPreferences].
+  static Future<void> saveCachedCurrencies(
+    List<Map<String, String>> currencies,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    final encoded = jsonEncode(currencies);
+    await prefs.setString(_cacheKeyCurrencies, encoded);
+  }
+
+  /// Loads cached currencies from [SharedPreferences], or `null` if absent.
+  static Future<List<Map<String, String>>?> loadCachedCurrencies() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_cacheKeyCurrencies);
+    if (raw == null) return null;
+    try {
+      final decoded = jsonDecode(raw) as List<dynamic>;
+      return decoded.map((e) {
+        final item = e as Map<String, dynamic>;
+        return {
+          'code': item['code'] as String,
+          'name': item['name'] as String,
+          'symbol': (item['symbol'] as String?) ?? '',
+        };
+      }).toList();
+    } catch (_) {
+      return null;
     }
   }
 

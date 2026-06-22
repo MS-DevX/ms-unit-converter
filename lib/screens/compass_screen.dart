@@ -266,7 +266,7 @@ class _CompassScreenState extends State<CompassScreen> {
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
               SliverFillRemaining(
-                hasScrollBody: false,
+                hasScrollBody: true,
                 child: Column(
                   children: [
                     // ── Mode toggle ─────────────────────────────────

@@ -43,8 +43,11 @@ class CurrencyResultRow {
 class CurrencyProvider extends ChangeNotifier {
   // ─── Currency lists ────────────────────────────────────────────────
 
-  /// All supported currencies (immutable, 53 entries).
-  List<CurrencyModel> get currencies => allCurrencies;
+  /// All supported currencies, fetched dynamically from Frankfurter API.
+  List<CurrencyModel> _currencies = [];
+
+  /// All supported currencies (dynamic, refreshed from API).
+  List<CurrencyModel> get currencies => _currencies;
 
   // ─── Mutable state ─────────────────────────────────────────────────
 
@@ -82,23 +85,23 @@ class CurrencyProvider extends ChangeNotifier {
 
   // ─── Constructor ───────────────────────────────────────────────────
 
-  /// Loads cached rates immediately, then fetches fresh ones in the
-  /// background. Defaults source to USD, input to "1".
+  /// Loads cached rates and currencies immediately, then fetches fresh
+  /// ones in the background. Defaults source to USD, input to "1".
   CurrencyProvider() {
-    _fromCurrency = currencyByCode('USD');
     // Populate fallback rates synchronously so [isReady] is true
     // instantly, even before cache or network resolves.
     _rates = Map.from(fallbackRatesToUsd);
+    _currencies = buildFallbackCurrencies();
+    _fromCurrency = _currencies.firstWhere(
+      (c) => c.code == 'USD',
+      orElse: () => _currencies.first,
+    );
     _init();
   }
 
   Future<void> _init() async {
     final cached = await CurrencyService.loadCachedRates();
-    // Only use cached rates if they cover every currency in [allCurrencies].
-    final bool cachedIsComplete =
-        cached != null &&
-        allCurrencies.every((c) => cached.containsKey(c.code));
-    if (cachedIsComplete) {
+    if (cached != null) {
       _rates = cached;
       _lastUpdated = await CurrencyService.loadLastUpdated();
       _isLoading = false;
@@ -106,6 +109,7 @@ class CurrencyProvider extends ChangeNotifier {
       notifyListeners();
     }
 
+    await refreshCurrencies();
     await refreshRates();
   }
 
@@ -142,7 +146,7 @@ class CurrencyProvider extends ChangeNotifier {
       final cached = await CurrencyService.loadCachedRates();
       final bool cachedIsComplete =
           cached != null &&
-          allCurrencies.every((c) => cached.containsKey(c.code));
+          _currencies.every((c) => cached.containsKey(c.code));
       if (cachedIsComplete) {
         _rates = cached;
         _lastUpdated = await CurrencyService.loadLastUpdated();
@@ -157,6 +161,30 @@ class CurrencyProvider extends ChangeNotifier {
       _isOffline = true;
       notifyListeners();
     }
+  }
+
+  /// Fetches the currency list from Frankfurter.
+  ///
+  /// Falls back to cached data, then to the built-in fallback list.
+  Future<void> refreshCurrencies() async {
+    try {
+      final apiCurrencies = await CurrencyService.fetchCurrencies();
+      _currencies = buildCurrencyList(apiCurrencies);
+      await CurrencyService.saveCachedCurrencies(apiCurrencies);
+    } catch (_) {
+      final cached = await CurrencyService.loadCachedCurrencies();
+      if (cached != null && cached.isNotEmpty) {
+        _currencies = buildCurrencyList(cached);
+      }
+      // If both fail, keep the fallback list from the constructor.
+    }
+
+    // Ensure _fromCurrency still exists in the list.
+    if (_fromCurrency != null &&
+        !_currencies.any((c) => c.code == _fromCurrency!.code)) {
+      _fromCurrency = _currencies.isNotEmpty ? _currencies.first : null;
+    }
+    notifyListeners();
   }
 
   /// Returns all currencies with their converted values for the current
@@ -175,7 +203,7 @@ class CurrencyProvider extends ChangeNotifier {
     if (sourceRate == null) return [];
 
     final List<CurrencyResultRow> results = [];
-    for (final currency in allCurrencies) {
+    for (final currency in _currencies) {
       final targetRate = _rates[currency.code];
       if (targetRate == null) continue;
 

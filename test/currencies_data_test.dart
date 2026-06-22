@@ -12,21 +12,23 @@ bool _matchesSearch(CurrencyModel c, String query) {
 }
 
 void main() {
-  group('allCurrencies', () {
+  final currencies = buildFallbackCurrencies();
+
+  group('buildFallbackCurrencies', () {
     test('contains PKR', () {
-      final pkr = currencyByCode('PKR');
+      final pkr = currencyByCode('PKR', currencies);
       expect(pkr, isNotNull);
       expect(pkr!.code, 'PKR');
       expect(pkr.name, 'Pakistani Rupee');
     });
 
     test('PKR is pinned', () {
-      final pkr = currencyByCode('PKR');
+      final pkr = currencyByCode('PKR', currencies);
       expect(pkr!.isPinned, isTrue);
     });
 
     test('USD is pinned', () {
-      final usd = currencyByCode('USD');
+      final usd = currencyByCode('USD', currencies);
       expect(usd!.isPinned, isTrue);
     });
 
@@ -42,9 +44,13 @@ void main() {
         'INR',
       ];
       for (final code in pinnedCodes) {
-        expect(currencyByCode(code), isNotNull, reason: '$code should exist');
         expect(
-          currencyByCode(code)!.isPinned,
+          currencyByCode(code, currencies),
+          isNotNull,
+          reason: '$code should exist',
+        );
+        expect(
+          currencyByCode(code, currencies)!.isPinned,
           isTrue,
           reason: '$code should be pinned',
         );
@@ -108,12 +114,12 @@ void main() {
         'ZAR',
       ];
       for (final code in expected) {
-        expect(currencyByCode(code), isNotNull, reason: '$code should exist');
+        expect(
+          currencyByCode(code, currencies),
+          isNotNull,
+          reason: '$code should exist',
+        );
       }
-    });
-
-    test('total count is 53', () {
-      expect(allCurrencies.length, 53);
     });
 
     test('pinned currencies appear first in the list', () {
@@ -129,7 +135,7 @@ void main() {
       ];
       for (int i = 0; i < pinnedCodes.length; i++) {
         expect(
-          allCurrencies[i].code,
+          currencies[i].code,
           pinnedCodes[i],
           reason: 'Position $i should be ${pinnedCodes[i]}',
         );
@@ -137,7 +143,7 @@ void main() {
     });
 
     test('non-pinned currencies are sorted alphabetically', () {
-      final nonPinned = allCurrencies
+      final nonPinned = currencies
           .where((c) => !c.isPinned)
           .map((c) => c.code)
           .toList();
@@ -146,30 +152,30 @@ void main() {
     });
 
     test('every currency has a non-empty symbol', () {
-      for (final c in allCurrencies) {
+      for (final c in currencies) {
         expect(c.symbol, isNotEmpty, reason: '${c.code} has empty symbol');
       }
     });
 
     test('every currency has a non-empty flag', () {
-      for (final c in allCurrencies) {
+      for (final c in currencies) {
         expect(c.flag, isNotEmpty, reason: '${c.code} has empty flag');
       }
     });
 
     test('currencyByCode returns null for unknown code', () {
-      expect(currencyByCode('XYZ'), isNull);
+      expect(currencyByCode('XYZ', currencies), isNull);
     });
 
     test('currencyByCode is case-sensitive', () {
-      expect(currencyByCode('pkr'), isNull);
-      expect(currencyByCode('PKR'), isNotNull);
+      expect(currencyByCode('pkr', currencies), isNull);
+      expect(currencyByCode('PKR', currencies), isNotNull);
     });
   });
 
   group('fallbackRatesToUsd', () {
     test('contains all currency codes', () {
-      for (final c in allCurrencies) {
+      for (final c in currencies) {
         expect(
           fallbackRatesToUsd.containsKey(c.code),
           isTrue,
@@ -204,8 +210,8 @@ void main() {
       }
     });
 
-    test('no duplicate entries in allCurrencies', () {
-      final codes = allCurrencies.map((c) => c.code).toList();
+    test('no duplicate entries in currencies', () {
+      final codes = currencies.map((c) => c.code).toList();
       final unique = codes.toSet();
       expect(codes.length, unique.length);
     });
@@ -213,64 +219,108 @@ void main() {
 
   group('search matching', () {
     test('matches by code', () {
-      final results = allCurrencies.where((c) => _matchesSearch(c, 'PKR'));
+      final results = currencies.where((c) => _matchesSearch(c, 'PKR'));
       expect(results, hasLength(1));
       expect(results.first.code, 'PKR');
     });
 
     test('matches by name', () {
-      final results = allCurrencies.where((c) => _matchesSearch(c, 'dollar'));
+      final results = currencies.where((c) => _matchesSearch(c, 'dollar'));
       expect(results, isNotEmpty);
       expect(results.any((c) => c.code == 'USD'), isTrue);
     });
 
     test('matches by symbol', () {
-      final results = allCurrencies.where((c) => _matchesSearch(c, '£'));
+      final results = currencies.where((c) => _matchesSearch(c, '\u00A3'));
       expect(results, isNotEmpty);
     });
 
     test('case-insensitive code match', () {
       expect(
-        _matchesSearch(allCurrencies.firstWhere((c) => c.code == 'PKR'), 'pkr'),
+        _matchesSearch(currencies.firstWhere((c) => c.code == 'PKR'), 'pkr'),
         isTrue,
       );
     });
 
     test('empty query matches all', () {
-      for (final c in allCurrencies) {
+      for (final c in currencies) {
         expect(_matchesSearch(c, ''), isTrue);
       }
     });
 
     test('no match returns empty', () {
-      final results = allCurrencies.where((c) => _matchesSearch(c, 'ZZZZZZZ'));
+      final results = currencies.where((c) => _matchesSearch(c, 'ZZZZZZZ'));
       expect(results, isEmpty);
     });
   });
 
-  group('formatting (row actions support)', () {
-    test('PKR rate conversion result', () {
-      final rate = fallbackRatesToUsd['PKR']!;
-      const amount = 100.0;
-      final result = amount * rate;
-      expect(result, greaterThan(20000));
-      expect(result, lessThan(35000));
+  group('buildCurrencyList', () {
+    test('builds from API-style data', () {
+      final apiData = [
+        {'code': 'EUR', 'name': 'Euro', 'symbol': '\u20AC'},
+        {'code': 'JPY', 'name': 'Japanese Yen', 'symbol': '\u00A5'},
+        {'code': 'USD', 'name': 'US Dollar', 'symbol': r'$'},
+      ];
+      final result = buildCurrencyList(apiData);
+      expect(result, hasLength(3));
+
+      // Pinned order: PKR, USD, EUR, GBP, JPY, AED, SAR, INR
+      // So USD comes first among these 3, then EUR, then JPY alphabetically.
+      expect(result[0].code, 'USD');
+      expect(result[0].isPinned, isTrue);
+      expect(result[1].code, 'EUR');
+      expect(result[1].isPinned, isTrue);
+      expect(result[2].code, 'JPY');
+      expect(result[2].isPinned, isTrue);
     });
 
-    test('USD rate conversion result for 1 PKR', () {
-      final rate = fallbackRatesToUsd['PKR']!;
-      const amount = 1.0;
-      final result = amount / rate;
-      expect(result, greaterThan(0.002));
-      expect(result, lessThan(0.005));
+    test('derives flag from code for known currencies', () {
+      final apiData = [
+        {'code': 'USD', 'name': 'US Dollar', 'symbol': r'$'},
+        {'code': 'JPY', 'name': 'Japanese Yen', 'symbol': '\u00A5'},
+      ];
+      final result = buildCurrencyList(apiData);
+      for (final c in result) {
+        // USD → regional indicator US, JPY → regional indicator JP
+        expect(c.flag, isNotEmpty);
+        expect(c.flag, isNot('\u{1F30D}'));
+      }
     });
 
-    test('EUR to USD conversion result', () {
-      final eurRate = fallbackRatesToUsd['EUR']!;
-      const amount = 50.0;
-      final result = amount * eurRate;
-      expect(result, greaterThan(25));
-      expect(result, lessThan(75));
+    test('uses flag override for EUR', () {
+      final apiData = [
+        {'code': 'EUR', 'name': 'Euro', 'symbol': '\u20AC'},
+      ];
+      final result = buildCurrencyList(apiData);
+      expect(result[0].flag, '\u{1F1EA}\u{1F1FA}');
+    });
+
+    test('falls back to globe for X-currencies', () {
+      final apiData = [
+        {'code': 'XAU', 'name': 'Gold', 'symbol': 'oz t'},
+      ];
+      final result = buildCurrencyList(apiData);
+      expect(result[0].flag, '\u{1F30D}');
+    });
+
+    test('applies decimal digits override', () {
+      final apiData = [
+        {'code': 'JPY', 'name': 'Japanese Yen', 'symbol': '\u00A5'},
+        {'code': 'USD', 'name': 'US Dollar', 'symbol': r'$'},
+      ];
+      final result = buildCurrencyList(apiData);
+      expect(result.firstWhere((c) => c.code == 'JPY').decimalDigits, 0);
+      expect(result.firstWhere((c) => c.code == 'USD').decimalDigits, 2);
+    });
+
+    test('currencyByCode finds currency in result list', () {
+      final apiData = [
+        {'code': 'GBP', 'name': 'British Pound', 'symbol': '\u00A3'},
+        {'code': 'USD', 'name': 'US Dollar', 'symbol': r'$'},
+      ];
+      final result = buildCurrencyList(apiData);
+      expect(currencyByCode('GBP', result)!.name, 'British Pound');
+      expect(currencyByCode('USD', result)!.symbol, r'$');
     });
   });
 }
