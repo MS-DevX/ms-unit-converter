@@ -17,11 +17,11 @@ class AppConstants {
 
   /// AdMob application ID for Android.
   static const String admobAppIdAndroid =
-      'ca-app-pub-8684958562988579~6766583891';
+      'ca-app-pub-8684958562988579~9464291585';
 
   /// AdMob App Open ad unit ID.
   static const String appOpenAdUnitId =
-      'ca-app-pub-8684958562988579/2956999697';
+      'ca-app-pub-8684958562988579/4208361403';
 
   /// In-app purchase product ID for removing ads.
   static const String removeAdsProductId = 'com.msdevx.unitconverter.removeads';

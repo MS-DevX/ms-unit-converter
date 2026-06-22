@@ -212,8 +212,8 @@ If a production release causes crashes or critical bugs:
 
 | Constant | Value |
 |----------|-------|
-| `admobAppIdAndroid` | `ca-app-pub-8684958562988579~6766583891` |
-| `appOpenAdUnitId` | `ca-app-pub-8684958562988579/2956999697` |
+| `admobAppIdAndroid` | `ca-app-pub-8684958562988579~9464291585` |
+| `appOpenAdUnitId` | `ca-app-pub-8684958562988579/4208361403` |
 | `removeAdsProductId` | `com.msdevx.unitconverter.removeads` |
 | `removeAdsPrice` | `\$1.99` |
 

@@ -77,7 +77,7 @@ Nothing is transmitted to a server. No analytics, no crash reporting.
 - **Premium users:** Ad is completely skipped when `isPremium` is `true`
 - **Cooldown:** 4-hour minimum between ad shows, persisted in SharedPreferences
 - **Failure handling:** If ad fails to load, app proceeds silently without ad
-- **AdMob App ID:** `ca-app-pub-8684958562988579~6766583891`
+- **AdMob App ID:** `ca-app-pub-8684958562988579~9464291585`
 - **Test ad unit:** `ca-app-pub-3940256099942544/9257395921`
 
 The Google Mobile Ads SDK may collect device advertising IDs for ad personalisation.
