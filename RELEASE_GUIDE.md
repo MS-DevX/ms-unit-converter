@@ -7,7 +7,7 @@
 | App name | MS Unit Converter |
 | Package ID | `com.msdevx.unitconverter` |
 | Developer | MS DevX |
-| Version | `2.0.0+2` (pubspec.yaml:19) |
+| Version | `2.1.0+3` (pubspec.yaml:19) |
 | Min SDK | 21 (Android 5.0) |
 | Target SDK | 35 (Android 15) |
 | Flutter | Latest stable 3.x |
