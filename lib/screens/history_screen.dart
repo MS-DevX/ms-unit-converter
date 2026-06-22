@@ -250,9 +250,9 @@ class _EmptyStateState extends State<_EmptyState>
           ),
           const SizedBox(height: 10),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 48),
+            padding: const EdgeInsets.symmetric(horizontal: 40),
             child: Text(
-              'Your conversion results will show up here automatically. Start converting to build your history.',
+              'Tap or copy a result in the converter to save it here. Start converting to build your history.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
@@ -287,6 +287,33 @@ class _HistoryCard extends StatelessWidget {
     return '${dt.day}/${dt.month}/${dt.year}';
   }
 
+  /// Maps a category display name to an emoji icon.
+  static String _categoryIcon(String category) {
+    return switch (category) {
+      'Length' => '\u{1F4CF}',
+      'Weight' => '\u{2696}\u{FE0F}',
+      'Temperature' => '\u{1F321}\u{FE0F}',
+      'Area' => '\u{1F4D0}',
+      'Volume' => '\u{1F9EA}',
+      'Speed' => '\u{1F680}',
+      'Data' => '\u{1F4BE}',
+      'Time' => '\u{23F1}\u{FE0F}',
+      'Angle' => '\u{1F4A0}',
+      'Energy' => '\u{26A1}',
+      'Power' => '\u{1F50B}',
+      'Pressure' => '\u{1F4A8}',
+      'Force' => '\u{1F4AA}',
+      'Frequency' => '\u{1F501}',
+      'Fuel Economy' => '\u{26FD}',
+      'Cooking' => '\u{1F373}',
+      'Shoe Size' => '\u{1F460}',
+      'Clothing Size' => '\u{1F455}',
+      'Number Base' => '\u{1F522}',
+      'Typography' => '\u{1F4D6}',
+      _ => '\u{1F504}',
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -306,7 +333,7 @@ class _HistoryCard extends StatelessWidget {
 
     final String conversionLine =
         '${Formatters.formatResult(entry.inputValue)} ${entry.fromUnit}'
-        ' → '
+        ' \u2192 '
         '${Formatters.formatResult(entry.result)} ${entry.toUnit}';
 
     return Padding(
@@ -324,50 +351,58 @@ class _HistoryCard extends StatelessWidget {
             ),
           );
         },
-        child: GestureDetector(
-          onLongPress: onLongPress,
-          child: Container(
-            decoration: BoxDecoration(
-              color: bgColor,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: borderColor, width: 1.5),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      entry.category,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.8,
-                        color: AppColors.primary,
+        child: Semantics(
+          label: '$conversionLine in ${entry.category}',
+          child: GestureDetector(
+            onLongPress: onLongPress,
+            child: Container(
+              decoration: BoxDecoration(
+                color: bgColor,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: borderColor, width: 1.5),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        _categoryIcon(entry.category),
+                        style: const TextStyle(fontSize: 14),
                       ),
-                    ),
-                    const Spacer(),
-                    Text(
-                      _formatTimestamp(entry.timestamp),
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: secondaryText.withValues(alpha: 0.75),
+                      const SizedBox(width: 6),
+                      Text(
+                        entry.category,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.8,
+                          color: AppColors.primary,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  conversionLine,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: primaryText,
+                      const Spacer(),
+                      Text(
+                        _formatTimestamp(entry.timestamp),
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: secondaryText.withValues(alpha: 0.75),
+                        ),
+                      ),
+                    ],
                   ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+                  const SizedBox(height: 6),
+                  Text(
+                    conversionLine,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: primaryText,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
             ),
           ),
         ),

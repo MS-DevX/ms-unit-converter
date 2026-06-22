@@ -120,20 +120,24 @@ class _ConverterConnectorBarState extends State<ConverterConnectorBar>
                   child: child,
                 );
               },
-              child: GestureDetector(
-                onTap: _handleSwap,
-                child: Container(
-                  width: 28,
-                  height: 28,
-                  margin: const EdgeInsets.only(right: 10),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.swap_vert_rounded,
-                    color: Colors.white,
-                    size: 16,
+              child: Semantics(
+                label: 'Swap units',
+                button: true,
+                child: GestureDetector(
+                  onTap: _handleSwap,
+                  child: Container(
+                    width: 28,
+                    height: 28,
+                    margin: const EdgeInsets.only(right: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.swap_vert_rounded,
+                      color: Colors.white,
+                      size: 16,
+                    ),
                   ),
                 ),
               ),

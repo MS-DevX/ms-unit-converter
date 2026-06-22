@@ -306,17 +306,38 @@ class _CompassScreenState extends State<CompassScreen> {
 
                       // ── Status text ─────────────────────────────────
                       Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.only(bottom: 4),
                         child: Text(
                           compassStateLabel(_compassState),
                           style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
                             color: _statusColor(_compassState),
                             letterSpacing: 0.5,
                           ),
                         ),
                       ),
+
+                      // ── Status hint ──────────────────────────────────
+                      if (_compassState == CompassState.sensorsUnavailable ||
+                          _compassState == CompassState.error ||
+                          _compassState == CompassState.calibrationRecommended)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Text(
+                            _compassState == CompassState.sensorsUnavailable
+                                ? 'Your device may not have the required sensors. Try the level mode instead.'
+                                : _compassState == CompassState.error
+                                ? 'An unexpected error occurred. Try retrying the sensors.'
+                                : 'Move your phone in a figure-eight pattern to improve accuracy.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                              height: 1.4,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
 
                       const Spacer(flex: 1),
 
@@ -429,17 +450,23 @@ class _CompassScreenState extends State<CompassScreen> {
     required Widget icon,
     required String label,
   }) {
-    return SizedBox(
-      width: double.infinity,
-      child: OutlinedButton.icon(
-        onPressed: onPressed,
-        icon: icon,
-        label: Text(label),
-        style: OutlinedButton.styleFrom(
-          foregroundColor: const Color(0xFF3B82F6),
-          side: const BorderSide(color: Color(0xFF3B82F6)),
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+    return Semantics(
+      label: label,
+      button: true,
+      child: SizedBox(
+        width: double.infinity,
+        child: OutlinedButton.icon(
+          onPressed: onPressed,
+          icon: icon,
+          label: Text(label),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: const Color(0xFF3B82F6),
+            side: const BorderSide(color: Color(0xFF3B82F6)),
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
         ),
       ),
     );

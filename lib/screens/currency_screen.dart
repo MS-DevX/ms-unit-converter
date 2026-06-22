@@ -11,6 +11,7 @@ import '../core/colors.dart';
 import '../data/currencies_data.dart';
 import '../models/currency_model.dart';
 import '../providers/currency_provider.dart';
+import '../widgets/empty_state_widget.dart';
 
 /// Full-screen currency converter with real-time rates for all currencies.
 class CurrencyScreen extends StatefulWidget {
@@ -206,13 +207,13 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
 
                             // ── Status row ────────────────────────────
                             Padding(
-                              padding: const EdgeInsets.fromLTRB(16, 2, 16, 0),
+                              padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
                               child: Row(
                                 children: [
                                   if (provider.isLoading)
                                     SizedBox(
-                                      width: 10,
-                                      height: 10,
+                                      width: 12,
+                                      height: 12,
                                       child: CircularProgressIndicator(
                                         strokeWidth: 1.5,
                                         color:
@@ -221,34 +222,35 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                                                           .darkTextSecondary
                                                     : AppColors
                                                           .lightTextSecondary)
-                                                .withValues(alpha: 0.5),
+                                                .withValues(alpha: 0.7),
                                       ),
                                     )
                                   else if (provider.isOffline)
                                     Icon(
                                       Icons.wifi_off_rounded,
-                                      size: 10,
+                                      size: 12,
                                       color: AppColors.warning.withValues(
-                                        alpha: 0.6,
+                                        alpha: 0.7,
                                       ),
                                     )
                                   else
                                     Icon(
                                       Icons.check_circle_rounded,
-                                      size: 10,
+                                      size: 12,
                                       color: AppColors.success.withValues(
-                                        alpha: 0.5,
+                                        alpha: 0.6,
                                       ),
                                     ),
-                                  const SizedBox(width: 3),
+                                  const SizedBox(width: 4),
                                   Text(
                                     provider.isLoading
-                                        ? 'Updating...'
+                                        ? 'Updating\u2026'
                                         : provider.isUsingCached
                                         ? 'Using cached rates'
                                         : 'Updated ${_formatLastUpdated(provider.lastUpdated)}',
                                     style: TextStyle(
-                                      fontSize: 10,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
                                       color:
                                           provider.isOffline &&
                                               !provider.isLoading
@@ -260,23 +262,23 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                                                           .darkTextSecondary
                                                     : AppColors
                                                           .lightTextSecondary)
-                                                .withValues(alpha: 0.45),
+                                                .withValues(alpha: 0.6),
                                     ),
                                   ),
                                   if (!provider.isLoading &&
                                       !provider.isOffline &&
                                       provider.baseRateDisplay != '\u2014') ...[
                                     Text(
-                                      '  ·  ${provider.baseRateDisplay}',
+                                      '  \u00b7  ${provider.baseRateDisplay}',
                                       style: TextStyle(
-                                        fontSize: 10,
+                                        fontSize: 12,
                                         color:
                                             (isDark
                                                     ? AppColors
                                                           .darkTextSecondary
                                                     : AppColors
                                                           .lightTextSecondary)
-                                                .withValues(alpha: 0.45),
+                                                .withValues(alpha: 0.6),
                                       ),
                                     ),
                                   ],
@@ -284,11 +286,11 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                                       provider.isOffline &&
                                       provider.baseRateDisplay != '\u2014') ...[
                                     Text(
-                                      '  ·  ${provider.baseRateDisplay}',
+                                      '  \u00b7  ${provider.baseRateDisplay}',
                                       style: TextStyle(
-                                        fontSize: 10,
+                                        fontSize: 12,
                                         color: AppColors.warning.withValues(
-                                          alpha: 0.6,
+                                          alpha: 0.7,
                                         ),
                                       ),
                                     ),
@@ -298,8 +300,8 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                                     Expanded(
                                       child: Text(
                                         provider.error!,
-                                        style: const TextStyle(
-                                          fontSize: 10,
+                                        style: TextStyle(
+                                          fontSize: 12,
                                           color: AppColors.warning,
                                         ),
                                         overflow: TextOverflow.ellipsis,
@@ -312,29 +314,29 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
 
                             // ── Data source label ─────────────────────
                             Padding(
-                              padding: const EdgeInsets.fromLTRB(16, 1, 16, 0),
+                              padding: const EdgeInsets.fromLTRB(16, 2, 16, 0),
                               child: Row(
                                 children: [
                                   Icon(
                                     Icons.link_rounded,
-                                    size: 9,
+                                    size: 10,
                                     color:
                                         (isDark
                                                 ? AppColors.darkTextSecondary
                                                 : AppColors.lightTextSecondary)
-                                            .withValues(alpha: 0.35),
+                                            .withValues(alpha: 0.4),
                                   ),
-                                  const SizedBox(width: 3),
+                                  const SizedBox(width: 4),
                                   Text(
-                                    'Free exchange rates by Frankfurter',
+                                    'Powered by Frankfurter API',
                                     style: TextStyle(
-                                      fontSize: 9,
+                                      fontSize: 11,
                                       color:
                                           (isDark
                                                   ? AppColors.darkTextSecondary
                                                   : AppColors
                                                         .lightTextSecondary)
-                                              .withValues(alpha: 0.35),
+                                              .withValues(alpha: 0.4),
                                     ),
                                   ),
                                 ],
@@ -546,22 +548,23 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                       SliverFillRemaining(
                         hasScrollBody: true,
                         child: results.isEmpty
-                            ? Center(
-                                child: Text(
-                                  provider.isLoading
-                                      ? 'Loading rates...'
-                                      : query.isNotEmpty
-                                      ? 'No currency found'
-                                      : 'Enter an amount to convert',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color:
-                                        (isDark
-                                                ? AppColors.darkTextSecondary
-                                                : AppColors.lightTextSecondary)
-                                            .withValues(alpha: 0.5),
-                                  ),
-                                ),
+                            ? EmptyStateWidget(
+                                icon: provider.isLoading
+                                    ? Icons.hourglass_empty_rounded
+                                    : query.isNotEmpty
+                                    ? Icons.search_off_rounded
+                                    : Icons.currency_exchange_rounded,
+                                message: provider.isLoading
+                                    ? 'Loading rates\u2026'
+                                    : query.isNotEmpty
+                                    ? 'No currency found'
+                                    : 'Enter an amount to convert',
+                                subtitle: provider.isLoading
+                                    ? 'Fetching live exchange rates'
+                                    : query.isNotEmpty
+                                    ? 'Try a different search term'
+                                    : provider.error ??
+                                        'Type an amount above to see conversions',
                               )
                             : _CurrencyResultsList(
                                 results: results,
@@ -702,101 +705,113 @@ class _CurrencyResultsList extends StatelessWidget {
         final row = results[index];
         final isSource = row.currency.code == sourceCode;
 
-        return GestureDetector(
+        return Semantics(
+          label:
+              '${row.currency.code}: ${row.formattedResult} ${row.currency.symbol}',
+          button: true,
           onTap: () => onRowTapped(row),
-          child: Container(
-            height: 48,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            color: isSource
-                ? (isDark
-                      ? AppColors.primary.withValues(alpha: 0.1)
-                      : AppColors.primary.withValues(alpha: 0.06))
-                : Colors.transparent,
-            child: Row(
-              children: [
-                Text(row.currency.flag, style: const TextStyle(fontSize: 18)),
-                const SizedBox(width: 10),
-                SizedBox(
-                  width: 42,
-                  child: Text(
-                    row.currency.code,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: isDark
-                          ? AppColors.darkTextSecondary
-                          : AppColors.lightTextSecondary,
+          child: GestureDetector(
+            onTap: () => onRowTapped(row),
+            child: Container(
+              height: 48,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              color: isSource
+                  ? (isDark
+                        ? AppColors.primary.withValues(alpha: 0.1)
+                        : AppColors.primary.withValues(alpha: 0.06))
+                  : Colors.transparent,
+              child: Row(
+                children: [
+                  Text(row.currency.flag, style: const TextStyle(fontSize: 18)),
+                  const SizedBox(width: 10),
+                  SizedBox(
+                    width: 42,
+                    child: Text(
+                      row.currency.code,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: isDark
+                            ? AppColors.darkTextSecondary
+                            : AppColors.lightTextSecondary,
+                      ),
                     ),
                   ),
-                ),
-                Expanded(
-                  child: Text(
-                    row.currency.name,
+                  Expanded(
+                    child: Text(
+                      row.currency.name,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color:
+                            (isDark
+                                    ? AppColors.darkTextSecondary
+                                    : AppColors.lightTextSecondary)
+                                .withValues(alpha: 0.6),
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    row.formattedResult,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: isSource
+                          ? AppColors.primary
+                          : (isDark
+                                ? AppColors.darkTextPrimary
+                                : AppColors.lightTextPrimary),
+                      height: 1.2,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    row.currency.symbol,
                     style: TextStyle(
                       fontSize: 12,
                       color:
                           (isDark
                                   ? AppColors.darkTextSecondary
                                   : AppColors.lightTextSecondary)
-                              .withValues(alpha: 0.6),
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  row.formattedResult,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: isSource
-                        ? AppColors.primary
-                        : (isDark
-                              ? AppColors.darkTextPrimary
-                              : AppColors.lightTextPrimary),
-                    height: 1.2,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  row.currency.symbol,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color:
-                        (isDark
-                                ? AppColors.darkTextSecondary
-                                : AppColors.lightTextSecondary)
-                            .withValues(alpha: 0.5),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                // ── Share button ──────────────────────────────
-                GestureDetector(
-                  onTap: () =>
-                      onShareTapped(row, inputAmount, sourceCode ?? ''),
-                  child: Container(
-                    width: 28,
-                    height: 28,
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? AppColors.darkTextSecondary.withValues(alpha: 0.15)
-                          : AppColors.lightTextSecondary.withValues(
-                              alpha: 0.12,
-                            ),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(
-                      Icons.share_outlined,
-                      size: 14,
-                      color:
-                          (isDark
-                                  ? AppColors.darkTextSecondary
-                                  : AppColors.lightTextSecondary)
-                              .withValues(alpha: 0.7),
+                              .withValues(alpha: 0.5),
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(width: 8),
+                  // ── Share button ──────────────────────────────
+                  Semantics(
+                    label: 'Share ${row.currency.code}',
+                    button: true,
+                    child: GestureDetector(
+                      onTap: () =>
+                          onShareTapped(row, inputAmount, sourceCode ?? ''),
+                      child: Container(
+                        width: 28,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? AppColors.darkTextSecondary.withValues(
+                                  alpha: 0.15,
+                                )
+                              : AppColors.lightTextSecondary.withValues(
+                                  alpha: 0.12,
+                                ),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(
+                          Icons.share_outlined,
+                          size: 14,
+                          color:
+                              (isDark
+                                      ? AppColors.darkTextSecondary
+                                      : AppColors.lightTextSecondary)
+                                  .withValues(alpha: 0.7),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         );

@@ -573,30 +573,10 @@ class _HomeScreenState extends State<HomeScreen> {
         : <UnitCategory>[];
 
     if (query.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.search_rounded,
-              size: 64,
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? AppColors.darkTextSecondary.withValues(alpha: 0.3)
-                  : AppColors.lightTextSecondary.withValues(alpha: 0.3),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Type a conversion like "10 km to miles"',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? AppColors.darkTextSecondary
-                    : AppColors.lightTextSecondary,
-              ),
-            ),
-          ],
-        ),
+      return EmptyStateWidget(
+        icon: Icons.search_rounded,
+        message: 'Search categories and units',
+        subtitle: 'Type a conversion like "10 km to miles"',
       );
     }
 
