@@ -21,28 +21,27 @@ class AppTheme {
         foregroundColor: AppColors.lightTextPrimary,
       ),
 
-      bottomNavigationBarTheme:
-          const BottomNavigationBarThemeData(
-            selectedItemColor: AppColors.primary,
-            unselectedItemColor: AppColors.lightTextSecondary,
-            backgroundColor: AppColors.lightSurface,
-            elevation: 0,
-            type: BottomNavigationBarType.fixed,
-          ),
+      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+        selectedItemColor: AppColors.primary,
+        unselectedItemColor: AppColors.lightTextSecondary,
+        backgroundColor: AppColors.lightSurface,
+        elevation: 0,
+        type: BottomNavigationBarType.fixed,
+      ),
 
       cardTheme: CardThemeData(
         elevation: 1,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         color: AppColors.lightSurface,
       ),
 
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.lightBackground,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(color: AppColors.borderLight),
@@ -53,8 +52,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide:
-              const BorderSide(color: AppColors.primary, width: 2),
+          borderSide: const BorderSide(color: AppColors.primary, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
@@ -62,24 +60,18 @@ class AppTheme {
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide:
-              const BorderSide(color: AppColors.error, width: 2),
+          borderSide: const BorderSide(color: AppColors.error, width: 2),
         ),
       ),
 
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ButtonStyle(
           shape: WidgetStatePropertyAll(
-            RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           ),
-          minimumSize:
-              const WidgetStatePropertyAll(Size(0, 48)),
-          backgroundColor:
-              WidgetStatePropertyAll(colorScheme.primary),
-          foregroundColor:
-              const WidgetStatePropertyAll(Colors.white),
+          minimumSize: const WidgetStatePropertyAll(Size(0, 48)),
+          backgroundColor: WidgetStatePropertyAll(colorScheme.primary),
+          foregroundColor: const WidgetStatePropertyAll(Colors.white),
         ),
       ),
 
@@ -110,28 +102,27 @@ class AppTheme {
         foregroundColor: AppColors.darkTextPrimary,
       ),
 
-      bottomNavigationBarTheme:
-          const BottomNavigationBarThemeData(
-            selectedItemColor: AppColors.primary,
-            unselectedItemColor: AppColors.darkTextSecondary,
-            backgroundColor: AppColors.darkSurface,
-            elevation: 0,
-            type: BottomNavigationBarType.fixed,
-          ),
+      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+        selectedItemColor: AppColors.primary,
+        unselectedItemColor: AppColors.darkTextSecondary,
+        backgroundColor: AppColors.darkSurface,
+        elevation: 0,
+        type: BottomNavigationBarType.fixed,
+      ),
 
       cardTheme: CardThemeData(
         elevation: 1,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         color: AppColors.darkSurface,
       ),
 
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.darkSurface,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(color: AppColors.borderDark),
@@ -142,8 +133,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide:
-              const BorderSide(color: AppColors.primary, width: 2),
+          borderSide: const BorderSide(color: AppColors.primary, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
@@ -151,24 +141,18 @@ class AppTheme {
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide:
-              const BorderSide(color: AppColors.error, width: 2),
+          borderSide: const BorderSide(color: AppColors.error, width: 2),
         ),
       ),
 
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ButtonStyle(
           shape: WidgetStatePropertyAll(
-            RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           ),
-          minimumSize:
-              const WidgetStatePropertyAll(Size(0, 48)),
-          backgroundColor:
-              WidgetStatePropertyAll(colorScheme.primary),
-          foregroundColor:
-              const WidgetStatePropertyAll(Colors.white),
+          minimumSize: const WidgetStatePropertyAll(Size(0, 48)),
+          backgroundColor: WidgetStatePropertyAll(colorScheme.primary),
+          foregroundColor: const WidgetStatePropertyAll(Colors.white),
         ),
       ),
 

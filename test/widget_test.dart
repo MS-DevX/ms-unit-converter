@@ -11,8 +11,9 @@ import 'package:unit_converter/screens/converter_screen.dart';
 /// Smoke test: the converter screen mounts without crashing and the
 /// core UI elements render correctly.
 void main() {
-  testWidgets('ConverterScreen smoke test — mounts without crash',
-      (WidgetTester tester) async {
+  testWidgets('ConverterScreen smoke test — mounts without crash', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(
       MultiProvider(
         providers: [

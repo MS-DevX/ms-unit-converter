@@ -23,14 +23,18 @@ class UnitDropdown extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final Color bgColor =
-        isDark ? AppColors.darkBackground : AppColors.lightBackground;
-    final Color borderColor =
-        isDark ? AppColors.borderDark : AppColors.borderLight;
-    final Color labelColor =
-        isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
-    final Color textColor =
-        isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary;
+    final Color bgColor = isDark
+        ? AppColors.darkBackground
+        : AppColors.lightBackground;
+    final Color borderColor = isDark
+        ? AppColors.borderDark
+        : AppColors.borderLight;
+    final Color labelColor = isDark
+        ? AppColors.darkTextSecondary
+        : AppColors.lightTextSecondary;
+    final Color textColor = isDark
+        ? AppColors.darkTextPrimary
+        : AppColors.lightTextPrimary;
     final Color iconColor = AppColors.primary;
 
     return Column(

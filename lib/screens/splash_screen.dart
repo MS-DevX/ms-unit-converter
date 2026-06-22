@@ -72,17 +72,20 @@ class _SplashScreenState extends State<SplashScreen> {
     }
 
     // Try to show the App Open Ad before navigating.
-    AdmobService.instance.showAdIfEligible(isPremium).then((shown) {
-      if (mounted) _navigateToApp();
-    }).catchError((_) {
-      if (mounted) _navigateToApp();
-    });
+    AdmobService.instance
+        .showAdIfEligible(isPremium)
+        .then((shown) {
+          if (mounted) _navigateToApp();
+        })
+        .catchError((_) {
+          if (mounted) _navigateToApp();
+        });
   }
 
   void _navigateToApp() {
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const MainShell()),
-    );
+    Navigator.of(
+      context,
+    ).pushReplacement(MaterialPageRoute(builder: (_) => const MainShell()));
   }
 
   @override
@@ -101,11 +104,7 @@ class _SplashScreenState extends State<SplashScreen> {
             // App icon
             ClipRRect(
               borderRadius: BorderRadius.circular(20),
-              child: Image.asset(
-                'assets/icon.png',
-                width: 80,
-                height: 80,
-              ),
+              child: Image.asset('assets/icon.png', width: 80, height: 80),
             ),
             SizedBox(height: 20),
             Text(

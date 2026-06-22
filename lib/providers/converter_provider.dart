@@ -23,9 +23,9 @@ class ConverterProvider extends ChangeNotifier {
   ConversionResult? _result;
 
   // ── Category-specific extras ─────────────────────────────────────────
-  String _rawInput = '';           // raw text (Number Base accepts hex)
-  double _baseFontSize = 16.0;     // em/rem base (Typography)
-  bool _isMenSize = true;          // men/women toggle (Clothing)
+  String _rawInput = ''; // raw text (Number Base accepts hex)
+  double _baseFontSize = 16.0; // em/rem base (Typography)
+  bool _isMenSize = true; // men/women toggle (Clothing)
 
   // ─── Getters ──────────────────────────────────────────────────────────
 
@@ -112,7 +112,11 @@ class ConverterProvider extends ChangeNotifier {
   void _initUnitsForCategory(UnitCategory category) {
     final units = getUnits(category);
     _fromUnit = units.isNotEmpty ? units[0] : null;
-    _toUnit = units.length > 1 ? units[1] : units.isNotEmpty ? units[0] : null;
+    _toUnit = units.length > 1
+        ? units[1]
+        : units.isNotEmpty
+        ? units[0]
+        : null;
   }
 
   void _recalculate() {
@@ -155,7 +159,11 @@ class ConverterProvider extends ChangeNotifier {
   }
 
   /// Handles Number Base conversion with radix-based integer parsing.
-  ConversionResult _convertNumberBase(String input, UnitModel from, UnitModel to) {
+  ConversionResult _convertNumberBase(
+    String input,
+    UnitModel from,
+    UnitModel to,
+  ) {
     final int? fromRadix = _radixForUnit(from.name);
     final int? toRadix = _radixForUnit(to.name);
     if (fromRadix == null || toRadix == null) {

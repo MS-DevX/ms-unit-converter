@@ -129,7 +129,7 @@ extension UnitCategoryExtension on UnitCategory {
   /// Each entry provides a [value], the [fromUnitName], and the
   /// [toUnitName] so the UI can build a tappable shortcut.
   List<({double value, String fromUnitName, String toUnitName})>
-      get commonConversions {
+  get commonConversions {
     switch (this) {
       case UnitCategory.length:
         return [
@@ -163,8 +163,16 @@ extension UnitCategoryExtension on UnitCategory {
         ];
       case UnitCategory.speed:
         return [
-          (value: 1, fromUnitName: 'Kilometers per Hour', toUnitName: 'Miles per Hour'),
-          (value: 1, fromUnitName: 'Meters per Second', toUnitName: 'Foot per Second'),
+          (
+            value: 1,
+            fromUnitName: 'Kilometers per Hour',
+            toUnitName: 'Miles per Hour',
+          ),
+          (
+            value: 1,
+            fromUnitName: 'Meters per Second',
+            toUnitName: 'Foot per Second',
+          ),
           (value: 1, fromUnitName: 'Knot', toUnitName: 'Kilometers per Hour'),
         ];
       case UnitCategory.data:
@@ -217,9 +225,17 @@ extension UnitCategoryExtension on UnitCategory {
         ];
       case UnitCategory.fuelEconomy:
         return [
-          (value: 1, fromUnitName: 'Kilometers per Liter', toUnitName: 'MPG (US)'),
+          (
+            value: 1,
+            fromUnitName: 'Kilometers per Liter',
+            toUnitName: 'MPG (US)',
+          ),
           (value: 10, fromUnitName: 'Liters per 100km', toUnitName: 'MPG (US)'),
-          (value: 1, fromUnitName: 'MPG (US)', toUnitName: 'Kilometers per Liter'),
+          (
+            value: 1,
+            fromUnitName: 'MPG (US)',
+            toUnitName: 'Kilometers per Liter',
+          ),
         ];
       case UnitCategory.cooking:
         return [
@@ -299,6 +315,102 @@ extension UnitCategoryExtension on UnitCategory {
         return '\u{1F4D6}';
     }
   }
+
+  /// A user-friendly explanation of how conversions in this category
+  /// work, shown on the converter screen.
+  String get formulaExplanation {
+    switch (this) {
+      case UnitCategory.length:
+        return 'Multiply by the source unit\'s meter factor, '
+            'then divide by the target unit\'s meter factor. '
+            'Example: 1 km = 1000 m.';
+      case UnitCategory.weight:
+        return 'Multiply by the source unit\'s kilogram factor, '
+            'then divide by the target unit\'s kilogram factor. '
+            'Example: 1 kg \u2248 2.205 lb.';
+      case UnitCategory.temperature:
+        return 'Uses special formulas, not a simple multiplier.\n'
+            '\u00B0F = (\u00B0C \u00d7 9/5) + 32\n'
+            '\u00B0C = (\u00B0F \u2212 32) \u00d7 5/9\n'
+            'K = \u00B0C + 273.15';
+      case UnitCategory.area:
+        return 'Multiply by the source unit\'s square-meter factor, '
+            'then divide by the target unit\'s square-meter factor. '
+            'Example: 1 m\u00B2 \u2248 10.764 ft\u00B2.';
+      case UnitCategory.volume:
+        return 'Multiply by the source unit\'s cubic-meter factor, '
+            'then divide by the target unit\'s cubic-meter factor. '
+            'Example: 1 L \u2248 0.264 gal (US).';
+      case UnitCategory.speed:
+        return 'Multiply by the source unit\'s m/s factor, '
+            'then divide by the target unit\'s m/s factor. '
+            'Example: 1 km/h \u2248 0.278 m/s.';
+      case UnitCategory.data:
+        return 'Multiply by the source unit\'s byte factor, '
+            'then divide by the target unit\'s byte factor.\n'
+            '1 byte = 8 bits. Units use powers of 1024 (binary).';
+      case UnitCategory.time:
+        return 'Multiply by the source unit\'s second factor, '
+            'then divide by the target unit\'s second factor. '
+            'Example: 1 hour = 3600 seconds.';
+      case UnitCategory.angle:
+        return 'Multiply by the source unit\'s radian factor, '
+            'then divide by the target unit\'s radian factor.\n'
+            '\u00B0 \u00d7 \u03C0/180 = rad.';
+      case UnitCategory.energy:
+        return 'Multiply by the source unit\'s joule factor, '
+            'then divide by the target unit\'s joule factor. '
+            'Example: 1 kWh = 3,600,000 J.';
+      case UnitCategory.power:
+        return 'Multiply by the source unit\'s watt factor, '
+            'then divide by the target unit\'s watt factor. '
+            'Example: 1 kW \u2248 1.341 hp.';
+      case UnitCategory.pressure:
+        return 'Multiply by the source unit\'s pascal factor, '
+            'then divide by the target unit\'s pascal factor. '
+            'Example: 1 bar \u2248 14.504 psi.';
+      case UnitCategory.force:
+        return 'Multiply by the source unit\'s newton factor, '
+            'then divide by the target unit\'s newton factor. '
+            'Example: 1 N \u2248 0.2248 lbf.';
+      case UnitCategory.frequency:
+        return 'Multiply by the source unit\'s hertz factor, '
+            'then divide by the target unit\'s hertz factor. '
+            'Example: 1 kHz = 1000 Hz.';
+      case UnitCategory.fuelEconomy:
+        return 'Most conversions use a simple multiplier, but '
+            'L/100km is inversely related to km/L and MPG.\n'
+            'A higher L/100km value means worse fuel efficiency. '
+            'Special formulas handle this automatically.';
+      case UnitCategory.cooking:
+        return 'Volume and weight units are grouped separately.\n'
+            'Conversions within each group work normally, but '
+            'cross-group conversions (e.g. cups to grams) are blocked '
+            'because ingredient density varies.';
+      case UnitCategory.shoeSize:
+        return 'Sizes are approximate and based on standard '
+            'conversion formulas using foot length (cm) as '
+            'the intermediate value.\n'
+            'Actual fit varies by brand and style.';
+      case UnitCategory.clothingSize:
+        return 'Sizes are approximate \u2014 brand standards vary '
+            'widely. US numeric size is used as the intermediate '
+            'value.\n'
+            'Men\'s and women\'s sizing uses different conversion formulas.';
+      case UnitCategory.numberBase:
+        return 'Enter a value in the source base to see it '
+            'converted to other bases.\n'
+            'Decimal = base 10, Binary = base 2, '
+            'Octal = base 8, Hexadecimal = base 16.';
+      case UnitCategory.typography:
+        return 'px = the base screen unit.\n'
+            'pt = 1/72 inch, em = relative to parent font, '
+            'rem = relative to root font.\n'
+            'Percent = % of the base font size.\n'
+            'Adjust the base font size above if needed '
+            '(default: 16px).';
+    }
+  }
 }
 
 /// Complete dataset of all convertible units organized by category.
@@ -341,12 +453,7 @@ const Map<UnitCategory, List<UnitModel>> unitsData = {
       toBase: 1,
       isSpecialCase: true,
     ),
-    UnitModel(
-      name: 'Kelvin',
-      symbol: 'K',
-      toBase: 1,
-      isSpecialCase: true,
-    ),
+    UnitModel(name: 'Kelvin', symbol: 'K', toBase: 1, isSpecialCase: true),
   ],
 
   // ── Area (base: square meter) ─────────────────────────────────
@@ -412,16 +519,8 @@ const Map<UnitCategory, List<UnitModel>> unitsData = {
     UnitModel(name: 'Radian', symbol: 'rad', toBase: 1),
     UnitModel(name: 'Degree', symbol: '\u00B0', toBase: math.pi / 180),
     UnitModel(name: 'Gradian', symbol: 'grad', toBase: math.pi / 200),
-    UnitModel(
-      name: 'Arcminute',
-      symbol: '\'',
-      toBase: math.pi / (180 * 60),
-    ),
-    UnitModel(
-      name: 'Arcsecond',
-      symbol: '"',
-      toBase: math.pi / (180 * 3600),
-    ),
+    UnitModel(name: 'Arcminute', symbol: '\'', toBase: math.pi / (180 * 60)),
+    UnitModel(name: 'Arcsecond', symbol: '"', toBase: math.pi / (180 * 3600)),
   ],
 
   // ── Energy (base: joule) ──────────────────────────────────────
@@ -473,35 +572,33 @@ const Map<UnitCategory, List<UnitModel>> unitsData = {
 
   // ── Fuel Economy (base: km/L, special case like temp) ─────────
   UnitCategory.fuelEconomy: [
-    UnitModel(
-      name: 'Kilometers per Liter',
-      symbol: 'km/L',
-      toBase: 1,
-    ),
+    UnitModel(name: 'Kilometers per Liter', symbol: 'km/L', toBase: 1),
     UnitModel(
       name: 'Liters per 100km',
       symbol: 'L/100km',
       toBase: 1,
       isSpecialCase: true,
     ),
-    UnitModel(
-      name: 'MPG (US)',
-      symbol: 'mpg (US)',
-      toBase: 0.425144,
-    ),
-    UnitModel(
-      name: 'MPG (UK)',
-      symbol: 'mpg (UK)',
-      toBase: 0.354006,
-    ),
+    UnitModel(name: 'MPG (US)', symbol: 'mpg (US)', toBase: 0.425144),
+    UnitModel(name: 'MPG (UK)', symbol: 'mpg (UK)', toBase: 0.354006),
   ],
 
   // ── Cooking (volume + weight groups, no cross-conversion) ─────
   UnitCategory.cooking: [
     UnitModel(name: 'Cup (US)', symbol: 'cup', toBase: 237, group: 'volume'),
-    UnitModel(name: 'Tablespoon', symbol: 'tbsp', toBase: 14.787, group: 'volume'),
+    UnitModel(
+      name: 'Tablespoon',
+      symbol: 'tbsp',
+      toBase: 14.787,
+      group: 'volume',
+    ),
     UnitModel(name: 'Teaspoon', symbol: 'tsp', toBase: 4.929, group: 'volume'),
-    UnitModel(name: 'Fluid Ounce', symbol: 'fl oz', toBase: 29.574, group: 'volume'),
+    UnitModel(
+      name: 'Fluid Ounce',
+      symbol: 'fl oz',
+      toBase: 29.574,
+      group: 'volume',
+    ),
     UnitModel(name: 'Milliliter', symbol: 'mL', toBase: 1, group: 'volume'),
     UnitModel(name: 'Gram', symbol: 'g', toBase: 1, group: 'weight'),
     UnitModel(name: 'Kilogram', symbol: 'kg', toBase: 1000, group: 'weight'),
@@ -514,7 +611,12 @@ const Map<UnitCategory, List<UnitModel>> unitsData = {
     UnitModel(name: 'EU', symbol: 'EU', toBase: 1, isSpecialCase: true),
     UnitModel(name: 'UK', symbol: 'UK', toBase: 1, isSpecialCase: true),
     UnitModel(name: 'US Men', symbol: 'US (M)', toBase: 1, isSpecialCase: true),
-    UnitModel(name: 'US Women', symbol: 'US (W)', toBase: 1, isSpecialCase: true),
+    UnitModel(
+      name: 'US Women',
+      symbol: 'US (W)',
+      toBase: 1,
+      isSpecialCase: true,
+    ),
     UnitModel(name: 'CM', symbol: 'cm', toBase: 1, isSpecialCase: true),
   ],
 
@@ -531,7 +633,12 @@ const Map<UnitCategory, List<UnitModel>> unitsData = {
     UnitModel(name: 'Binary', symbol: 'bin', toBase: 1, isSpecialCase: true),
     UnitModel(name: 'Octal', symbol: 'oct', toBase: 1, isSpecialCase: true),
     UnitModel(name: 'Decimal', symbol: 'dec', toBase: 1, isSpecialCase: true),
-    UnitModel(name: 'Hexadecimal', symbol: 'hex', toBase: 1, isSpecialCase: true),
+    UnitModel(
+      name: 'Hexadecimal',
+      symbol: 'hex',
+      toBase: 1,
+      isSpecialCase: true,
+    ),
   ],
 
   // ── Typography (base: px) ─────────────────────────────────────

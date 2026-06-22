@@ -82,20 +82,20 @@ class _CategoryChip extends StatelessWidget {
     final Color bgColor = isSelected
         ? AppColors.primary
         : isDark
-            ? AppColors.darkSurface
-            : AppColors.lightBackground;
+        ? AppColors.darkSurface
+        : AppColors.lightBackground;
 
     final Color borderColor = isSelected
         ? AppColors.primary
         : isDark
-            ? AppColors.borderDark
-            : AppColors.borderLight;
+        ? AppColors.borderDark
+        : AppColors.borderLight;
 
     final Color textColor = isSelected
         ? Colors.white
         : isDark
-            ? AppColors.darkTextSecondary
-            : AppColors.lightTextSecondary;
+        ? AppColors.darkTextSecondary
+        : AppColors.lightTextSecondary;
 
     void handleTap() {
       HapticFeedback.selectionClick();
@@ -104,46 +104,47 @@ class _CategoryChip extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.only(right: 8),
-      child: GestureDetector(
-        onTap: handleTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeInOut,
-          decoration: BoxDecoration(
-            color: bgColor,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: borderColor, width: 1.5),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: AppColors.primary.withValues(alpha: 0.30),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ]
-                : const [],
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                category.icon,
-                style: const TextStyle(fontSize: 14),
-              ),
-              const SizedBox(width: 6),
-              AnimatedDefaultTextStyle(
-                duration: const Duration(milliseconds: 200),
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight:
-                      isSelected ? FontWeight.w600 : FontWeight.w400,
-                  color: textColor,
-                  letterSpacing: 0.1,
+      child: Semantics(
+        label: '${category.displayName} category',
+        button: true,
+        selected: isSelected,
+        child: GestureDetector(
+          onTap: handleTap,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeInOut,
+            decoration: BoxDecoration(
+              color: bgColor,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: borderColor, width: 1.5),
+              boxShadow: isSelected
+                  ? [
+                      BoxShadow(
+                        color: AppColors.primary.withValues(alpha: 0.30),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ]
+                  : const [],
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(category.icon, style: const TextStyle(fontSize: 14)),
+                const SizedBox(width: 6),
+                AnimatedDefaultTextStyle(
+                  duration: const Duration(milliseconds: 200),
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                    color: textColor,
+                    letterSpacing: 0.1,
+                  ),
+                  child: Text(category.displayName),
                 ),
-                child: Text(category.displayName),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

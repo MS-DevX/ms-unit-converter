@@ -7,11 +7,7 @@ class UnitSearchDialog extends StatefulWidget {
   final List<UnitModel> units;
   final UnitModel? selectedUnit;
 
-  const UnitSearchDialog({
-    super.key,
-    required this.units,
-    this.selectedUnit,
-  });
+  const UnitSearchDialog({super.key, required this.units, this.selectedUnit});
 
   @override
   State<UnitSearchDialog> createState() => _UnitSearchDialogState();
@@ -45,12 +41,15 @@ class _UnitSearchDialogState extends State<UnitSearchDialog> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final Color bgColor =
-        isDark ? AppColors.darkBackground : AppColors.lightBackground;
-    final Color surfaceColor =
-        isDark ? AppColors.darkSurface : AppColors.lightSurface;
-    final Color textColor =
-        isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary;
+    final Color bgColor = isDark
+        ? AppColors.darkBackground
+        : AppColors.lightBackground;
+    final Color surfaceColor = isDark
+        ? AppColors.darkSurface
+        : AppColors.lightSurface;
+    final Color textColor = isDark
+        ? AppColors.darkTextPrimary
+        : AppColors.lightTextPrimary;
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -59,10 +58,7 @@ class _UnitSearchDialogState extends State<UnitSearchDialog> {
         elevation: 0,
         scrolledUnderElevation: 0.5,
         leading: IconButton(
-          icon: Icon(
-            Icons.close_rounded,
-            color: textColor,
-          ),
+          icon: Icon(Icons.close_rounded, color: textColor),
           onPressed: () => Navigator.pop(context),
         ),
         title: SizedBox(
@@ -83,10 +79,7 @@ class _UnitSearchDialogState extends State<UnitSearchDialog> {
               contentPadding: EdgeInsets.zero,
               isDense: true,
             ),
-            style: TextStyle(
-              fontSize: 17,
-              color: textColor,
-            ),
+            style: TextStyle(fontSize: 17, color: textColor),
             onChanged: (v) => setState(() => _query = v),
           ),
         ),
@@ -113,8 +106,8 @@ class _UnitSearchDialogState extends State<UnitSearchDialog> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 color: isSelected
                     ? (isDark
-                        ? AppColors.primary.withValues(alpha: 0.12)
-                        : AppColors.primary.withValues(alpha: 0.08))
+                          ? AppColors.primary.withValues(alpha: 0.12)
+                          : AppColors.primary.withValues(alpha: 0.08))
                     : Colors.transparent,
                 child: Row(
                   children: [
@@ -123,8 +116,9 @@ class _UnitSearchDialogState extends State<UnitSearchDialog> {
                         unit.name,
                         style: TextStyle(
                           fontSize: 15,
-                          fontWeight:
-                              isSelected ? FontWeight.w600 : FontWeight.w400,
+                          fontWeight: isSelected
+                              ? FontWeight.w600
+                              : FontWeight.w400,
                           color: textColor,
                         ),
                         maxLines: 1,

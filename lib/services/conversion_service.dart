@@ -51,6 +51,8 @@ class ConversionService {
         result = _convertShoeSize(value, from, to);
       case UnitCategory.clothingSize:
         result = _convertClothingSize(value, from, to);
+      case UnitCategory.numberBase:
+        result = _convertNumberBase(value, from, to);
       case UnitCategory.typography:
         result = _convertTypography(value, from, to);
       default:
@@ -158,11 +160,7 @@ class ConversionService {
 
   /// Converts a cooking measurement. Cross-group (volume → weight)
   /// conversions return [double.nan] with an error message.
-  static double _convertCooking(
-    double value,
-    UnitModel from,
-    UnitModel to,
-  ) {
+  static double _convertCooking(double value, UnitModel from, UnitModel to) {
     if (from.group != to.group) {
       return double.nan;
     }
@@ -180,11 +178,7 @@ class ConversionService {
 
   /// Converts a shoe size using CM as intermediate reference.
   /// Results are rounded to the nearest 0.5 increment.
-  static double _convertShoeSize(
-    double value,
-    UnitModel from,
-    UnitModel to,
-  ) {
+  static double _convertShoeSize(double value, UnitModel from, UnitModel to) {
     final double cm = _shoeToCm(value, from.name);
     if (cm.isNaN) return double.nan;
     final double result = _cmToShoe(cm, to.name);
@@ -270,15 +264,42 @@ class ConversionService {
     }
   }
 
+  // ── Number Base (radix conversion via string) ─────────────────
+
+  /// Converts a number between radices.
+  ///
+  /// Interprets [value] as an integer string in [from]'s radix,
+  /// then renders that integer as a string in [to]'s radix.
+  /// Returns [double.nan] if [value] contains digits invalid for [from]'s radix.
+  static double _convertNumberBase(double value, UnitModel from, UnitModel to) {
+    final inputStr = value.toInt().toString();
+    final fromRadix = _radixFor(from.name);
+    final toRadix = _radixFor(to.name);
+    final int intValue;
+    try {
+      intValue = int.parse(inputStr, radix: fromRadix);
+    } on FormatException {
+      return double.nan;
+    }
+    final resultStr = intValue.toRadixString(toRadix);
+    return double.tryParse(resultStr) ?? intValue.toDouble();
+  }
+
+  static int _radixFor(String unitName) {
+    return switch (unitName) {
+      'Binary' => 2,
+      'Octal' => 8,
+      'Decimal' => 10,
+      'Hexadecimal' => 16,
+      _ => 10,
+    };
+  }
+
   // ── Typography (px base, em/rem via baseFontSize) ────────────
 
   /// Converts a typographic value using px as the base.
   /// Uses 16px default base font when called without extra state.
-  static double _convertTypography(
-    double value,
-    UnitModel from,
-    UnitModel to,
-  ) {
+  static double _convertTypography(double value, UnitModel from, UnitModel to) {
     final double px = _typoToPx(value, from, 16.0);
     if (px.isNaN) return double.nan;
     return _pxToTypo(px, to, 16.0);

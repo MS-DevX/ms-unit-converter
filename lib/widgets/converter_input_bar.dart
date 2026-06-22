@@ -29,10 +29,7 @@ class ConverterInputBar extends StatelessWidget {
     final selected = await showDialog<UnitModel>(
       context: context,
       useSafeArea: false,
-      builder: (_) => UnitSearchDialog(
-        units: units,
-        selectedUnit: sourceUnit,
-      ),
+      builder: (_) => UnitSearchDialog(units: units, selectedUnit: sourceUnit),
     );
     if (selected != null && context.mounted) {
       onUnitChanged(selected);
@@ -44,8 +41,9 @@ class ConverterInputBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final hasInput = controller.text.isNotEmpty;
-    final Color borderColor =
-        isDark ? AppColors.inputBorderDark : AppColors.inputBorderLight;
+    final Color borderColor = isDark
+        ? AppColors.inputBorderDark
+        : AppColors.inputBorderLight;
     final bgColor = isDark ? AppColors.darkSurface : AppColors.lightSurface;
 
     return Row(
@@ -62,7 +60,8 @@ class ConverterInputBar extends StatelessWidget {
             child: TextField(
               controller: controller,
               focusNode: focusNode,
-              keyboardType: keyboardType ??
+              keyboardType:
+                  keyboardType ??
                   const TextInputType.numberWithOptions(
                     decimal: true,
                     signed: true,
@@ -83,14 +82,17 @@ class ConverterInputBar extends StatelessWidget {
                 hintStyle: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.w300,
-                  color: (isDark
-                          ? AppColors.darkTextSecondary
-                          : AppColors.lightTextSecondary)
-                      .withValues(alpha: 0.35),
+                  color:
+                      (isDark
+                              ? AppColors.darkTextSecondary
+                              : AppColors.lightTextSecondary)
+                          .withValues(alpha: 0.35),
                 ),
                 border: InputBorder.none,
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
                 isDense: true,
                 suffixIcon: hasInput
                     ? GestureDetector(
@@ -124,32 +126,36 @@ class ConverterInputBar extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: borderColor, width: 1),
             ),
-            child: GestureDetector(
-              onTap: () => _openUnitSearch(context),
-              behavior: HitTestBehavior.opaque,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        sourceUnit?.symbol ?? '\u2014',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.primary,
-                          height: 1.2,
+            child: Semantics(
+              label: 'Select unit, currently ${sourceUnit?.name ?? 'none'}',
+              button: true,
+              child: GestureDetector(
+                onTap: () => _openUnitSearch(context),
+                behavior: HitTestBehavior.opaque,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          sourceUnit?.symbol ?? '\u2014',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primary,
+                            height: 1.2,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    Icon(
-                      Icons.keyboard_arrow_down_rounded,
-                      color: AppColors.primary,
-                      size: 20,
-                    ),
-                  ],
+                      Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        color: AppColors.primary,
+                        size: 20,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

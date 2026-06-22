@@ -80,7 +80,9 @@ class IapService {
       }
 
       final ProductDetails productDetails = response.productDetails.first;
-      final PurchaseParam purchaseParam = PurchaseParam(productDetails: productDetails);
+      final PurchaseParam purchaseParam = PurchaseParam(
+        productDetails: productDetails,
+      );
       await iap.buyNonConsumable(purchaseParam: purchaseParam);
     } catch (_) {
       // Degrade gracefully on billing errors
@@ -123,7 +125,9 @@ class IapService {
   }
 
   /// Internal handler for the purchase stream updates.
-  Future<void> _handlePurchaseUpdates(List<PurchaseDetails> purchaseDetailsList) async {
+  Future<void> _handlePurchaseUpdates(
+    List<PurchaseDetails> purchaseDetailsList,
+  ) async {
     final iap = _iap;
     if (iap == null) return;
     for (final purchaseDetails in purchaseDetailsList) {
@@ -133,7 +137,7 @@ class IapService {
         if (purchaseDetails.status == PurchaseStatus.error) {
           // Handle error safely without crashing
         } else if (purchaseDetails.status == PurchaseStatus.purchased ||
-                   purchaseDetails.status == PurchaseStatus.restored) {
+            purchaseDetails.status == PurchaseStatus.restored) {
           final bool valid = _verifyPurchase(purchaseDetails);
           if (valid) {
             final prefs = await SharedPreferences.getInstance();

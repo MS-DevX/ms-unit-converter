@@ -1,6 +1,6 @@
 /// Service for fetching, caching, and applying currency exchange rates.
 ///
-/// Rates are sourced from [Frankfurter.app](https://www.frankfurter.app) (free,
+/// Rates are sourced from [Frankfurter](https://www.frankfurter.dev) (free,
 /// no API key required). The service caches the latest rates in
 /// [SharedPreferences] for offline use and stores the last-fetch timestamp.
 ///
@@ -24,34 +24,42 @@ const String _cacheKeyTimestamp = 'currency_rates_timestamp';
 class CurrencyService {
   CurrencyService._();
 
-  static const String _apiBase = 'https://api.frankfurter.app';
+  /// Frankfurter v2 API base URL — returns all active currencies as an array.
+  static const String _apiBase = 'https://api.frankfurter.dev/v2';
+
+  /// Connection timeout for HTTP requests.
+  static const Duration _connectionTimeout = Duration(seconds: 10);
+
+  /// Total response timeout for HTTP requests.
+  static const Duration _responseTimeout = Duration(seconds: 15);
 
   /// Fetches the latest rates relative to [base] currency (default USD).
   ///
   /// Returns a `Map<String, double>` of currency code → rate relative to
   /// [base]. Throws on network failure or non-200 response.
   static Future<Map<String, double>> fetchRates({String base = 'USD'}) async {
-    final url = Uri.parse('$_apiBase/latest?from=$base');
+    final url = Uri.parse('$_apiBase/rates?base=$base');
     final client = HttpClient();
+    client.connectionTimeout = _connectionTimeout;
     try {
       final request = await client.getUrl(url);
       request.headers.set('Accept', 'application/json');
-      final response = await request.close();
+      final response = await request.close().timeout(_responseTimeout);
 
       if (response.statusCode != 200) {
-        throw HttpException(
-          'Frankfurter returned ${response.statusCode}',
-        );
+        throw HttpException('Frankfurter returned ${response.statusCode}');
       }
 
       final body = await response.transform(utf8.decoder).join();
-      final data = jsonDecode(body) as Map<String, dynamic>;
-      final ratesRaw = data['rates'] as Map<String, dynamic>;
+      final data = jsonDecode(body) as List<dynamic>;
 
       final rates = <String, double>{};
       rates[base] = 1.0;
-      for (final entry in ratesRaw.entries) {
-        rates[entry.key] = (entry.value as num).toDouble();
+      for (final entry in data) {
+        final item = entry as Map<String, dynamic>;
+        final quote = item['quote'] as String;
+        final rate = (item['rate'] as num).toDouble();
+        rates[quote] = rate;
       }
       return rates;
     } finally {

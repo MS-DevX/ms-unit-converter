@@ -1,7 +1,7 @@
 /// UI-state provider for the Currency converter tab.
 ///
 /// Manages the source currency, input value, exchange rates, and computes
-/// results for all 30 currencies in a single list view.
+/// results for all currencies in a single list view.
 library;
 
 import 'dart:async';
@@ -43,7 +43,7 @@ class CurrencyResultRow {
 class CurrencyProvider extends ChangeNotifier {
   // ─── Currency lists ────────────────────────────────────────────────
 
-  /// All supported currencies (immutable, ~30 entries).
+  /// All supported currencies (immutable, 53 entries).
   List<CurrencyModel> get currencies => allCurrencies;
 
   // ─── Mutable state ─────────────────────────────────────────────────
@@ -53,6 +53,8 @@ class CurrencyProvider extends ChangeNotifier {
   bool _isLoading = true;
   String? _error;
   DateTime? _lastUpdated;
+  bool _isOffline = false;
+  bool _isUsingCached = false;
 
   // Internal rates map: code → rate relative to USD.
   Map<String, double> _rates = {};
@@ -64,6 +66,8 @@ class CurrencyProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
   DateTime? get lastUpdated => _lastUpdated;
+  bool get isOffline => _isOffline;
+  bool get isUsingCached => _isUsingCached;
 
   /// True when the user has entered a valid numeric input.
   bool get hasValidInput {
@@ -91,12 +95,14 @@ class CurrencyProvider extends ChangeNotifier {
   Future<void> _init() async {
     final cached = await CurrencyService.loadCachedRates();
     // Only use cached rates if they cover every currency in [allCurrencies].
-    final bool cachedIsComplete = cached != null &&
+    final bool cachedIsComplete =
+        cached != null &&
         allCurrencies.every((c) => cached.containsKey(c.code));
     if (cachedIsComplete) {
       _rates = cached;
       _lastUpdated = await CurrencyService.loadLastUpdated();
       _isLoading = false;
+      _isUsingCached = true;
       notifyListeners();
     }
 
@@ -117,7 +123,7 @@ class CurrencyProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Fetches live rates from Frankfurter.app.
+  /// Fetches live rates from Frankfurter.
   Future<void> refreshRates() async {
     _isLoading = true;
     _error = null;
@@ -129,19 +135,26 @@ class CurrencyProvider extends ChangeNotifier {
       _lastUpdated = DateTime.now();
       await CurrencyService.saveRates(fresh);
       _isLoading = false;
+      _isOffline = false;
+      _isUsingCached = false;
       notifyListeners();
     } catch (_) {
       final cached = await CurrencyService.loadCachedRates();
-      final bool cachedIsComplete = cached != null &&
+      final bool cachedIsComplete =
+          cached != null &&
           allCurrencies.every((c) => cached.containsKey(c.code));
       if (cachedIsComplete) {
         _rates = cached;
         _lastUpdated = await CurrencyService.loadLastUpdated();
+        _isUsingCached = true;
+        _error = null;
       } else {
         _rates = CurrencyService.getFallbackRates();
-        _error = 'Could not fetch rates. Using approximate rates.';
+        _isUsingCached = false;
+        _error = 'Could not update rates. Using approximate rates.';
       }
       _isLoading = false;
+      _isOffline = true;
       notifyListeners();
     }
   }
@@ -169,13 +182,21 @@ class CurrencyProvider extends ChangeNotifier {
       final rate = targetRate / sourceRate;
       final converted = amount * rate;
 
-      results.add(CurrencyResultRow(
-        currency: currency,
-        rate: rate,
-        convertedValue: converted,
-        formattedResult: Formatters.formatResult(converted),
-        formattedRate: Formatters.formatResult(rate),
-      ));
+      results.add(
+        CurrencyResultRow(
+          currency: currency,
+          rate: rate,
+          convertedValue: converted,
+          formattedResult: Formatters.formatResult(
+            converted,
+            currencyDecimals: currency.decimalDigits,
+          ),
+          formattedRate: Formatters.formatResult(
+            rate,
+            currencyDecimals: currency.decimalDigits,
+          ),
+        ),
+      );
     }
     return results;
   }
@@ -192,6 +213,10 @@ class CurrencyProvider extends ChangeNotifier {
     final sourceRate = _rates[sourceCode]!;
     final eurRate = _rates['EUR']!;
     final rate = eurRate / sourceRate;
-    return '1 ${_fromCurrency!.symbol} = ${Formatters.formatResult(rate)} €';
+    final formatted = Formatters.formatResult(
+      rate,
+      currencyDecimals: _fromCurrency!.decimalDigits,
+    );
+    return '1 ${_fromCurrency!.symbol} = $formatted €';
   }
 }

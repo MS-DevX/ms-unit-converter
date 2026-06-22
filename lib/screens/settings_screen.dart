@@ -10,8 +10,11 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../core/colors.dart';
 import '../core/constants.dart';
+import '../providers/favorites_provider.dart';
+import '../providers/history_provider.dart';
 import '../providers/settings_provider.dart';
 import '../services/iap_service.dart';
+import '../utils/formatters.dart';
 
 /// Shows appearance, premium, about, and action settings.
 class SettingsScreen extends StatelessWidget {
@@ -58,15 +61,40 @@ class SettingsScreen extends StatelessWidget {
     }
   }
 
+  /// Shows a confirmation dialog before clearing all history.
+  Future<void> _confirmClearHistory(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Clear History?'),
+        content: const Text('This will remove all conversion history.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      HapticFeedback.mediumImpact();
+      await context.read<HistoryProvider>().clearHistory();
+    }
+  }
+
   // ─── Build ─────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settings'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text('Settings'), centerTitle: true),
       body: Consumer<SettingsProvider>(
         builder: (context, settings, _) {
           return ListView(
@@ -80,7 +108,9 @@ class SettingsScreen extends StatelessWidget {
                     icon: _themeModeIcon(settings.themeMode),
                     iconColor: AppColors.primary,
                     title: 'Theme',
-                    trailing: _ThemeChip(label: _themeModeLabel(settings.themeMode)),
+                    trailing: _ThemeChip(
+                      label: _themeModeLabel(settings.themeMode),
+                    ),
                     onTap: () {
                       HapticFeedback.lightImpact();
                       settings.toggleTheme();
@@ -91,7 +121,48 @@ class SettingsScreen extends StatelessWidget {
 
               const SizedBox(height: 20),
 
-              // ── Premium ──────────────────────────────────────────
+              // ── Converter ─────────────────────────────────────────
+              _SectionHeader(label: 'Converter'),
+              _SettingsCard(
+                children: [
+                  ...DecimalPrecision.values.map((precision) {
+                    final selected = settings.decimalPrecision == precision;
+                    return Column(
+                      children: [
+                        if (precision != DecimalPrecision.values.first)
+                          _Divider(),
+                        _SettingsTile(
+                          icon: selected
+                              ? Icons.check_circle_rounded
+                              : Icons.circle_outlined,
+                          iconColor: selected
+                              ? AppColors.primary
+                              : AppColors.lightTextSecondary,
+                          title: precision.label,
+                          subtitle: precision == DecimalPrecision.auto
+                              ? 'Automatically choose decimal places'
+                              : null,
+                          trailing: selected
+                              ? Icon(
+                                  Icons.check_rounded,
+                                  color: AppColors.primary,
+                                  size: 20,
+                                )
+                              : null,
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            settings.setDecimalPrecision(precision);
+                          },
+                        ),
+                      ],
+                    );
+                  }),
+                ],
+              ),
+
+              const SizedBox(height: 20),
+
+              // ── Premium / Support ─────────────────────────────────
               _SectionHeader(label: 'Premium'),
               _SettingsCard(
                 children: [
@@ -112,7 +183,8 @@ class SettingsScreen extends StatelessWidget {
                       icon: Icons.star_rounded,
                       iconColor: AppColors.warning,
                       title: 'Remove Ads',
-                      subtitle: 'One-time purchase \u2014 ${AppConstants.removeAdsPrice}',
+                      subtitle:
+                          'One-time purchase \u2014 ${AppConstants.removeAdsPrice}',
                       onTap: () {
                         HapticFeedback.mediumImpact();
                         IapService.instance.purchase();
@@ -135,6 +207,39 @@ class SettingsScreen extends StatelessWidget {
 
               const SizedBox(height: 20),
 
+              // ── Privacy ───────────────────────────────────────────
+              _SectionHeader(label: 'Privacy'),
+              _SettingsCard(
+                children: [
+                  _SettingsTile(
+                    icon: Icons.privacy_tip_outlined,
+                    iconColor: AppColors.lightTextSecondary,
+                    title: 'Privacy Policy',
+                    trailing: const Icon(
+                      Icons.open_in_new_rounded,
+                      size: 16,
+                      color: AppColors.lightTextSecondary,
+                    ),
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      _launchUrl(AppConstants.privacyPolicyUrl);
+                    },
+                  ),
+                  _Divider(),
+                  _SettingsTile(
+                    icon: Icons.info_outline_rounded,
+                    iconColor: AppColors.lightTextSecondary,
+                    title: 'How your data is used',
+                    subtitle:
+                        'All conversions happen on-device. No data is collected, '
+                        'shared, or sent to servers. Exchange rates are fetched '
+                        'from a free public API.',
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 20),
+
               // ── About ────────────────────────────────────────────
               _SectionHeader(label: 'About'),
               FutureBuilder<PackageInfo>(
@@ -142,8 +247,9 @@ class SettingsScreen extends StatelessWidget {
                 builder: (context, snapshot) {
                   final version = snapshot.data?.version ?? '—';
                   final build = snapshot.data?.buildNumber ?? '';
-                  final versionLabel =
-                      build.isNotEmpty ? '$version ($build)' : version;
+                  final versionLabel = build.isNotEmpty
+                      ? '$version ($build)'
+                      : version;
 
                   return _SettingsCard(
                     children: [
@@ -172,6 +278,28 @@ class SettingsScreen extends StatelessWidget {
               _SettingsCard(
                 children: [
                   _SettingsTile(
+                    icon: Icons.delete_outline_rounded,
+                    iconColor: AppColors.error,
+                    title: 'Clear History',
+                    subtitle: 'Remove all conversion history',
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      _confirmClearHistory(context);
+                    },
+                  ),
+                  _Divider(),
+                  _SettingsTile(
+                    icon: Icons.star_border_rounded,
+                    iconColor: AppColors.warning,
+                    title: 'Clear Favorites',
+                    subtitle: 'Remove all favorite categories',
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      context.read<FavoritesProvider>().clearFavorites();
+                    },
+                  ),
+                  _Divider(),
+                  _SettingsTile(
                     icon: Icons.star_border_rounded,
                     iconColor: AppColors.warning,
                     title: 'Rate the App',
@@ -195,21 +323,6 @@ class SettingsScreen extends StatelessWidget {
                     onTap: () {
                       HapticFeedback.lightImpact();
                       _shareApp();
-                    },
-                  ),
-                  _Divider(),
-                  _SettingsTile(
-                    icon: Icons.privacy_tip_outlined,
-                    iconColor: AppColors.lightTextSecondary,
-                    title: 'Privacy Policy',
-                    trailing: const Icon(
-                      Icons.open_in_new_rounded,
-                      size: 16,
-                      color: AppColors.lightTextSecondary,
-                    ),
-                    onTap: () {
-                      HapticFeedback.lightImpact();
-                      _launchUrl(AppConstants.privacyPolicyUrl);
                     },
                   ),
                 ],
@@ -257,10 +370,8 @@ class _SettingsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final Color bg =
-        isDark ? AppColors.darkSurface : AppColors.lightSurface;
-    final Color border =
-        isDark ? AppColors.borderDark : AppColors.borderLight;
+    final Color bg = isDark ? AppColors.darkSurface : AppColors.lightSurface;
+    final Color border = isDark ? AppColors.borderDark : AppColors.borderLight;
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -272,10 +383,7 @@ class _SettingsCard extends StatelessWidget {
         // Material provides the ink-splash surface that ListTile requires.
         child: Material(
           color: bg,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: children,
-          ),
+          child: Column(mainAxisSize: MainAxisSize.min, children: children),
         ),
       ),
     );
@@ -319,7 +427,9 @@ class _SettingsTile extends StatelessWidget {
         style: TextStyle(
           fontSize: 15,
           fontWeight: FontWeight.w600,
-          color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+          color: isDark
+              ? AppColors.darkTextPrimary
+              : AppColors.lightTextPrimary,
         ),
       ),
       subtitle: subtitle != null
@@ -333,7 +443,8 @@ class _SettingsTile extends StatelessWidget {
               ),
             )
           : null,
-      trailing: trailing ??
+      trailing:
+          trailing ??
           (onTap != null
               ? Icon(
                   Icons.chevron_right_rounded,
@@ -375,9 +486,7 @@ class _ThemeChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.primary.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: AppColors.primary.withValues(alpha: 0.30),
-        ),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.30)),
       ),
       child: Text(
         label,
