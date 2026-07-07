@@ -312,36 +312,7 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                               ),
                             ),
 
-                            // ── Data source label ─────────────────────
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(16, 2, 16, 0),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.link_rounded,
-                                    size: 10,
-                                    color:
-                                        (isDark
-                                                ? AppColors.darkTextSecondary
-                                                : AppColors.lightTextSecondary)
-                                            .withValues(alpha: 0.4),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    'Powered by Frankfurter API',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color:
-                                          (isDark
-                                                  ? AppColors.darkTextSecondary
-                                                  : AppColors
-                                                        .lightTextSecondary)
-                                              .withValues(alpha: 0.4),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+
 
                             // ── Search field ──────────────────────────
                             Padding(

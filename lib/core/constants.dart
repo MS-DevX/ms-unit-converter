@@ -8,10 +8,10 @@ class AppConstants {
   static const String packageId = 'com.msdevx.unitconverter';
 
   static const String admobAppIdAndroid =
-      'ca-app-pub-8684958562988579~6766583891';
+      'ca-app-pub-8684958562988579~9464291585';
 
   static const String appOpenAdUnitId =
-      'ca-app-pub-8684958562988579/2956999697';
+      'ca-app-pub-8684958562988579/4208361403';
 
   static const String privacyPolicyUrl = 'https://msdevx.com/msunit-privacy';
 

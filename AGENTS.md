@@ -129,7 +129,6 @@ PUBSPEC DEPENDENCIES
 provider: ^6.1.0
 shared_preferences: ^2.2.0
 google_mobile_ads: ^5.0.0
-in_app_purchase: ^3.1.0
 share_plus: ^7.0.0
 package_info_plus: ^6.0.0
 url_launcher: ^6.2.0
@@ -138,20 +137,18 @@ url_launcher: ^6.2.0
 MONETIZATION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-MODEL: Free with single App Open Ad + $1.99 remove ads IAP
+MODEL: Free with single App Open Ad per session.
 
 AD TYPE: AppOpenAd (google_mobile_ads)
   NOT interstitial. NOT banner. NOT rewarded.
   ONLY AppOpenAd — one per app session.
 
 Test App Open Ad ID : ca-app-pub-3940256099942544/9257395921
-Real App Open Ad ID : ca-app-pub-3940256099942544/9257395921
+Real App Open Ad ID : ca-app-pub-8684958562988579/4208361403
 
 WHEN TO SHOW:
   ✓ Cold start (app launched fresh)
-  ✓ Warm start after 4+ hours in background
-  ✗ Never on resume after < 4 hours background
-  ✗ Never if isPremium = true
+  ✓ Warm start after 5+ minutes in background
   ✗ Never if ad failed to load (skip silently)
 
 LOADING STRATEGY:
@@ -162,20 +159,9 @@ LOADING STRATEGY:
   - Never delay user more than 1500ms total for any reason
 
 COOLDOWN:
-  - Minimum 4 hours between ad shows
+  - Minimum 5 minutes between ad shows
   - Store lastAdShownTimestamp in SharedPreferences
   - On each cold start: check timestamp before showing
-
-IAP — REMOVE ADS:
-  Product ID : com.msdevx.unitconverter.removeads
-  Price      : $1.99 one-time purchase
-  On purchase: isPremium = true → save to SharedPreferences
-  On restore : check past purchases → restore isPremium
-  Always restore on app start (handles reinstalls/device changes)
-
-isPremium BEHAVIOUR:
-  true  → skip all ad logic, app launches instantly after splash
-  false → follow ad flow above
 
 SPLASH SCREEN:
   Duration   : 1500ms
@@ -196,28 +182,9 @@ ADMOB SERVICE FILE: lib/services/admob_service.dart
   Responsibilities:
   - Initialize MobileAds SDK (done at splash)
   - Load AppOpenAd
-  - Show AppOpenAd (if loaded + cooldown passed + not premium)
+  - Show AppOpenAd (if loaded + cooldown passed)
   - Track lastAdShownTimestamp
-  - Expose: isAdReady (bool), showAdIfEligible(bool isPremium)
-
-IAP SERVICE FILE: lib/services/iap_service.dart
-  Responsibilities:
-  - Initialize in_app_purchase stream
-  - loadProducts(): fetch product details from Play Store
-  - purchase(): initiate $1.99 purchase
-  - restore(): restore past purchases
-  - isPurchased(): check SharedPreferences
-  - verifyAndSave(): on successful purchase, save isPremium=true
-
-SETTINGS SCREEN IAP BUTTON:
-  if !isPremium:
-    ListTile "Remove Ads — $1.99"
-    subtitle: "One-time purchase. No ads forever."
-  if isPremium:
-    ListTile with check icon
-    "✓ Premium — Ad Free"
-    subtitle: "Thank you for your support!"
-    (disabled, not tappable)
+  - Expose: isAdReady (bool), showAdIfEligible()
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 OPENCODE TASK RULES

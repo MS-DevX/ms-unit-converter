@@ -2,9 +2,11 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:in_app_update/in_app_update.dart';
 
 import '../core/constants.dart';
 import '../services/admob_service.dart';
+import '../services/in_app_update_service.dart';
 import 'main_shell.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -25,6 +27,7 @@ class _SplashScreenState extends State<SplashScreen> {
     super.initState();
 
     _initAds();
+    _checkUpdate();
 
     Future.delayed(
       const Duration(milliseconds: AppConstants.splashDurationMs),
@@ -54,6 +57,72 @@ class _SplashScreenState extends State<SplashScreen> {
     if (mounted) {
       setState(() => _adReady = AdmobService.instance.isAdReady);
     }
+  }
+
+  Future<void> _checkUpdate() async {
+    final info = await InAppUpdateService.instance.checkForUpdate();
+    if (!mounted || info == null) {
+      return;
+    }
+    if (info.updateAvailability != UpdateAvailability.updateAvailable ||
+        !info.flexibleUpdateAllowed) {
+      return;
+    }
+
+    final proceed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Update Available'),
+        content: const Text(
+          'A new version of MS Unit Converter is available. '
+          'Would you like to download it now?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Later'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Update'),
+          ),
+        ],
+      ),
+    );
+
+    if (!mounted || proceed != true) return;
+
+    final result = await InAppUpdateService.instance.startFlexibleUpdate();
+    if (result != AppUpdateResult.success) return;
+
+    InAppUpdateService.instance.installUpdateListener.listen((status) {
+      if (status == InstallStatus.downloaded && mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Update Downloaded'),
+            content: const Text(
+              'The update has been downloaded. Restart to install it?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('Later'),
+              ),
+              FilledButton(
+                onPressed: () {
+                  Navigator.of(ctx).pop();
+                  InAppUpdateService.instance.completeFlexibleUpdate();
+                },
+                child: const Text('Install'),
+              ),
+            ],
+          ),
+        );
+      }
+    });
   }
 
   void _onReady() {
