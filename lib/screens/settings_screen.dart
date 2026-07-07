@@ -1,4 +1,3 @@
-/// Settings screen — theme, premium, app info and action links.
 library;
 
 import 'package:flutter/material.dart';
@@ -13,89 +12,22 @@ import '../core/constants.dart';
 import '../providers/favorites_provider.dart';
 import '../providers/history_provider.dart';
 import '../providers/settings_provider.dart';
-import '../services/iap_service.dart';
 import '../utils/formatters.dart';
 
-/// Shows appearance, premium, about, and action settings.
-class SettingsScreen extends StatefulWidget {
-  /// Creates a [SettingsScreen].
+class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
-  @override
-  State<SettingsScreen> createState() => _SettingsScreenState();
-}
-
-class _SettingsScreenState extends State<SettingsScreen> {
-  bool _isPurchasing = false;
-
-  @override
-  void initState() {
-    super.initState();
-    // Replace persistence-only callback with one that also shows feedback.
-    // Persistence is still handled (setPremium) so premium is never lost.
-    IapService.instance.onPremiumUnlocked = () {
-      if (!mounted) return;
-      context.read<SettingsProvider>().setPremium(true);
-      setState(() => _isPurchasing = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Premium unlocked \u2014 thank you for your support!'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    };
-    IapService.instance.onPurchaseError = () {
-      if (!mounted) return;
-      setState(() => _isPurchasing = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Something went wrong. Please try again.'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    };
-  }
-
-  @override
-  void dispose() {
-    // Restore persistence-only callback for purchases made outside settings.
-    final settings = context.read<SettingsProvider>();
-    IapService.instance.onPremiumUnlocked = () {
-      settings.setPremium(true);
-    };
-    IapService.instance.onPurchaseError = null;
-    super.dispose();
-  }
-
-  void _purchaseRemoveAds() {
-    HapticFeedback.mediumImpact();
-    setState(() => _isPurchasing = true);
-    IapService.instance.purchase();
-  }
-
-  void _restorePurchases() {
-    HapticFeedback.mediumImpact();
-    setState(() => _isPurchasing = true);
-    IapService.instance.restore();
-  }
-
-  // ─── Helpers ───────────────────────────────────────────────────────────────
-
-  /// Opens [url] in the default browser; silently ignores failures.
   Future<void> _launchUrl(String url) async {
     try {
       await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
     } catch (_) {
-      // No crash on launch failure.
     }
   }
 
-  /// Shares [AppConstants.shareMessage] via the system share sheet.
   void _shareApp() {
     Share.share(AppConstants.shareMessage);
   }
 
-  /// Maps a [ThemeMode] to a short display label.
   String _themeModeLabel(ThemeMode mode) {
     switch (mode) {
       case ThemeMode.light:
@@ -107,7 +39,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  /// Maps a [ThemeMode] to a descriptive icon.
   IconData _themeModeIcon(ThemeMode mode) {
     switch (mode) {
       case ThemeMode.light:
@@ -119,7 +50,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  /// Shows a confirmation dialog before clearing all history.
   Future<void> _confirmClearHistory(BuildContext context) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -147,8 +77,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  // ─── Build ─────────────────────────────────────────────────────────────────
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -158,7 +86,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           return ListView(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
             children: [
-              // ── Appearance ───────────────────────────────────────
               _SectionHeader(label: 'Appearance'),
               _SettingsCard(
                 children: [
@@ -179,7 +106,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
               const SizedBox(height: 20),
 
-              // ── Converter ─────────────────────────────────────────
               _SectionHeader(label: 'Converter'),
               _SettingsCard(
                 children: [
@@ -220,53 +146,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
               const SizedBox(height: 20),
 
-              // ── Premium / Support ─────────────────────────────────
-              _SectionHeader(label: 'Premium'),
+              _SectionHeader(label: 'Data'),
               _SettingsCard(
                 children: [
-                  if (settings.isPremium)
-                    _SettingsTile(
-                      icon: Icons.verified_rounded,
-                      iconColor: AppColors.success,
-                      title: '\u2713 Premium \u2014 Ad Free',
-                      subtitle: 'Thank you for your support!',
-                      trailing: const Icon(
-                        Icons.check_circle_rounded,
-                        color: AppColors.success,
-                        size: 20,
-                      ),
-                    )
-                  else ...[
-                    _SettingsTile(
-                      icon: _isPurchasing
-                          ? Icons.hourglass_empty_rounded
-                          : Icons.star_rounded,
-                      iconColor: AppColors.warning,
-                      title: 'Remove Ads',
-                      subtitle: _isPurchasing
-                          ? 'Connecting to Play Store\u2026'
-                          : 'One-time purchase \u2014 ${AppConstants.removeAdsPrice}',
-                      onTap: _isPurchasing ? null : _purchaseRemoveAds,
-                    ),
-                    _Divider(),
-                  ],
                   _SettingsTile(
-                    icon: _isPurchasing
-                        ? Icons.hourglass_empty_rounded
-                        : Icons.restore_rounded,
-                    iconColor: AppColors.primary,
-                    title: 'Restore Purchases',
-                    subtitle: _isPurchasing
-                        ? 'Please wait\u2026'
-                        : 'Already purchased? Tap to restore.',
-                    onTap: _isPurchasing ? null : _restorePurchases,
+                    icon: Icons.delete_outline_rounded,
+                    iconColor: AppColors.error,
+                    title: 'Clear History',
+                    subtitle: 'Remove all conversion history',
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      _confirmClearHistory(context);
+                    },
+                  ),
+                  _Divider(),
+                  _SettingsTile(
+                    icon: Icons.star_border_rounded,
+                    iconColor: AppColors.warning,
+                    title: 'Clear Favorites',
+                    subtitle: 'Remove all favorite categories',
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      context.read<FavoritesProvider>().clearFavorites();
+                    },
                   ),
                 ],
               ),
 
               const SizedBox(height: 20),
 
-              // ── Privacy ───────────────────────────────────────────
               _SectionHeader(label: 'Privacy'),
               _SettingsCard(
                 children: [
@@ -299,7 +207,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
               const SizedBox(height: 20),
 
-              // ── About ────────────────────────────────────────────
               _SectionHeader(label: 'About'),
               FutureBuilder<PackageInfo>(
                 future: PackageInfo.fromPlatform(),
@@ -332,32 +239,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
               const SizedBox(height: 20),
 
-              // ── Actions ──────────────────────────────────────────
               _SectionHeader(label: 'Actions'),
               _SettingsCard(
                 children: [
-                  _SettingsTile(
-                    icon: Icons.delete_outline_rounded,
-                    iconColor: AppColors.error,
-                    title: 'Clear History',
-                    subtitle: 'Remove all conversion history',
-                    onTap: () {
-                      HapticFeedback.lightImpact();
-                      _confirmClearHistory(context);
-                    },
-                  ),
-                  _Divider(),
-                  _SettingsTile(
-                    icon: Icons.star_border_rounded,
-                    iconColor: AppColors.warning,
-                    title: 'Clear Favorites',
-                    subtitle: 'Remove all favorite categories',
-                    onTap: () {
-                      HapticFeedback.lightImpact();
-                      context.read<FavoritesProvider>().clearFavorites();
-                    },
-                  ),
-                  _Divider(),
                   _SettingsTile(
                     icon: Icons.star_border_rounded,
                     iconColor: AppColors.warning,
@@ -394,9 +278,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 }
 
-// ── Private components ────────────────────────────────────────────────────────
-
-/// Small uppercase section heading rendered above a card.
 class _SectionHeader extends StatelessWidget {
   final String label;
   const _SectionHeader({required this.label});
@@ -421,7 +302,6 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
-/// Rounded card container grouping related settings tiles.
 class _SettingsCard extends StatelessWidget {
   final List<Widget> children;
   const _SettingsCard({required this.children});
@@ -439,7 +319,6 @@ class _SettingsCard extends StatelessWidget {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(15),
-        // Material provides the ink-splash surface that ListTile requires.
         child: Material(
           color: bg,
           child: Column(mainAxisSize: MainAxisSize.min, children: children),
@@ -449,7 +328,6 @@ class _SettingsCard extends StatelessWidget {
   }
 }
 
-/// A single settings row with icon, title, optional subtitle and trailing.
 class _SettingsTile extends StatelessWidget {
   final IconData icon;
   final Color iconColor;
@@ -519,7 +397,6 @@ class _SettingsTile extends StatelessWidget {
   }
 }
 
-/// Thin divider used between tiles inside a card.
 class _Divider extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -533,7 +410,6 @@ class _Divider extends StatelessWidget {
   }
 }
 
-/// Small pill badge showing the active theme name.
 class _ThemeChip extends StatelessWidget {
   final String label;
   const _ThemeChip({required this.label});

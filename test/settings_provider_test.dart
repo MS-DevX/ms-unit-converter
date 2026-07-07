@@ -11,34 +11,19 @@ void main() {
   });
 
   group('SettingsProvider', () {
-    test('initial state is false / system / auto', () {
+    test('initial state is system / auto', () {
       final settings = SettingsProvider();
-      expect(settings.isPremium, false);
       expect(settings.isLoaded, false);
       expect(settings.themeMode, ThemeMode.system);
       expect(settings.decimalPrecision, DecimalPrecision.auto);
     });
 
-    test(
-      'loadSettings sets isLoaded true and uses defaults when empty',
-      () async {
-        final settings = SettingsProvider();
-        expect(settings.isLoaded, false);
-        await settings.loadSettings();
-        expect(settings.isLoaded, true);
-        expect(settings.isPremium, false);
-        expect(settings.themeMode, ThemeMode.system);
-      },
-    );
-
-    test('loadSettings reads premium flag from storage', () async {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool(AppConstants.premiumStorageKey, true);
-
+    test('loadSettings sets isLoaded true and uses defaults when empty', () async {
       final settings = SettingsProvider();
+      expect(settings.isLoaded, false);
       await settings.loadSettings();
-      expect(settings.isPremium, true);
       expect(settings.isLoaded, true);
+      expect(settings.themeMode, ThemeMode.system);
     });
 
     test('loadSettings reads themeMode from storage', () async {
@@ -48,34 +33,6 @@ void main() {
       final settings = SettingsProvider();
       await settings.loadSettings();
       expect(settings.themeMode, ThemeMode.dark);
-    });
-
-    test('setPremium updates in-memory state and notifies listeners', () async {
-      final settings = SettingsProvider();
-      int notifyCount = 0;
-      settings.addListener(() => notifyCount++);
-
-      await settings.setPremium(true);
-      expect(settings.isPremium, true);
-      expect(notifyCount, 1);
-
-      // Verify it persists to SharedPreferences
-      final prefs = await SharedPreferences.getInstance();
-      expect(prefs.getBool(AppConstants.premiumStorageKey), true);
-    });
-
-    test('setPremium false works correctly', () async {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool(AppConstants.premiumStorageKey, true);
-
-      final settings = SettingsProvider();
-      await settings.loadSettings();
-      expect(settings.isPremium, true);
-
-      await settings.setPremium(false);
-      expect(settings.isPremium, false);
-      final stored = await SharedPreferences.getInstance();
-      expect(stored.getBool(AppConstants.premiumStorageKey), false);
     });
 
     test('toggleTheme cycles through system → light → dark → system', () async {
@@ -104,20 +61,16 @@ void main() {
   });
 
   group('AdCooldown', () {
-    test('adCooldownHours is 4', () {
-      expect(AppConstants.adCooldownHours, 4);
+    test('adCooldownMinutes is 5', () {
+      expect(AppConstants.adCooldownMinutes, 5);
     });
 
     test('splashDurationMs is 1500', () {
       expect(AppConstants.splashDurationMs, 1500);
     });
 
-    test('cooldown in milliseconds equals 4 hours', () {
-      expect(AppConstants.adCooldownHours * 3600000, 14400000);
-    });
-
-    test('premiumStorageKey has correct value', () {
-      expect(AppConstants.premiumStorageKey, 'is_premium');
+    test('cooldown in milliseconds equals 5 minutes', () {
+      expect(AppConstants.adCooldownMinutes * 60000, 300000);
     });
   });
 }

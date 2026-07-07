@@ -1,25 +1,13 @@
-/// Splash screen — brand impression + parallel ad/service init.
-///
-/// Always visible for at least 1500ms. During that time the App Open Ad
-/// is loaded and premium status is checked. After the minimum duration:
-/// - Premium users → skip ad, go straight to MainShell
-/// - Free users with loaded ad + cooldown passed → show AppOpenAd, then MainShell
-/// - Free users without loaded ad → skip, go straight to MainShell
 library;
 
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:provider/provider.dart';
 
 import '../core/constants.dart';
-import '../providers/settings_provider.dart';
 import '../services/admob_service.dart';
 import 'main_shell.dart';
 
-/// Splash screen that runs for [AppConstants.splashDurationMs] (1500ms)
-/// minimum and initialises the App Open Ad in the background.
 class SplashScreen extends StatefulWidget {
-  /// Creates a [SplashScreen].
   const SplashScreen({super.key});
 
   @override
@@ -27,8 +15,9 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-  bool _adReady = false;
   bool _minimumTimeElapsed = false;
+  bool _adReady = false;
+  bool _adTimedOut = false;
   bool _navigating = false;
 
   @override
@@ -45,49 +34,47 @@ class _SplashScreenState extends State<SplashScreen> {
         }
       },
     );
+
+    Future.delayed(const Duration(seconds: 5), () {
+      if (mounted) {
+        setState(() => _adTimedOut = true);
+      }
+    });
   }
 
   Future<void> _initAds() async {
     try {
       await MobileAds.instance.initialize();
+      debugPrint('[Splash] MobileAds initialized');
       await AdmobService.instance.loadAppOpenAd();
-    } catch (_) {
-      // Non-mobile platform or ad failure — degrade gracefully.
+      debugPrint('[Splash] Ad load completed');
+    } catch (e) {
+      debugPrint('[Splash] Ad init error: $e');
     }
     if (mounted) {
       setState(() => _adReady = AdmobService.instance.isAdReady);
     }
   }
 
-  /// Called once the minimum time has elapsed and settings are loaded.
   void _onReady() {
     if (!mounted || _navigating) return;
-
-    // Wait for persisted settings (including premium status) to load
-    // before making the ad decision. Without this guard, a premium user
-    // could be shown an ad on a cold start.
-    final settings = context.read<SettingsProvider>();
-    if (!settings.isLoaded) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _onReady());
-      return;
-    }
-
     _navigating = true;
 
-    if (settings.isPremium || !_adReady) {
+    final ad = AdmobService.instance;
+
+    if (!ad.isAdReady) {
+      debugPrint('[Splash] No ad ready, navigating directly');
       _navigateToApp();
       return;
     }
 
-    // Try to show the App Open Ad before navigating.
-    AdmobService.instance
-        .showAdIfEligible(settings.isPremium)
-        .then((_) {
-          if (mounted) _navigateToApp();
-        })
-        .catchError((_) {
-          if (mounted) _navigateToApp();
-        });
+    ad.showAdIfEligible().then((shown) {
+      debugPrint('[Splash] Ad shown: $shown');
+      if (mounted) _navigateToApp();
+    }).catchError((e) {
+      debugPrint('[Splash] Ad show error: $e');
+      if (mounted) _navigateToApp();
+    });
   }
 
   void _navigateToApp() {
@@ -98,9 +85,10 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Navigate once minimum time elapsed.
     if (_minimumTimeElapsed && !_navigating) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _onReady());
+      if (_adReady || _adTimedOut) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => _onReady());
+      }
     }
 
     return Scaffold(
@@ -109,13 +97,12 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // App icon
             ClipRRect(
               borderRadius: BorderRadius.circular(20),
               child: Image.asset('assets/icon.png', width: 80, height: 80),
             ),
-            SizedBox(height: 20),
-            Text(
+            const SizedBox(height: 20),
+            const Text(
               AppConstants.appName,
               style: TextStyle(
                 fontSize: 26,
@@ -124,8 +111,8 @@ class _SplashScreenState extends State<SplashScreen> {
                 letterSpacing: 0.5,
               ),
             ),
-            SizedBox(height: 4),
-            Text(
+            const SizedBox(height: 4),
+            const Text(
               'by MS DevX',
               style: TextStyle(
                 fontSize: 13,
@@ -133,8 +120,8 @@ class _SplashScreenState extends State<SplashScreen> {
                 color: Color(0xFF8B949E),
               ),
             ),
-            SizedBox(height: 48),
-            SizedBox(
+            const SizedBox(height: 48),
+            const SizedBox(
               width: 24,
               height: 24,
               child: CircularProgressIndicator(
