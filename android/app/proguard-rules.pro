@@ -13,7 +13,13 @@
 # Keep Google Mobile Ads annotations.
 -dontwarn com.google.android.gms.ads.**
 
-
 # Play Core — used by Flutter's deferred component manager at runtime.
 -keep class com.google.android.play.core.** { *; }
 -dontwarn com.google.android.play.core.**
+
+# AndroidX WorkManager & Room Database keep rules for R8 / minification
+-keep class androidx.work.** { *; }
+-keep class androidx.room.** { *; }
+-keep class * extends androidx.room.RoomDatabase
+-dontwarn androidx.work.**
+-dontwarn androidx.room.**
