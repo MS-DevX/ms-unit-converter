@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../core/colors.dart';
+import '../services/navigation_service.dart';
 import 'compass_screen.dart';
 import 'currency_screen.dart';
 import 'history_screen.dart';
@@ -84,6 +85,9 @@ class _MainShellState extends State<MainShell> {
   void initState() {
     super.initState();
     _pageController = PageController(initialPage: 0);
+    appNavigator.register((index) {
+      _onTabTapped(index);
+    });
   }
 
   @override
@@ -104,7 +108,9 @@ class _MainShellState extends State<MainShell> {
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
+    return AppNavigator(
+      notifier: appNavigator,
+      child: PopScope(
       canPop: _currentIndex == 0,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) {
@@ -131,8 +137,9 @@ class _MainShellState extends State<MainShell> {
           unselectedItemColor: AppColors.lightTextSecondary,
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 /// Wraps a screen widget so it survives PageView page changes.

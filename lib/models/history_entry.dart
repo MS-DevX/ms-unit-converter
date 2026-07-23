@@ -21,6 +21,12 @@ class HistoryEntry {
   /// Name of the target unit.
   final String toUnit;
 
+  /// Symbol of the source unit (e.g. "km"). Empty string for legacy entries.
+  final String fromSymbol;
+
+  /// Symbol of the target unit (e.g. "mi"). Empty string for legacy entries.
+  final String toSymbol;
+
   /// Converted result value.
   final double result;
 
@@ -34,6 +40,8 @@ class HistoryEntry {
     required this.inputValue,
     required this.fromUnit,
     required this.toUnit,
+    this.fromSymbol = '',
+    this.toSymbol = '',
     required this.result,
     required this.timestamp,
   });
@@ -46,6 +54,8 @@ class HistoryEntry {
       'inputValue': inputValue,
       'fromUnit': fromUnit,
       'toUnit': toUnit,
+      'fromSymbol': fromSymbol,
+      'toSymbol': toSymbol,
       'result': result,
       'timestamp': timestamp.toIso8601String(),
     };
@@ -54,6 +64,8 @@ class HistoryEntry {
   /// Deserializes a [HistoryEntry] from a JSON map.
   ///
   /// Numeric values stored as [int] are safely promoted to [double].
+  /// Symbol fields default to empty string for backward-compatibility with
+  /// entries saved before this field was added.
   factory HistoryEntry.fromJson(Map<String, dynamic> json) {
     return HistoryEntry(
       id: json['id'] as String,
@@ -61,6 +73,8 @@ class HistoryEntry {
       inputValue: (json['inputValue'] as num).toDouble(),
       fromUnit: json['fromUnit'] as String,
       toUnit: json['toUnit'] as String,
+      fromSymbol: (json['fromSymbol'] as String?) ?? '',
+      toSymbol: (json['toSymbol'] as String?) ?? '',
       result: (json['result'] as num).toDouble(),
       timestamp: DateTime.parse(json['timestamp'] as String),
     );
@@ -73,6 +87,8 @@ class HistoryEntry {
     double? inputValue,
     String? fromUnit,
     String? toUnit,
+    String? fromSymbol,
+    String? toSymbol,
     double? result,
     DateTime? timestamp,
   }) {
@@ -82,6 +98,8 @@ class HistoryEntry {
       inputValue: inputValue ?? this.inputValue,
       fromUnit: fromUnit ?? this.fromUnit,
       toUnit: toUnit ?? this.toUnit,
+      fromSymbol: fromSymbol ?? this.fromSymbol,
+      toSymbol: toSymbol ?? this.toSymbol,
       result: result ?? this.result,
       timestamp: timestamp ?? this.timestamp,
     );
@@ -93,8 +111,8 @@ class HistoryEntry {
         '  id: $id,\n'
         '  category: $category,\n'
         '  inputValue: $inputValue,\n'
-        '  fromUnit: $fromUnit,\n'
-        '  toUnit: $toUnit,\n'
+        '  fromUnit: $fromUnit ($fromSymbol),\n'
+        '  toUnit: $toUnit ($toSymbol),\n'
         '  result: $result,\n'
         '  timestamp: ${timestamp.toIso8601String()}\n'
         ')';
@@ -109,6 +127,8 @@ class HistoryEntry {
         other.inputValue == inputValue &&
         other.fromUnit == fromUnit &&
         other.toUnit == toUnit &&
+        other.fromSymbol == fromSymbol &&
+        other.toSymbol == toSymbol &&
         other.result == result &&
         other.timestamp == timestamp;
   }
@@ -121,6 +141,8 @@ class HistoryEntry {
       inputValue,
       fromUnit,
       toUnit,
+      fromSymbol,
+      toSymbol,
       result,
       timestamp,
     );

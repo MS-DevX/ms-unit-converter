@@ -1,4 +1,4 @@
-/// Home screen — premium category grid with animated cards and quick presets.
+/// Home screen — premium category grid with animated cards, persistent search bar, and quick presets.
 library;
 
 import 'package:flutter/material.dart';
@@ -10,6 +10,7 @@ import '../core/colors.dart';
 import '../core/constants.dart';
 import '../data/currencies_data.dart';
 import '../data/units_data.dart';
+import '../models/unit_model.dart';
 import '../providers/favorites_provider.dart';
 import '../services/conversion_service.dart';
 import '../services/smart_parse_service.dart';
@@ -20,7 +21,7 @@ import 'converter_screen.dart';
 import 'currency_screen.dart';
 
 /// A premium grid showing all conversion categories as styled cards
-/// with quick conversion presets below.
+/// with a persistent smart search bar and quick conversion presets.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -30,7 +31,6 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _refreshKey = 0;
-  bool _isSearching = false;
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
 
@@ -51,7 +51,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _onRefresh() async {
     setState(() => _refreshKey++);
-    // Re-stagger animations by rebuilding the grid.
     await Future.delayed(const Duration(milliseconds: 400));
   }
 
@@ -150,17 +149,32 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: _isSearching ? _buildSearchAppBar() : _buildNormalAppBar(),
-      body: _isSearching ? _buildSearchBody() : _buildNormalBody(),
+      appBar: AppBar(
+        title: const Text(
+          AppConstants.appName,
+          style: TextStyle(fontWeight: FontWeight.w700),
+        ),
+        centerTitle: false,
+      ),
+      body: _buildBody(),
     );
   }
 
-  void _openConverter(BuildContext context, UnitCategory category) {
+  void _openConverter(
+    BuildContext context,
+    UnitCategory category, {
+    String? presetFromUnitName,
+    String? presetToUnitName,
+  }) {
     HapticFeedback.lightImpact();
     Navigator.of(context).push(
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) {
-          return ConverterScreen(initialCategory: category);
+          return ConverterScreen(
+            initialCategory: category,
+            presetFromUnitName: presetFromUnitName,
+            presetToUnitName: presetToUnitName,
+          );
         },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return FadeTransition(
@@ -359,82 +373,21 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── Search mode ─────────────────────────────────────────────────
-
-  AppBar _buildNormalAppBar() {
-    return AppBar(
-      title: const Text(
-        AppConstants.appName,
-        style: TextStyle(fontWeight: FontWeight.w700),
-      ),
-      centerTitle: false,
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.search_rounded),
-          onPressed: () {
-            setState(() {
-              _isSearching = true;
-            });
-            _searchFocusNode.requestFocus();
-          },
-          tooltip: 'Search conversions',
-        ),
-      ],
-    );
-  }
-
-  AppBar _buildSearchAppBar() {
+  Widget _buildBody() {
+    final query = _searchController.text.trim();
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return AppBar(
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back_rounded),
-        onPressed: () {
-          _searchController.clear();
-          setState(() => _isSearching = false);
-        },
-        tooltip: 'Close search',
-      ),
-      title: TextField(
-        controller: _searchController,
-        focusNode: _searchFocusNode,
-        autofocus: true,
-        decoration: InputDecoration(
-          hintText: 'Search categories and units\u2026',
-          hintStyle: TextStyle(
-            color: isDark
-                ? AppColors.darkTextSecondary.withValues(alpha: 0.6)
-                : AppColors.lightTextSecondary.withValues(alpha: 0.6),
-          ),
-          border: InputBorder.none,
-          filled: false,
-          isDense: true,
-        ),
-        style: TextStyle(
-          fontSize: 18,
-          color: isDark
-              ? AppColors.darkTextPrimary
-              : AppColors.lightTextPrimary,
-        ),
-        textInputAction: TextInputAction.search,
-      ),
-      actions: [
-        if (_searchController.text.isNotEmpty)
-          IconButton(
-            icon: const Icon(Icons.clear_rounded),
-            onPressed: () {
-              _searchController.clear();
-              _searchFocusNode.requestFocus();
-            },
-            tooltip: 'Clear search',
-          ),
-      ],
-    );
-  }
 
-  Widget _buildNormalBody() {
     return Consumer<FavoritesProvider>(
       builder: (context, favProv, _) {
         final favoriteList = favProv.favorites.toList();
+        final smartResult = query.isNotEmpty
+            ? SmartParseService.parse(query)
+            : null;
+        final showSmart = smartResult?.isRecognized == true;
+        final detailedResults = query.isNotEmpty
+            ? SearchHelper.searchDetailed(query)
+            : <CategorySearchResult>[];
+
         return RefreshIndicator(
           onRefresh: _onRefresh,
           displacement: 60,
@@ -442,45 +395,153 @@ class _HomeScreenState extends State<HomeScreen> {
             key: ValueKey(_refreshKey),
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
-              if (favoriteList.isNotEmpty)
-                SliverToBoxAdapter(child: _buildFavoritesSection(favoriteList)),
-              SliverPadding(
-                padding: EdgeInsets.fromLTRB(
-                  16,
-                  favoriteList.isNotEmpty ? 4 : 8,
-                  16,
-                  12,
-                ),
-                sliver: SliverGrid(
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: MediaQuery.of(context).size.width > 600
-                        ? 4
-                        : 2,
-                    crossAxisSpacing: 14,
-                    mainAxisSpacing: 14,
-                    childAspectRatio: MediaQuery.of(context).size.width > 600
-                        ? 1.2
-                        : 1.1,
-                  ),
-                  delegate: SliverChildBuilderDelegate((context, index) {
-                    final category = UnitCategory.values[index];
-                    return _CategoryCard(
-                      category: category,
-                      gradients: _categoryGradients[category]!,
-                      onTap: () => _openConverter(context, category),
-                      onLongPress: () =>
-                          _showCategoryPresets(context, category),
-                    );
-                  }, childCount: UnitCategory.values.length),
-                ),
-              ),
+              // Persistent Smart Search Bar
               SliverToBoxAdapter(
-                child: _QuickConversions(
-                  presets: _quickPresets,
-                  onPresetTapped: (preset) =>
-                      _openConverterWithPreset(context, preset),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+                  child: TextField(
+                    controller: _searchController,
+                    focusNode: _searchFocusNode,
+                    decoration: InputDecoration(
+                      hintText: 'Search categories or units (e.g. 10 km to miles)',
+                      hintStyle: TextStyle(
+                        fontSize: 14,
+                        color: isDark
+                            ? AppColors.darkTextSecondary.withValues(alpha: 0.6)
+                            : AppColors.lightTextSecondary.withValues(alpha: 0.6),
+                      ),
+                      prefixIcon: const Icon(Icons.search_rounded, size: 20),
+                      suffixIcon: query.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear_rounded, size: 18),
+                              onPressed: () {
+                                _searchController.clear();
+                                setState(() {});
+                              },
+                            )
+                          : null,
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
+                      filled: true,
+                      fillColor: isDark
+                          ? AppColors.darkSurface
+                          : AppColors.lightSurface,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(
+                          color: isDark
+                              ? AppColors.borderDark
+                              : AppColors.borderLight,
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(
+                          color: isDark
+                              ? AppColors.borderDark
+                              : AppColors.borderLight,
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
               ),
+
+              // Search results view
+              if (query.isNotEmpty) ...[
+                if (showSmart)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: _SmartConvertCard(
+                        result: smartResult!,
+                        onTap: () => _onSmartResultTap(smartResult),
+                      ),
+                    ),
+                  ),
+                if (!showSmart && detailedResults.isEmpty)
+                  const SliverToBoxAdapter(
+                    child: EmptyStateWidget(
+                      icon: Icons.search_off_rounded,
+                      message: 'No conversions found',
+                      subtitle: 'Try searching for a category or unit name',
+                    ),
+                  ),
+                if (detailedResults.isNotEmpty)
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                    sliver: SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          final res = detailedResults[index];
+                          return _SearchResultCard(
+                            result: res,
+                            gradients: _categoryGradients[res.category]!,
+                            onTap: () {
+                              HapticFeedback.lightImpact();
+                              _openConverter(context, res.category);
+                            },
+                            onUnitTap: (unit) {
+                              HapticFeedback.lightImpact();
+                              _openConverter(
+                                context,
+                                res.category,
+                                presetFromUnitName: unit.name,
+                              );
+                            },
+                          );
+                        },
+                        childCount: detailedResults.length,
+                      ),
+                    ),
+                  ),
+              ] else ...[
+                // Normal view (Favorites + Full Grid + Quick Conversions)
+                if (favoriteList.isNotEmpty)
+                  SliverToBoxAdapter(
+                    child: _buildFavoritesSection(favoriteList),
+                  ),
+                SliverPadding(
+                  padding: EdgeInsets.fromLTRB(
+                    16,
+                    favoriteList.isNotEmpty ? 4 : 8,
+                    16,
+                    12,
+                  ),
+                  sliver: SliverGrid(
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: MediaQuery.of(context).size.width > 600
+                          ? 4
+                          : 2,
+                      crossAxisSpacing: 14,
+                      mainAxisSpacing: 14,
+                      childAspectRatio: MediaQuery.of(context).size.width > 600
+                          ? 1.2
+                          : 1.1,
+                    ),
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      final category = UnitCategory.values[index];
+                      return _CategoryCard(
+                        category: category,
+                        gradients: _categoryGradients[category]!,
+                        onTap: () => _openConverter(context, category),
+                        onLongPress: () =>
+                            _showCategoryPresets(context, category),
+                      );
+                    }, childCount: UnitCategory.values.length),
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: _QuickConversions(
+                    presets: _quickPresets,
+                    onPresetTapped: (preset) =>
+                        _openConverterWithPreset(context, preset),
+                  ),
+                ),
+              ],
             ],
           ),
         );
@@ -492,7 +553,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -559,53 +620,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildSearchBody() {
-    final query = _searchController.text;
-    final smartResult = query.isNotEmpty
-        ? SmartParseService.parse(query)
-        : null;
-    final showSmart = smartResult?.isRecognized == true;
-    final results = query.isNotEmpty
-        ? SearchHelper.search(query)
-        : <UnitCategory>[];
-
-    if (query.isEmpty) {
-      return EmptyStateWidget(
-        icon: Icons.search_rounded,
-        message: 'Search categories and units',
-        subtitle: 'Type a conversion like "10 km to miles"',
-      );
-    }
-
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-      children: [
-        if (showSmart)
-          _SmartConvertCard(
-            result: smartResult!,
-            onTap: () => _onSmartResultTap(smartResult),
-          ),
-        if (!showSmart && results.isEmpty)
-          EmptyStateWidget(
-            icon: Icons.search_off_rounded,
-            message: 'No conversions found',
-            subtitle: 'Try searching for a category or unit name',
-          ),
-        if (results.isNotEmpty)
-          ...results.map(
-            (category) => _SearchResultCard(
-              category: category,
-              gradients: _categoryGradients[category]!,
-              onTap: () {
-                HapticFeedback.lightImpact();
-                _openConverter(context, category);
-              },
-            ),
-          ),
-      ],
     );
   }
 
@@ -889,9 +903,7 @@ class _CategoryCard extends StatelessWidget {
   }
 }
 
-/// A search result card showing a matched category with gradient styling.
-/// A card shown at the top of search results when a smart-parsed conversion
-/// query is detected (e.g. "10 km to miles").
+/// Smart convert card shown when a natural language conversion query is recognized.
 class _SmartConvertCard extends StatelessWidget {
   final SmartParseResult result;
   final VoidCallback onTap;
@@ -1006,7 +1018,6 @@ class _SmartConvertCard extends StatelessWidget {
         ? amount.toInt().toString()
         : amount.toString();
 
-    // Compute approximate conversion for preview.
     String converted;
     if (result.isCurrency) {
       converted = _currencyPreview(amount);
@@ -1052,88 +1063,148 @@ class _SmartConvertCard extends StatelessWidget {
   }
 }
 
+/// Detailed search result card highlighting matched units.
 class _SearchResultCard extends StatelessWidget {
-  final UnitCategory category;
+  final CategorySearchResult result;
   final List<Color> gradients;
   final VoidCallback onTap;
+  final ValueChanged<UnitModel> onUnitTap;
 
   const _SearchResultCard({
-    required this.category,
+    required this.result,
     required this.gradients,
     required this.onTap,
+    required this.onUnitTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final category = result.category;
+    final matchedUnits = result.matchingUnits;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            gradient: LinearGradient(
-              colors: gradients,
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: gradients.last.withValues(alpha: 0.3),
-                blurRadius: 8,
-                offset: const Offset(0, 4),
-              ),
-            ],
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          gradient: LinearGradient(
+            colors: gradients,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(14),
-              onTap: onTap,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 12,
-                ),
-                child: Row(
-                  children: [
-                    Text(category.icon, style: const TextStyle(fontSize: 24)),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            category.displayName,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              height: 1.2,
+          boxShadow: [
+            BoxShadow(
+              color: gradients.last.withValues(alpha: 0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(14),
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 12,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(category.icon, style: const TextStyle(fontSize: 24)),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              category.displayName,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                height: 1.2,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            category.description,
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.85),
-                              fontSize: 12,
-                              fontWeight: FontWeight.w400,
-                              height: 1.3,
+                            const SizedBox(height: 2),
+                            Text(
+                              category.description,
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.85),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w400,
+                                height: 1.3,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                    Icon(
-                      Icons.arrow_forward_ios_rounded,
-                      color: Colors.white.withValues(alpha: 0.5),
-                      size: 14,
+                      Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        color: Colors.white.withValues(alpha: 0.5),
+                        size: 14,
+                      ),
+                    ],
+                  ),
+
+                  // Matched unit chips
+                  if (matchedUnits.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: matchedUnits.take(6).map((unit) {
+                        return InkWell(
+                          onTap: () => onUnitTap(unit),
+                          borderRadius: BorderRadius.circular(6),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.3),
+                                width: 0.5,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  unit.name,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                if (unit.symbol.isNotEmpty) ...[
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '(${unit.symbol})',
+                                    style: TextStyle(
+                                      color: Colors.white.withValues(alpha: 0.8),
+                                      fontSize: 10,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
                     ),
                   ],
-                ),
+                ],
               ),
             ),
           ),

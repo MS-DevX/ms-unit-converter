@@ -32,7 +32,7 @@ class AppConstants {
 
   static const String favoritesStorageKey = 'favorite_categories';
 
-  static const int maxHistoryEntries = 20;
+  static const int maxHistoryEntries = 50;
 
   static const int adCooldownMinutes = 5;
 
