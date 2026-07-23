@@ -119,10 +119,7 @@ class DefaultLocationPermissionAdapter implements LocationPermissionAdapter {
 
   @override
   Future<Position> getCurrentPosition(LocationSettings settings) =>
-      Geolocator.getCurrentPosition(
-        desiredAccuracy: settings.accuracy,
-        timeLimit: const Duration(seconds: 8),
-      );
+      Geolocator.getCurrentPosition(locationSettings: settings);
 }
 
 // ── Pure helper functions (package-visible for testing) ──────────

@@ -25,7 +25,7 @@ class SettingsScreen extends StatelessWidget {
   }
 
   void _shareApp() {
-    Share.share(AppConstants.shareMessage);
+    SharePlus.instance.share(ShareParams(text: AppConstants.shareMessage));
   }
 
   String _themeModeLabel(ThemeMode mode) {

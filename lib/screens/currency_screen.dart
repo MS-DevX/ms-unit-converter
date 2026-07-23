@@ -75,7 +75,9 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
     HapticFeedback.lightImpact();
     final text =
         '$amount $sourceCode = ${row.formattedResult} ${row.currency.code}';
-    Share.share(text, subject: 'Currency conversion');
+    SharePlus.instance.share(
+      ShareParams(text: text, subject: 'Currency conversion'),
+    );
   }
 
   Future<void> _onRefresh() async {

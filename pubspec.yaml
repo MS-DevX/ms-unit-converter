@@ -36,12 +36,12 @@ dependencies:
   cupertino_icons: ^1.0.8
   provider: ^6.1.0
   shared_preferences: ^2.2.0
-  google_mobile_ads: ^5.0.0
-  share_plus: ^7.0.0
-  package_info_plus: ^6.0.0
+  google_mobile_ads: ^9.0.0
+  share_plus: ^13.2.1
+  package_info_plus: ^10.2.1
   url_launcher: ^6.2.0
-  sensors_plus: ^6.1.0
-  geolocator: ^12.0.0
+  sensors_plus: ^7.1.0
+  geolocator: ^14.0.3
   geomag: ^0.3.0
   in_app_update: ^5.0.0
 

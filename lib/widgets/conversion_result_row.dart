@@ -70,7 +70,9 @@ class ConversionResultRow extends StatelessWidget {
     if (result == null || !result!.isValid) return;
     HapticFeedback.lightImpact();
     final text = '$_displayValue ${unit.symbol}';
-    Share.share(text, subject: 'Conversion result');
+    SharePlus.instance.share(
+      ShareParams(text: text, subject: 'Conversion result'),
+    );
   }
 
   @override
