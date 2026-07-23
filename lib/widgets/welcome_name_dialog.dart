@@ -46,11 +46,11 @@ class _WelcomeNameDialogState extends State<WelcomeNameDialog> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: AppColors.card,
+      backgroundColor: AppColors.surfaceContainer,
       elevation: 8,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(24),
-        side: const BorderSide(color: AppColors.borderDark, width: 1),
+        side: const BorderSide(color: AppColors.outlineVariant, width: 1),
       ),
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -63,7 +63,7 @@ class _WelcomeNameDialogState extends State<WelcomeNameDialog> {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.15),
+                    color: AppColors.primaryContainer,
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
@@ -78,33 +78,51 @@ class _WelcomeNameDialogState extends State<WelcomeNameDialog> {
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+                    color: AppColors.onSurface,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
             const Text(
-              'Let\'s personalize your experience.',
+              'What should we call you?',
               style: TextStyle(
-                fontSize: 15,
-                color: AppColors.textSecondary,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AppColors.onSurface,
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 4),
+            const Text(
+              'Enter your name to personalize your app.',
+              style: TextStyle(
+                fontSize: 13,
+                color: AppColors.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 16),
             TextField(
               controller: _controller,
               textCapitalization: TextCapitalization.words,
-              style: const TextStyle(color: AppColors.textPrimary, fontSize: 16),
+              autofocus: true,
+              style: const TextStyle(color: AppColors.onSurface, fontSize: 16),
               decoration: InputDecoration(
-                hintText: 'What should we call you?',
-                hintStyle: const TextStyle(color: AppColors.textSecondary),
+                hintText: 'Enter your name',
+                hintStyle: const TextStyle(color: AppColors.onSurfaceVariant),
                 prefixIcon: const Icon(Icons.person_outline_rounded, color: AppColors.primary),
-                fillColor: AppColors.background,
+                fillColor: AppColors.surface,
                 filled: true,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(color: AppColors.borderDark),
+                  borderSide: const BorderSide(color: AppColors.outlineVariant),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: const BorderSide(color: AppColors.outlineVariant),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: const BorderSide(color: AppColors.primary, width: 2),
                 ),
               ),
               onSubmitted: (_) => _saveName(context),
@@ -120,13 +138,15 @@ class _WelcomeNameDialogState extends State<WelcomeNameDialog> {
                   },
                   child: const Text(
                     'Skip',
-                    style: TextStyle(color: AppColors.textSecondary, fontSize: 15),
+                    style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 15),
                   ),
                 ),
                 const SizedBox(width: 12),
                 ElevatedButton(
                   onPressed: () => _saveName(context),
                   style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
