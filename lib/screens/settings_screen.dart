@@ -10,7 +10,6 @@ import 'package:url_launcher/url_launcher.dart';
 import '../core/colors.dart';
 import '../core/constants.dart';
 import '../providers/settings_provider.dart';
-import '../services/in_app_update_service.dart';
 import '../utils/formatters.dart';
 import '../widgets/stitch_card.dart';
 
@@ -367,16 +366,6 @@ class SettingsScreen extends StatelessWidget {
               padding: EdgeInsets.zero,
               child: Column(
                 children: [
-                  _SettingsListTile(
-                    icon: Icons.system_update_rounded,
-                    title: 'Check for Updates',
-                    subtitle: 'Google Play In-App Updates',
-                    onTap: () {
-                      HapticFeedback.lightImpact();
-                      InAppUpdateService.instance.checkForUpdate(context: context);
-                    },
-                  ),
-                  const Divider(height: 1, indent: 56),
                   _SettingsListTile(
                     icon: Icons.star_border_rounded,
                     title: 'Rate the App',
