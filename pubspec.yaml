@@ -41,6 +41,7 @@ dependencies:
   package_info_plus: ^10.2.1
   url_launcher: ^6.2.0
   sensors_plus: ^7.1.0
+  flutter_compass: ^0.8.0
   geolocator: ^14.0.3
   geomag: ^0.3.0
   in_app_update: ^5.0.0

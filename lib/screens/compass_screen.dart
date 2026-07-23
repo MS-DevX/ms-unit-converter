@@ -1,9 +1,12 @@
-/// Compass Screen — Pixel-perfect implementation of Google Stitch Material Design 3 export.
+/// Compass Screen — Real-time live sensor integration with pixel-perfect Google Stitch M3 UI.
 library;
 
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_compass/flutter_compass.dart';
+import 'package:sensors_plus/sensors_plus.dart';
 
 import '../core/colors.dart';
 import '../widgets/stitch_card.dart';
@@ -15,24 +18,76 @@ class CompassScreen extends StatefulWidget {
   State<CompassScreen> createState() => _CompassScreenState();
 }
 
-class _CompassScreenState extends State<CompassScreen>
-    with SingleTickerProviderStateMixin {
-  double _heading = 180.0;
-  String _cardinal = 'S';
-  late final AnimationController _animController;
+class _CompassScreenState extends State<CompassScreen> {
+  double _heading = 0.0;
+  String _cardinal = 'N';
+  double _accuracy = 15.0; // In degrees
+  double _magneticField = 48.2; // In μT
+  bool _hasSensors = true;
+  bool _isLoading = true;
+
+  StreamSubscription<CompassEvent>? _compassSub;
+  StreamSubscription<MagnetometerEvent>? _magSub;
 
   @override
   void initState() {
     super.initState();
-    _animController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 10),
-    )..repeat();
+    _initSensors();
+  }
+
+  void _initSensors() {
+    _compassSub = FlutterCompass.events?.listen(
+      (event) {
+        if (!mounted) return;
+        final heading = event.heading;
+        if (heading != null) {
+          setState(() {
+            _hasSensors = true;
+            _isLoading = false;
+            // Normalize heading to 0..359
+            final normalized = (heading % 360 + 360) % 360;
+            _heading = normalized;
+            _cardinal = _getCardinal(normalized);
+            if (event.accuracy != null) {
+              _accuracy = event.accuracy!;
+            }
+          });
+        }
+      },
+      onError: (err) {
+        if (!mounted) return;
+        setState(() {
+          _hasSensors = false;
+          _isLoading = false;
+        });
+      },
+    );
+
+    if (_compassSub == null) {
+      setState(() {
+        _hasSensors = false;
+        _isLoading = false;
+      });
+    }
+
+    _magSub = magnetometerEventStream().listen(
+      (event) {
+        if (!mounted) return;
+        final field = math.sqrt(event.x * event.x + event.y * event.y + event.z * event.z);
+        if (field > 0) {
+          setState(() {
+            _magneticField = field;
+          });
+        }
+      },
+      onError: (_) {},
+    );
   }
 
   @override
   void dispose() {
-    _animController.dispose();
+    _compassSub?.cancel();
+    _magSub?.cancel();
     super.dispose();
   }
 
@@ -45,6 +100,18 @@ class _CompassScreenState extends State<CompassScreen>
     if (heading >= 202.5 && heading < 247.5) return 'SW';
     if (heading >= 247.5 && heading < 292.5) return 'W';
     return 'NW';
+  }
+
+  String _getAccuracyText(double accuracy) {
+    if (accuracy <= 15) return 'High';
+    if (accuracy <= 30) return 'Medium';
+    return 'Low';
+  }
+
+  Color _getAccuracyColor(double accuracy) {
+    if (accuracy <= 15) return AppColors.success;
+    if (accuracy <= 30) return AppColors.tertiary;
+    return AppColors.error;
   }
 
   @override
@@ -64,203 +131,201 @@ class _CompassScreenState extends State<CompassScreen>
         ),
       ),
       body: SafeArea(
-        child: Column(
-          children: [
-            const Spacer(),
-
-            // ROTATING COMPASS RING CONTAINER
-            Center(
-              child: SizedBox(
-                width: 280,
-                height: 280,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    // Fixed Heading Indicator Top Pin
-                    Positioned(
-                      top: 0,
-                      child: Container(
-                        width: 4,
-                        height: 24,
-                        decoration: BoxDecoration(
-                          color: AppColors.primary,
-                          borderRadius: BorderRadius.circular(2),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: AppColors.primary,
-                              blurRadius: 10,
+        child: _isLoading
+            ? const Center(
+                child: CircularProgressIndicator(color: AppColors.primary),
+              )
+            : !_hasSensors
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: StitchCard(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            Icon(
+                              Icons.explore_off_rounded,
+                              size: 48,
+                              color: AppColors.tertiary,
+                            ),
+                            SizedBox(height: 16),
+                            Text(
+                              'Compass Sensor Unavailable',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.onSurface,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              'Your device hardware does not support magnetometer or compass orientation sensors.',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: AppColors.onSurfaceVariant,
+                              ),
+                              textAlign: TextAlign.center,
                             ),
                           ],
                         ),
                       ),
                     ),
-
-                    // Rotating Compass Ring
-                    AnimatedRotation(
-                      turns: -_heading / 360.0,
-                      duration: const Duration(milliseconds: 200),
-                      curve: Curves.easeOutCubic,
-                      child: CustomPaint(
-                        size: const Size(280, 280),
-                        painter: _CompassPainter(),
-                      ),
-                    ),
-
-                    // Central Readout Box
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          '${_heading.round()}°',
-                          style: const TextStyle(
-                            fontSize: 36,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.onSurface,
-                          ),
-                        ),
-                        Text(
-                          _cardinal,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.primary,
-                            letterSpacing: 2.0,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            const Spacer(),
-
-            // MANUAL ADJUSTMENT SLIDER FOR TESTING / CONVERTING
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  )
+                : Column(
                     children: [
-                      const Text(
-                        'Manual Angle',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: AppColors.onSurfaceVariant,
+                      const Spacer(),
+
+                      // ROTATING COMPASS RING CONTAINER
+                      Center(
+                        child: SizedBox(
+                          width: 280,
+                          height: 280,
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              // Fixed Heading Indicator Top Pin
+                              Positioned(
+                                top: 0,
+                                child: Container(
+                                  width: 4,
+                                  height: 24,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary,
+                                    borderRadius: BorderRadius.circular(2),
+                                    boxShadow: const [
+                                      BoxShadow(
+                                        color: AppColors.primary,
+                                        blurRadius: 10,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+
+                              // Live Rotating Compass Ring
+                              AnimatedRotation(
+                                turns: -_heading / 360.0,
+                                duration: const Duration(milliseconds: 150),
+                                curve: Curves.easeOutCubic,
+                                child: CustomPaint(
+                                  size: const Size(280, 280),
+                                  painter: _CompassPainter(),
+                                ),
+                              ),
+
+                              // Central Readout Box
+                              Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    '${_heading.round()}°',
+                                    style: const TextStyle(
+                                      fontSize: 36,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.onSurface,
+                                    ),
+                                  ),
+                                  Text(
+                                    _cardinal,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.primary,
+                                      letterSpacing: 2.0,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                      Text(
-                        '${_heading.round()}° (${(_heading * math.pi / 180).toStringAsFixed(2)} rad)',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.primary,
+
+                      const Spacer(),
+
+                      // METRIC DETAILS PANEL (ACCURACY & MAGNETIC FIELD)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: StitchCard(
+                                backgroundColor: AppColors.surfaceContainerLow,
+                                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                                child: Column(
+                                  children: [
+                                    const Text(
+                                      'ACCURACY',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w700,
+                                        color: AppColors.onSurfaceVariant,
+                                        letterSpacing: 1.0,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Container(
+                                          width: 8,
+                                          height: 8,
+                                          decoration: BoxDecoration(
+                                            color: _getAccuracyColor(_accuracy),
+                                            shape: BoxShape.circle,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          _getAccuracyText(_accuracy),
+                                          style: const TextStyle(
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppColors.onSurface,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: StitchCard(
+                                backgroundColor: AppColors.surfaceContainerLow,
+                                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                                child: Column(
+                                  children: [
+                                    const Text(
+                                      'MAGNETIC FIELD',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w700,
+                                        color: AppColors.onSurfaceVariant,
+                                        letterSpacing: 1.0,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      '${_magneticField.toStringAsFixed(1)} μT',
+                                      style: const TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.onSurface,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
-                  Slider(
-                    value: _heading,
-                    min: 0,
-                    max: 360,
-                    activeColor: AppColors.primary,
-                    inactiveColor: AppColors.surfaceContainerHighest,
-                    onChanged: (val) {
-                      setState(() {
-                        _heading = val;
-                        _cardinal = _getCardinal(val);
-                      });
-                    },
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // METRIC DETAILS PANEL (ACCURACY & MAGNETIC FIELD)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: StitchCard(
-                      backgroundColor: AppColors.surfaceContainerLow,
-                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-                      child: Column(
-                        children: [
-                          const Text(
-                            'ACCURACY',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.onSurfaceVariant,
-                              letterSpacing: 1.0,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Container(
-                                width: 8,
-                                height: 8,
-                                decoration: const BoxDecoration(
-                                  color: AppColors.success,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              const Text(
-                                'High',
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.onSurface,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: StitchCard(
-                      backgroundColor: AppColors.surfaceContainerLow,
-                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-                      child: Column(
-                        children: const [
-                          Text(
-                            'MAGNETIC FIELD',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.onSurfaceVariant,
-                              letterSpacing: 1.0,
-                            ),
-                          ),
-                          SizedBox(height: 6),
-                          Text(
-                            '48.2 μT',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.onSurface,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

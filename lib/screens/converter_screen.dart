@@ -1,4 +1,4 @@
-/// Unit Converter Screen — Pixel-perfect implementation of Google Stitch Material Design 3 export.
+/// Unit Converter Screen — Enhanced interactions matching Google Stitch specifications.
 library;
 
 import 'dart:async';
@@ -42,6 +42,7 @@ class _ConverterScreenState extends State<ConverterScreen> {
   Timer? _historyDebounce;
   String _lastHistorySignature = '';
   double _swapRotationAngle = 0.0;
+  bool _isSwapPressed = false;
 
   static IconData _getCategoryIcon(UnitCategory category) {
     switch (category) {
@@ -89,6 +90,16 @@ class _ConverterScreenState extends State<ConverterScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _inputFocusNode.requestFocus();
+      }
+    });
+  }
+
+  @override
   void dispose() {
     _historyDebounce?.cancel();
     _inputController.dispose();
@@ -105,6 +116,7 @@ class _ConverterScreenState extends State<ConverterScreen> {
         final converter = context.read<ConverterProvider>();
         converter.setCategory(widget.initialCategory!);
         _applyPreset(converter);
+        _inputFocusNode.requestFocus();
       });
     }
   }
@@ -287,6 +299,8 @@ class _ConverterScreenState extends State<ConverterScreen> {
         ? result.formattedResult
         : '0.00';
 
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -301,7 +315,7 @@ class _ConverterScreenState extends State<ConverterScreen> {
         title: Text(
           converter.selectedCategory.displayName,
           style: const TextStyle(
-            fontSize: 28,
+            fontSize: 26,
             fontWeight: FontWeight.w600,
             color: AppColors.onSurface,
           ),
@@ -309,7 +323,7 @@ class _ConverterScreenState extends State<ConverterScreen> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -320,13 +334,13 @@ class _ConverterScreenState extends State<ConverterScreen> {
                 child: Stack(
                   children: [
                     Positioned(
-                      top: 0,
-                      right: 0,
+                      top: -10,
+                      right: -10,
                       child: Opacity(
-                        opacity: 0.08,
+                        opacity: 0.06,
                         child: Icon(
                           _getCategoryIcon(converter.selectedCategory),
-                          size: 120,
+                          size: 140,
                           color: AppColors.onSurface,
                         ),
                       ),
@@ -334,21 +348,21 @@ class _ConverterScreenState extends State<ConverterScreen> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // FROM SECTION
+                        // FROM SECTION HEADER
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             const Text(
                               'FROM',
                               style: TextStyle(
-                                fontSize: 13,
+                                fontSize: 12,
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.primary,
                                 letterSpacing: 1.2,
                               ),
                             ),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                               decoration: BoxDecoration(
                                 color: AppColors.surface,
                                 borderRadius: BorderRadius.circular(8),
@@ -358,11 +372,11 @@ class _ConverterScreenState extends State<ConverterScreen> {
                               ),
                               child: Row(
                                 children: const [
-                                  Icon(Icons.language_rounded, size: 14, color: AppColors.onSurfaceVariant),
+                                  Icon(Icons.language_rounded, size: 13, color: AppColors.onSurfaceVariant),
                                   SizedBox(width: 4),
                                   Text(
                                     'Standard',
-                                    style: TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
+                                    style: TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant),
                                   ),
                                 ],
                               ),
@@ -372,68 +386,93 @@ class _ConverterScreenState extends State<ConverterScreen> {
 
                         const SizedBox(height: 12),
 
+                        // FROM INPUT ROW — PROMINENT AUTO-FOCUSED 48px INPUT
                         Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             Expanded(
-                              child: TextField(
-                                controller: _inputController,
-                                focusNode: _inputFocusNode,
-                                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                style: const TextStyle(
-                                  fontSize: 36,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.onSurface,
-                                ),
-                                decoration: const InputDecoration(
-                                  hintText: '0.00',
-                                  hintStyle: TextStyle(
-                                    fontSize: 36,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.outlineVariant,
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                alignment: Alignment.centerLeft,
+                                child: SizedBox(
+                                  width: screenWidth * 0.5,
+                                  child: TextField(
+                                    controller: _inputController,
+                                    focusNode: _inputFocusNode,
+                                    autofocus: true,
+                                    keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                                    style: const TextStyle(
+                                      fontSize: 48,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.onSurface,
+                                      height: 1.1,
+                                    ),
+                                    decoration: const InputDecoration(
+                                      hintText: '0.00',
+                                      hintStyle: TextStyle(
+                                        fontSize: 48,
+                                        fontWeight: FontWeight.w700,
+                                        color: AppColors.outlineVariant,
+                                        height: 1.1,
+                                      ),
+                                      border: InputBorder.none,
+                                      enabledBorder: InputBorder.none,
+                                      focusedBorder: InputBorder.none,
+                                      filled: false,
+                                      contentPadding: EdgeInsets.zero,
+                                    ),
+                                    onChanged: (text) => converter.setInput(text),
                                   ),
-                                  border: InputBorder.none,
-                                  enabledBorder: InputBorder.none,
-                                  focusedBorder: InputBorder.none,
-                                  filled: false,
-                                  contentPadding: EdgeInsets.zero,
                                 ),
-                                onChanged: (text) => converter.setInput(text),
                               ),
                             ),
 
-                            GestureDetector(
-                              onTap: () => _showUnitPicker(context, converter, true),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                decoration: BoxDecoration(
-                                  color: AppColors.surface,
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: const Border(
-                                    bottom: BorderSide(color: AppColors.primary, width: 2),
-                                  ),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Text(
-                                      fromUnit?.name ?? 'Select',
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w500,
-                                        color: AppColors.onSurface,
-                                      ),
+                            const SizedBox(width: 12),
+
+                            // ALIGNED RESPONSIVE UNIT SELECTOR
+                            ConstrainedBox(
+                              constraints: BoxConstraints(
+                                maxWidth: screenWidth * 0.42,
+                              ),
+                              child: GestureDetector(
+                                onTap: () => _showUnitPicker(context, converter, true),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.surface,
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: const Border(
+                                      bottom: BorderSide(color: AppColors.primary, width: 2),
                                     ),
-                                    const SizedBox(width: 6),
-                                    const Icon(Icons.expand_more_rounded, color: AppColors.primary),
-                                  ],
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Flexible(
+                                        child: Text(
+                                          fromUnit?.name ?? 'Select',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppColors.onSurface,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      const Icon(Icons.expand_more_rounded, color: AppColors.primary, size: 20),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
                           ],
                         ),
 
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 20),
 
-                        // SWAP DIVIDER & ANIMATED SWAP BUTTON
+                        // SWAP BUTTON WITH HAPTIC & SCALE ANIMATION
                         Stack(
                           alignment: Alignment.center,
                           children: [
@@ -442,6 +481,9 @@ class _ConverterScreenState extends State<ConverterScreen> {
                               thickness: 1,
                             ),
                             GestureDetector(
+                              onTapDown: (_) => setState(() => _isSwapPressed = true),
+                              onTapUp: (_) => setState(() => _isSwapPressed = false),
+                              onTapCancel: () => setState(() => _isSwapPressed = false),
                               onTap: () {
                                 setState(() {
                                   _swapRotationAngle += 3.14159;
@@ -450,28 +492,33 @@ class _ConverterScreenState extends State<ConverterScreen> {
                                 converter.swapUnits();
                                 _inputController.text = converter.inputValue;
                               },
-                              child: AnimatedRotation(
-                                turns: _swapRotationAngle / (2 * 3.14159),
-                                duration: const Duration(milliseconds: 300),
-                                curve: Curves.easeOutCubic,
-                                child: Container(
-                                  width: 48,
-                                  height: 48,
-                                  decoration: const BoxDecoration(
-                                    color: AppColors.primary,
-                                    shape: BoxShape.circle,
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Color(0x33000000),
-                                        blurRadius: 8,
-                                        offset: Offset(0, 4),
-                                      ),
-                                    ],
-                                  ),
-                                  child: const Icon(
-                                    Icons.swap_vert_rounded,
-                                    color: Colors.white,
-                                    size: 26,
+                              child: AnimatedScale(
+                                scale: _isSwapPressed ? 0.90 : 1.0,
+                                duration: const Duration(milliseconds: 150),
+                                curve: Curves.easeOut,
+                                child: AnimatedRotation(
+                                  turns: _swapRotationAngle / (2 * 3.14159),
+                                  duration: const Duration(milliseconds: 300),
+                                  curve: Curves.easeOutCubic,
+                                  child: Container(
+                                    width: 56,
+                                    height: 56,
+                                    decoration: const BoxDecoration(
+                                      color: AppColors.primary,
+                                      shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Color(0x40000000),
+                                          blurRadius: 10,
+                                          offset: Offset(0, 4),
+                                        ),
+                                      ],
+                                    ),
+                                    child: const Icon(
+                                      Icons.swap_vert_rounded,
+                                      color: Colors.white,
+                                      size: 28,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -479,16 +526,16 @@ class _ConverterScreenState extends State<ConverterScreen> {
                           ],
                         ),
 
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 20),
 
-                        // TO SECTION
+                        // TO SECTION HEADER
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: const [
                             Text(
                               'TO',
                               style: TextStyle(
-                                fontSize: 13,
+                                fontSize: 12,
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.onSurfaceVariant,
                                 letterSpacing: 1.2,
@@ -499,48 +546,80 @@ class _ConverterScreenState extends State<ConverterScreen> {
 
                         const SizedBox(height: 12),
 
+                        // TO RESULT ROW — ANIMATED FADE & SCALE TRANSITION ON RESULT CHANGE
                         Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             Expanded(
-                              child: Text(
-                                resultStr,
-                                style: const TextStyle(
-                                  fontSize: 36,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.primary,
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                alignment: Alignment.centerLeft,
+                                child: AnimatedSwitcher(
+                                  duration: const Duration(milliseconds: 200),
+                                  transitionBuilder: (child, anim) {
+                                    return FadeTransition(
+                                      opacity: anim,
+                                      child: ScaleTransition(
+                                        scale: Tween<double>(begin: 0.95, end: 1.0).animate(anim),
+                                        child: child,
+                                      ),
+                                    );
+                                  },
+                                  child: Text(
+                                    resultStr,
+                                    key: ValueKey(resultStr),
+                                    style: const TextStyle(
+                                      fontSize: 48,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.primary,
+                                      height: 1.1,
+                                    ),
+                                    maxLines: 1,
+                                  ),
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
 
-                            GestureDetector(
-                              onTap: () => _showUnitPicker(context, converter, false),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                decoration: BoxDecoration(
-                                  color: AppColors.surface,
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border(
-                                    bottom: BorderSide(
-                                      color: AppColors.outlineVariant.withValues(alpha: 0.5),
-                                      width: 2,
-                                    ),
-                                  ),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Text(
-                                      toUnit?.name ?? 'Select',
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w500,
-                                        color: AppColors.onSurface,
+                            const SizedBox(width: 12),
+
+                            // ALIGNED RESPONSIVE UNIT SELECTOR
+                            ConstrainedBox(
+                              constraints: BoxConstraints(
+                                maxWidth: screenWidth * 0.42,
+                              ),
+                              child: GestureDetector(
+                                onTap: () => _showUnitPicker(context, converter, false),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.surface,
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border(
+                                      bottom: BorderSide(
+                                        color: AppColors.outlineVariant.withValues(alpha: 0.5),
+                                        width: 2,
                                       ),
                                     ),
-                                    const SizedBox(width: 6),
-                                    const Icon(Icons.expand_more_rounded, color: AppColors.onSurfaceVariant),
-                                  ],
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Flexible(
+                                        child: Text(
+                                          toUnit?.name ?? 'Select',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppColors.onSurface,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      const Icon(Icons.expand_more_rounded, color: AppColors.onSurfaceVariant, size: 20),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
@@ -552,21 +631,21 @@ class _ConverterScreenState extends State<ConverterScreen> {
                 ),
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
 
-              // QUICK ACTION BUTTONS GRID (COPY, SHARE, SWAP, SAVE)
+              // COMPACT ACTION BUTTONS GRID WITH HAPTIC FEEDBACK (COPY, SHARE, SWAP, SAVE)
               Row(
                 children: [
                   Expanded(
                     child: StitchCard(
                       onTap: () => _copyToClipboard(resultStr),
                       backgroundColor: AppColors.primaryContainer,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: const [
-                          Icon(Icons.content_copy_rounded, color: AppColors.primary, size: 20),
-                          SizedBox(height: 4),
+                          Icon(Icons.content_copy_rounded, color: AppColors.primary, size: 18),
+                          SizedBox(width: 0, height: 3),
                           Text(
                             'Copy',
                             style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.primary),
@@ -575,17 +654,17 @@ class _ConverterScreenState extends State<ConverterScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: StitchCard(
                       onTap: () => _shareResult(converter),
                       backgroundColor: AppColors.surface,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: const [
-                          Icon(Icons.share_rounded, color: AppColors.onSurfaceVariant, size: 20),
-                          SizedBox(height: 4),
+                          Icon(Icons.share_rounded, color: AppColors.onSurfaceVariant, size: 18),
+                          SizedBox(width: 0, height: 3),
                           Text(
                             'Share',
                             style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.onSurfaceVariant),
@@ -594,7 +673,7 @@ class _ConverterScreenState extends State<ConverterScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: StitchCard(
                       onTap: () {
@@ -603,12 +682,12 @@ class _ConverterScreenState extends State<ConverterScreen> {
                         _inputController.text = converter.inputValue;
                       },
                       backgroundColor: AppColors.surface,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: const [
-                          Icon(Icons.swap_horiz_rounded, color: AppColors.onSurfaceVariant, size: 20),
-                          SizedBox(height: 4),
+                          Icon(Icons.swap_horiz_rounded, color: AppColors.onSurfaceVariant, size: 18),
+                          SizedBox(width: 0, height: 3),
                           Text(
                             'Swap',
                             style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.onSurfaceVariant),
@@ -617,7 +696,7 @@ class _ConverterScreenState extends State<ConverterScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 8),
                   Consumer<FavoritesProvider>(
                     builder: (context, favProv, _) {
                       final isFav = favProv.isFavorite(converter.selectedCategory);
@@ -628,16 +707,16 @@ class _ConverterScreenState extends State<ConverterScreen> {
                             favProv.toggleFavorite(converter.selectedCategory);
                           },
                           backgroundColor: AppColors.surface,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          padding: const EdgeInsets.symmetric(vertical: 10),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Icon(
                                 isFav ? Icons.star_rounded : Icons.star_outline_rounded,
                                 color: isFav ? Colors.amber : AppColors.onSurfaceVariant,
-                                size: 20,
+                                size: 18,
                               ),
-                              const SizedBox(height: 4),
+                              const SizedBox(height: 3),
                               Text(
                                 isFav ? 'Saved' : 'Save',
                                 style: TextStyle(
@@ -655,25 +734,25 @@ class _ConverterScreenState extends State<ConverterScreen> {
                 ],
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
 
-              // FORMULA CARD
+              // REFINED FORMULA CARD
               StitchCard(
                 backgroundColor: AppColors.surfaceContainerLow,
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(14),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
                       'FORMULA',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 11,
                         fontWeight: FontWeight.w700,
                         color: AppColors.onSurfaceVariant,
-                        letterSpacing: 1.0,
+                        letterSpacing: 1.2,
                       ),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 4),
                     Text(
                       converter.selectedCategory.formulaExplanation,
                       style: const TextStyle(
@@ -686,9 +765,9 @@ class _ConverterScreenState extends State<ConverterScreen> {
                 ),
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
 
-              // PRECISION BAR
+              // RESPONSIVE DECIMAL PRECISION SELECTOR
               const DecimalPrecisionBar(),
             ],
           ),

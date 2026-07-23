@@ -1,4 +1,4 @@
-/// Settings Screen — Pixel-perfect implementation of Google Stitch Material Design 3 export.
+/// Settings Screen — Compact Material 3 implementation matching Google Stitch design tokens.
 library;
 
 import 'package:flutter/material.dart';
@@ -63,6 +63,156 @@ class SettingsScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  void _showThemeSelector(BuildContext context, SettingsProvider settings) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surfaceContainer,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 8, bottom: 12),
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.outlineVariant,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Select Theme',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.onSurface,
+                  ),
+                ),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.brightness_auto_rounded, color: AppColors.primary),
+              title: const Text('System Default', style: TextStyle(color: AppColors.onSurface)),
+              trailing: settings.themeMode == ThemeMode.system
+                  ? const Icon(Icons.check_rounded, color: AppColors.primary)
+                  : null,
+              onTap: () {
+                HapticFeedback.selectionClick();
+                settings.setThemeMode(ThemeMode.system);
+                Navigator.pop(ctx);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.light_mode_rounded, color: AppColors.primary),
+              title: const Text('Light', style: TextStyle(color: AppColors.onSurface)),
+              trailing: settings.themeMode == ThemeMode.light
+                  ? const Icon(Icons.check_rounded, color: AppColors.primary)
+                  : null,
+              onTap: () {
+                HapticFeedback.selectionClick();
+                settings.setThemeMode(ThemeMode.light);
+                Navigator.pop(ctx);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.dark_mode_rounded, color: AppColors.primary),
+              title: const Text('Dark', style: TextStyle(color: AppColors.onSurface)),
+              trailing: settings.themeMode == ThemeMode.dark
+                  ? const Icon(Icons.check_rounded, color: AppColors.primary)
+                  : null,
+              onTap: () {
+                HapticFeedback.selectionClick();
+                settings.setThemeMode(ThemeMode.dark);
+                Navigator.pop(ctx);
+              },
+            ),
+            const SizedBox(height: 16),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showPrecisionSelector(BuildContext context, SettingsProvider settings) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surfaceContainer,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 8, bottom: 12),
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.outlineVariant,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Default Precision',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.onSurface,
+                  ),
+                ),
+              ),
+            ),
+            ...DecimalPrecision.values.map((precision) {
+              final selected = settings.decimalPrecision == precision;
+              return ListTile(
+                leading: Icon(
+                  selected ? Icons.check_circle_rounded : Icons.circle_outlined,
+                  color: selected ? AppColors.primary : AppColors.outline,
+                ),
+                title: Text(
+                  precision.label,
+                  style: TextStyle(
+                    color: selected ? AppColors.primary : AppColors.onSurface,
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                  ),
+                ),
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  settings.setDecimalPrecision(precision);
+                  Navigator.pop(ctx);
+                },
+              );
+            }),
+            const SizedBox(height: 16),
+          ],
+        );
+      },
+    );
+  }
+
+  String _getThemeLabel(ThemeMode mode) {
+    switch (mode) {
+      case ThemeMode.light:
+        return 'Light';
+      case ThemeMode.dark:
+        return 'Dark';
+      case ThemeMode.system:
+        return 'System Default';
+    }
   }
 
   @override
@@ -154,68 +304,56 @@ class SettingsScreen extends StatelessWidget {
             const SizedBox(height: 8),
             StitchCard(
               padding: EdgeInsets.zero,
-              child: Column(
-                children: [
-                  _SettingsListTile(
-                    icon: Icons.dark_mode_rounded,
-                    title: 'Theme',
-                    subtitle: settings.themeMode == ThemeMode.dark ? 'Dark Mode' : 'System Default',
-                    trailing: Switch.adaptive(
-                      value: settings.themeMode == ThemeMode.dark,
-                      activeThumbColor: AppColors.primary,
-                      onChanged: (_) {
-                        HapticFeedback.lightImpact();
-                        settings.toggleTheme();
-                      },
-                    ),
-                  ),
-                  const Divider(height: 1, indent: 56),
-                  _SettingsListTile(
-                    icon: Icons.palette_rounded,
-                    title: 'Accent Color',
-                    subtitle: 'Deep Space Blue (#4F8CFF)',
-                    trailing: Container(
-                      width: 24,
-                      height: 24,
-                      decoration: const BoxDecoration(
+              child: _SettingsListTile(
+                icon: Icons.dark_mode_rounded,
+                title: 'Theme',
+                subtitle: _getThemeLabel(settings.themeMode),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      _getThemeLabel(settings.themeMode),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
                         color: AppColors.primary,
-                        shape: BoxShape.circle,
                       ),
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 4),
+                    const Icon(Icons.arrow_drop_down_rounded, color: AppColors.primary),
+                  ],
+                ),
+                onTap: () => _showThemeSelector(context, settings),
               ),
             ),
 
             const SizedBox(height: 24),
 
-            // UNITS & PRECISION SECTION
+            // CONVERTER & PRECISION SECTION
             const _SectionHeader(title: 'CONVERTER & PRECISION'),
             const SizedBox(height: 8),
             StitchCard(
               padding: EdgeInsets.zero,
-              child: Column(
-                children: [
-                  ...DecimalPrecision.values.map((precision) {
-                    final selected = settings.decimalPrecision == precision;
-                    return Column(
-                      children: [
-                        if (precision != DecimalPrecision.values.first)
-                          const Divider(height: 1, indent: 56),
-                        _SettingsListTile(
-                          icon: selected ? Icons.check_circle_rounded : Icons.circle_outlined,
-                          iconColor: selected ? AppColors.primary : AppColors.outline,
-                          title: precision.label,
-                          subtitle: 'Precision formatting setting',
-                          onTap: () {
-                            HapticFeedback.selectionClick();
-                            settings.setDecimalPrecision(precision);
-                          },
-                        ),
-                      ],
-                    );
-                  }),
-                ],
+              child: _SettingsListTile(
+                icon: Icons.tune_rounded,
+                title: 'Default Precision',
+                subtitle: settings.decimalPrecision.label,
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      settings.decimalPrecision.label,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.arrow_drop_down_rounded, color: AppColors.primary),
+                  ],
+                ),
+                onTap: () => _showPrecisionSelector(context, settings),
               ),
             ),
 
@@ -299,7 +437,6 @@ class _SectionHeader extends StatelessWidget {
 
 class _SettingsListTile extends StatelessWidget {
   final IconData icon;
-  final Color? iconColor;
   final String title;
   final String subtitle;
   final Widget? trailing;
@@ -307,7 +444,6 @@ class _SettingsListTile extends StatelessWidget {
 
   const _SettingsListTile({
     required this.icon,
-    this.iconColor,
     required this.title,
     required this.subtitle,
     this.trailing,
@@ -320,7 +456,7 @@ class _SettingsListTile extends StatelessWidget {
       onTap: onTap,
       leading: Icon(
         icon,
-        color: iconColor ?? AppColors.onSurfaceVariant,
+        color: AppColors.onSurfaceVariant,
         size: 22,
       ),
       title: Text(
