@@ -5,12 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../core/colors.dart';
+import '../services/in_app_update_service.dart';
 import '../services/navigation_service.dart';
 import '../utils/responsive_helper.dart';
 import '../widgets/stitch_bottom_nav.dart';
 import '../widgets/welcome_name_dialog.dart';
 import 'compass_screen.dart';
-import 'converter_screen.dart';
 import 'currency_screen.dart';
 import 'history_screen.dart';
 import 'home_screen.dart';
@@ -35,7 +35,7 @@ class MainShell extends StatefulWidget {
   State<MainShell> createState() => _MainShellState();
 }
 
-class _MainShellState extends State<MainShell> {
+class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
   int _currentIndex = 0;
   late final PageController _pageController;
 
@@ -78,6 +78,7 @@ class _MainShellState extends State<MainShell> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _pageController = PageController(initialPage: 0);
     appNavigator.register((index) {
       _onTabTapped(index);
@@ -85,13 +86,24 @@ class _MainShellState extends State<MainShell> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       WelcomeNameDialog.showIfNeeded(context);
+      // Check for Google Play In-App Updates on launch
+      InAppUpdateService.instance.checkForUpdate(context: context);
     });
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _pageController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Check for Google Play In-App Updates when app resumes from background
+      InAppUpdateService.instance.checkForUpdate(context: context);
+    }
   }
 
   void _onTabTapped(int index) {
@@ -139,16 +151,18 @@ class _MainShellState extends State<MainShell> {
         controller: _pageController,
         physics: const _ReducedSensitivityPhysics(),
         onPageChanged: (index) {
-          setState(() => _currentIndex = index);
+          if (_currentIndex != index) {
+            setState(() {
+              _currentIndex = index;
+            });
+          }
         },
-        children: _screens.map((screen) {
-          return _KeepAlivePage(child: screen);
-        }).toList(),
+        children: _screens,
       ),
       bottomNavigationBar: StitchBottomNav(
         currentIndex: _currentIndex,
-        onTap: _onTabTapped,
         items: _navItems,
+        onTap: _onTabTapped,
       ),
     );
   }
@@ -158,80 +172,39 @@ class _MainShellState extends State<MainShell> {
       children: [
         NavigationRail(
           selectedIndex: _currentIndex,
-          onDestinationSelected: (index) => _onTabTapped(index),
-          labelType: NavigationRailLabelType.selected,
-          destinations: _navItems.map((item) {
-            return NavigationRailDestination(
-              icon: Icon(item.icon),
-              selectedIcon: Icon(item.selectedIcon),
-              label: Text(item.label),
-            );
-          }).toList(),
-          backgroundColor: AppColors.surface,
+          onDestinationSelected: _onTabTapped,
+          labelType: NavigationRailLabelType.all,
+          backgroundColor: AppColors.surfaceContainer,
+          indicatorColor: AppColors.primaryContainer,
           selectedIconTheme: const IconThemeData(color: AppColors.primary),
+          unselectedIconTheme: const IconThemeData(color: AppColors.onSurfaceVariant),
           selectedLabelTextStyle: const TextStyle(
             color: AppColors.primary,
-            fontWeight: FontWeight.w700,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+          unselectedLabelTextStyle: const TextStyle(
+            color: AppColors.onSurfaceVariant,
             fontSize: 12,
           ),
-          unselectedIconTheme: const IconThemeData(color: AppColors.onSurfaceVariant),
-        ),
-        const VerticalDivider(
-          thickness: 1,
-          width: 1,
-          color: AppColors.outlineVariant,
-        ),
-        Expanded(
-          child: _currentIndex == 0
-              ? _buildHomeSplitPane()
-              : IndexedStack(
-                  index: _currentIndex,
-                  children: _screens,
+          destinations: _navItems
+              .map(
+                (item) => NavigationRailDestination(
+                  icon: Icon(item.icon),
+                  selectedIcon: Icon(item.selectedIcon),
+                  label: Text(item.label),
                 ),
+              )
+              .toList(),
+        ),
+        const VerticalDivider(thickness: 1, width: 1, color: AppColors.outlineVariant),
+        Expanded(
+          child: IndexedStack(
+            index: _currentIndex,
+            children: _screens,
+          ),
         ),
       ],
     );
   }
-
-  Widget _buildHomeSplitPane() {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final leftPaneWidth = screenWidth > 1100 ? 420.0 : 360.0;
-
-    return Row(
-      children: [
-        SizedBox(
-          width: leftPaneWidth,
-          child: const HomeScreen(),
-        ),
-        const VerticalDivider(
-          thickness: 1,
-          width: 1,
-          color: AppColors.outlineVariant,
-        ),
-        const Expanded(
-          child: ConverterScreen(),
-        ),
-      ],
-    );
-  }
-}
-
-class _KeepAlivePage extends StatefulWidget {
-  final Widget child;
-  const _KeepAlivePage({required this.child});
-
-  @override
-  State<_KeepAlivePage> createState() => _KeepAlivePageState();
-}
-
-class _KeepAlivePageState extends State<_KeepAlivePage>
-    with AutomaticKeepAliveClientMixin {
-  @override
-  Widget build(BuildContext context) {
-    super.build(context);
-    return widget.child;
-  }
-
-  @override
-  bool get wantKeepAlive => true;
 }
