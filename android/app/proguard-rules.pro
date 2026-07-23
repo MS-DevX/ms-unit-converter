@@ -13,8 +13,6 @@
 # Keep Google Mobile Ads annotations.
 -dontwarn com.google.android.gms.ads.**
 
-# Keep in_app_purchase classes.
--keep class com.android.billingclient.** { *; }
 
 # Play Core — used by Flutter's deferred component manager at runtime.
 -keep class com.google.android.play.core.** { *; }

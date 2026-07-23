@@ -9,19 +9,18 @@ plugins {
 
 android {
     namespace = "com.msdevx.unitconverter"
-    compileSdk = 36
-    buildToolsVersion = "36.1.0"
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
 
     defaultConfig {
         applicationId = "com.msdevx.unitconverter"
         minSdk = flutter.minSdkVersion
-        targetSdk = 35
+        targetSdk = 37
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
@@ -82,12 +81,19 @@ android {
 
 kotlin {
     compilerOptions {
-        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21
     }
 }
 
 dependencies {
+    // This app uses AdMob only. Explicitly exclude the Play Billing client
+    // to prevent any transitive dependency from accidentally pulling it in.
+    configurations.all {
+        exclude(group = "com.android.billingclient", module = "billing")
+        exclude(group = "com.android.billingclient", module = "billing-ktx")
+    }
 }
+
 
 flutter {
     source = "../.."
