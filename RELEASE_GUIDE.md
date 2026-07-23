@@ -7,7 +7,7 @@
 | App name | MS Unit Converter |
 | Package ID | `com.msdevx.unitconverter` |
 | Developer | MS DevX |
-| Version | `2.0.0+2` (pubspec.yaml:19) |
+| Version | `2.1.0+3` (pubspec.yaml:19) |
 | Min SDK | 21 (Android 5.0) |
 | Target SDK | 35 (Android 15) |
 | Flutter | Latest stable 3.x |
@@ -212,8 +212,8 @@ If a production release causes crashes or critical bugs:
 
 | Constant | Value |
 |----------|-------|
-| `admobAppIdAndroid` | `ca-app-pub-8684958562988579~6766583891` |
-| `appOpenAdUnitId` | `ca-app-pub-8684958562988579/2956999697` |
+| `admobAppIdAndroid` | `ca-app-pub-8684958562988579~9464291585` |
+| `appOpenAdUnitId` | `ca-app-pub-8684958562988579/4208361403` |
 | `removeAdsProductId` | `com.msdevx.unitconverter.removeads` |
 | `removeAdsPrice` | `\$1.99` |
 
