@@ -16,6 +16,8 @@ import '../services/conversion_service.dart';
 import '../services/smart_parse_service.dart';
 import '../utils/formatters.dart';
 import '../utils/search_helper.dart';
+import '../providers/converter_provider.dart';
+import '../utils/responsive_helper.dart';
 import '../widgets/empty_state_widget.dart';
 import 'converter_screen.dart';
 import 'currency_screen.dart';
@@ -167,29 +169,51 @@ class _HomeScreenState extends State<HomeScreen> {
     String? presetToUnitName,
   }) {
     HapticFeedback.lightImpact();
-    Navigator.of(context).push(
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) {
-          return ConverterScreen(
-            initialCategory: category,
-            presetFromUnitName: presetFromUnitName,
-            presetToUnitName: presetToUnitName,
-          );
-        },
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return FadeTransition(
-            opacity: animation,
-            child: ScaleTransition(
-              scale: Tween<double>(begin: 0.92, end: 1.0).animate(
-                CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+
+    final converter = context.read<ConverterProvider>();
+    converter.setCategory(category);
+
+    if (presetFromUnitName != null) {
+      final from = converter.currentUnits
+          .where((u) => u.name == presetFromUnitName)
+          .firstOrNull;
+      if (from != null) converter.setFromUnit(from);
+    }
+    if (presetToUnitName != null) {
+      final to = converter.currentUnits
+          .where((u) => u.name == presetToUnitName)
+          .firstOrNull;
+      if (to != null) converter.setToUnit(to);
+    }
+
+    if (!ResponsiveHelper.isExpanded(context)) {
+      Navigator.of(context).push(
+        PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) {
+            return ConverterScreen(
+              initialCategory: category,
+              presetFromUnitName: presetFromUnitName,
+              presetToUnitName: presetToUnitName,
+            );
+          },
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(
+              opacity: animation,
+              child: ScaleTransition(
+                scale: Tween<double>(begin: 0.92, end: 1.0).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeOutCubic,
+                  ),
+                ),
+                child: child,
               ),
-              child: child,
-            ),
-          );
-        },
-        transitionDuration: const Duration(milliseconds: 300),
-      ),
-    );
+            );
+          },
+          transitionDuration: const Duration(milliseconds: 300),
+        ),
+      );
+    }
   }
 
   void _showCategoryPresets(BuildContext context, UnitCategory category) {
