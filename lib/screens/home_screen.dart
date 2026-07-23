@@ -16,6 +16,12 @@ import '../services/conversion_service.dart';
 import '../services/smart_parse_service.dart';
 import '../utils/formatters.dart';
 import '../utils/search_helper.dart';
+import '../core/ui_constants.dart';
+import '../providers/settings_provider.dart';
+import '../widgets/cosmic_background.dart';
+import '../widgets/glassmorphic_tile.dart';
+import '../widgets/conversion_bar.dart';
+import '../widgets/performance_monitor.dart';
 import '../providers/converter_provider.dart';
 import '../utils/responsive_helper.dart';
 import '../widgets/empty_state_widget.dart';
@@ -35,6 +41,42 @@ class _HomeScreenState extends State<HomeScreen> {
   int _refreshKey = 0;
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
+  final ScrollController _scrollController = ScrollController();
+
+  static const List<QuickConversionItem> _cosmicBarItems = [
+    QuickConversionItem(
+      category: UnitCategory.length,
+      fromSymbol: 'cm',
+      toSymbol: 'in',
+      sampleValue: 10,
+      fromUnitName: 'Centimeter',
+      toUnitName: 'Inch',
+    ),
+    QuickConversionItem(
+      category: UnitCategory.weight,
+      fromSymbol: 'kg',
+      toSymbol: 'lb',
+      sampleValue: 1,
+      fromUnitName: 'Kilogram',
+      toUnitName: 'Pound',
+    ),
+    QuickConversionItem(
+      category: UnitCategory.temperature,
+      fromSymbol: '°C',
+      toSymbol: '°F',
+      sampleValue: 25,
+      fromUnitName: 'Celsius',
+      toUnitName: 'Fahrenheit',
+    ),
+    QuickConversionItem(
+      category: UnitCategory.volume,
+      fromSymbol: 'l',
+      toSymbol: 'gal',
+      sampleValue: 1,
+      fromUnitName: 'Liter',
+      toUnitName: 'Gallon (US)',
+    ),
+  ];
 
   @override
   void initState() {
@@ -48,6 +90,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void dispose() {
     _searchController.dispose();
     _searchFocusNode.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -400,176 +443,220 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildBody() {
     final query = _searchController.text.trim();
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final settings = context.watch<SettingsProvider>();
+    final isCosmic = settings.isCosmicTheme;
 
-    return Consumer<FavoritesProvider>(
-      builder: (context, favProv, _) {
-        final favoriteList = favProv.favorites.toList();
-        final smartResult = query.isNotEmpty
-            ? SmartParseService.parse(query)
-            : null;
-        final showSmart = smartResult?.isRecognized == true;
-        final detailedResults = query.isNotEmpty
-            ? SearchHelper.searchDetailed(query)
-            : <CategorySearchResult>[];
+    return PerformanceMonitor(
+      enabled: false,
+      child: CosmicBackground(
+        scrollController: _scrollController,
+        opacity: isCosmic ? 0.08 : 0.0,
+        child: Consumer<FavoritesProvider>(
+          builder: (context, favProv, _) {
+            final favoriteList = favProv.favorites.toList();
+            final smartResult = query.isNotEmpty
+                ? SmartParseService.parse(query)
+                : null;
+            final showSmart = smartResult?.isRecognized == true;
+            final detailedResults = query.isNotEmpty
+                ? SearchHelper.searchDetailed(query)
+                : <CategorySearchResult>[];
 
-        return RefreshIndicator(
-          onRefresh: _onRefresh,
-          displacement: 60,
-          child: CustomScrollView(
-            key: ValueKey(_refreshKey),
-            physics: const AlwaysScrollableScrollPhysics(),
-            slivers: [
-              // Persistent Smart Search Bar
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-                  child: TextField(
-                    controller: _searchController,
-                    focusNode: _searchFocusNode,
-                    decoration: InputDecoration(
-                      hintText: 'Search categories or units (e.g. 10 km to miles)',
-                      hintStyle: TextStyle(
-                        fontSize: 14,
-                        color: isDark
-                            ? AppColors.darkTextSecondary.withValues(alpha: 0.6)
-                            : AppColors.lightTextSecondary.withValues(alpha: 0.6),
-                      ),
-                      prefixIcon: const Icon(Icons.search_rounded, size: 20),
-                      suffixIcon: query.isNotEmpty
-                          ? IconButton(
-                              icon: const Icon(Icons.clear_rounded, size: 18),
-                              onPressed: () {
-                                _searchController.clear();
-                                setState(() {});
-                              },
-                            )
-                          : null,
-                      isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 12,
-                      ),
-                      filled: true,
-                      fillColor: isDark
-                          ? AppColors.darkSurface
-                          : AppColors.lightSurface,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: BorderSide(
-                          color: isDark
-                              ? AppColors.borderDark
-                              : AppColors.borderLight,
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: BorderSide(
-                          color: isDark
-                              ? AppColors.borderDark
-                              : AppColors.borderLight,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-
-              // Search results view
-              if (query.isNotEmpty) ...[
-                if (showSmart)
+            return RefreshIndicator(
+              onRefresh: _onRefresh,
+              displacement: 60,
+              child: CustomScrollView(
+                controller: _scrollController,
+                key: ValueKey(_refreshKey),
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  // Persistent Smart Search Bar
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: _SmartConvertCard(
-                        result: smartResult!,
-                        onTap: () => _onSmartResultTap(smartResult),
+                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+                      child: TextField(
+                        controller: _searchController,
+                        focusNode: _searchFocusNode,
+                        decoration: InputDecoration(
+                          hintText: 'Search categories or units (e.g. 10 km to miles)',
+                          hintStyle: TextStyle(
+                            fontSize: 14,
+                            color: isDark
+                                ? AppColors.darkTextSecondary.withValues(alpha: 0.6)
+                                : AppColors.lightTextSecondary.withValues(alpha: 0.6),
+                          ),
+                          prefixIcon: const Icon(Icons.search_rounded, size: 20),
+                          suffixIcon: query.isNotEmpty
+                              ? IconButton(
+                                  icon: const Icon(Icons.clear_rounded, size: 18),
+                                  onPressed: () {
+                                    _searchController.clear();
+                                    setState(() {});
+                                  },
+                                )
+                              : null,
+                          isDense: true,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 12,
+                          ),
+                          filled: true,
+                          fillColor: (isCosmic || isDark)
+                              ? AppColors.darkSurface.withValues(alpha: 0.85)
+                              : AppColors.lightSurface,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: BorderSide(
+                              color: isCosmic
+                                  ? CosmicUIConstants.cosmicBorder
+                                  : (isDark
+                                      ? AppColors.borderDark
+                                      : AppColors.borderLight),
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: BorderSide(
+                              color: isCosmic
+                                  ? CosmicUIConstants.cosmicBorder
+                                  : (isDark
+                                      ? AppColors.borderDark
+                                      : AppColors.borderLight),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                if (!showSmart && detailedResults.isEmpty)
-                  const SliverToBoxAdapter(
-                    child: EmptyStateWidget(
-                      icon: Icons.search_off_rounded,
-                      message: 'No conversions found',
-                      subtitle: 'Try searching for a category or unit name',
-                    ),
-                  ),
-                if (detailedResults.isNotEmpty)
-                  SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-                    sliver: SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          final res = detailedResults[index];
-                          return _SearchResultCard(
-                            result: res,
-                            gradients: _categoryGradients[res.category]!,
-                            onTap: () {
-                              HapticFeedback.lightImpact();
-                              _openConverter(context, res.category);
-                            },
-                            onUnitTap: (unit) {
-                              HapticFeedback.lightImpact();
-                              _openConverter(
-                                context,
-                                res.category,
-                                presetFromUnitName: unit.name,
+
+                  // Search results view
+                  if (query.isNotEmpty) ...[
+                    if (showSmart)
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: _SmartConvertCard(
+                            result: smartResult!,
+                            onTap: () => _onSmartResultTap(smartResult),
+                          ),
+                        ),
+                      ),
+                    if (!showSmart && detailedResults.isEmpty)
+                      const SliverToBoxAdapter(
+                        child: EmptyStateWidget(
+                          icon: Icons.search_off_rounded,
+                          message: 'No conversions found',
+                          subtitle: 'Try searching for a category or unit name',
+                        ),
+                      ),
+                    if (detailedResults.isNotEmpty)
+                      SliverPadding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                        sliver: SliverList(
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                              final res = detailedResults[index];
+                              return _SearchResultCard(
+                                result: res,
+                                gradients: _categoryGradients[res.category]!,
+                                onTap: () {
+                                  HapticFeedback.lightImpact();
+                                  _openConverter(context, res.category);
+                                },
+                                onUnitTap: (unit) {
+                                  HapticFeedback.lightImpact();
+                                  _openConverter(
+                                    context,
+                                    res.category,
+                                    presetFromUnitName: unit.name,
+                                  );
+                                },
                               );
                             },
+                            childCount: detailedResults.length,
+                          ),
+                        ),
+                      ),
+                  ] else ...[
+                    // Normal view (Favorites + Full Grid + Quick Conversions)
+                    if (favoriteList.isNotEmpty)
+                      SliverToBoxAdapter(
+                        child: _buildFavoritesSection(favoriteList),
+                      ),
+                    SliverPadding(
+                      padding: EdgeInsets.fromLTRB(
+                        16,
+                        favoriteList.isNotEmpty ? 4 : 8,
+                        16,
+                        12,
+                      ),
+                      sliver: SliverGrid(
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: MediaQuery.of(context).size.width > 600
+                              ? 4
+                              : 2,
+                          crossAxisSpacing: 14,
+                          mainAxisSpacing: 14,
+                          childAspectRatio: MediaQuery.of(context).size.width > 600
+                              ? 1.2
+                              : 1.1,
+                        ),
+                        delegate: SliverChildBuilderDelegate((context, index) {
+                          final category = UnitCategory.values[index];
+                          if (isCosmic) {
+                            return GlassmorphicCategoryTile(
+                              category: category,
+                              isFavorite: favProv.isFavorite(category),
+                              onFavoriteToggle: (_) =>
+                                  favProv.toggleFavorite(category),
+                              onTap: () => _openConverter(context, category),
+                              onLongPress: () =>
+                                  _showCategoryPresets(context, category),
+                            );
+                          }
+                          return _CategoryCard(
+                            category: category,
+                            gradients: _categoryGradients[category]!,
+                            onTap: () => _openConverter(context, category),
+                            onLongPress: () =>
+                                _showCategoryPresets(context, category),
                           );
-                        },
-                        childCount: detailedResults.length,
+                        }, childCount: UnitCategory.values.length),
                       ),
                     ),
-                  ),
-              ] else ...[
-                // Normal view (Favorites + Full Grid + Quick Conversions)
-                if (favoriteList.isNotEmpty)
-                  SliverToBoxAdapter(
-                    child: _buildFavoritesSection(favoriteList),
-                  ),
-                SliverPadding(
-                  padding: EdgeInsets.fromLTRB(
-                    16,
-                    favoriteList.isNotEmpty ? 4 : 8,
-                    16,
-                    12,
-                  ),
-                  sliver: SliverGrid(
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: MediaQuery.of(context).size.width > 600
-                          ? 4
-                          : 2,
-                      crossAxisSpacing: 14,
-                      mainAxisSpacing: 14,
-                      childAspectRatio: MediaQuery.of(context).size.width > 600
-                          ? 1.2
-                          : 1.1,
+
+                    if (isCosmic)
+                      SliverToBoxAdapter(
+                        child: QuickConversionBar(
+                          items: _cosmicBarItems,
+                          onItemTap: (item) {
+                            _openConverterWithPreset(
+                              context,
+                              _PresetConversion(
+                                category: item.category,
+                                value: item.sampleValue,
+                                fromUnitName: item.fromUnitName,
+                                toUnitName: item.toUnitName,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+
+                    SliverToBoxAdapter(
+                      child: _QuickConversions(
+                        presets: _quickPresets,
+                        onPresetTapped: (preset) =>
+                            _openConverterWithPreset(context, preset),
+                      ),
                     ),
-                    delegate: SliverChildBuilderDelegate((context, index) {
-                      final category = UnitCategory.values[index];
-                      return _CategoryCard(
-                        category: category,
-                        gradients: _categoryGradients[category]!,
-                        onTap: () => _openConverter(context, category),
-                        onLongPress: () =>
-                            _showCategoryPresets(context, category),
-                      );
-                    }, childCount: UnitCategory.values.length),
-                  ),
-                ),
-                SliverToBoxAdapter(
-                  child: _QuickConversions(
-                    presets: _quickPresets,
-                    onPresetTapped: (preset) =>
-                        _openConverterWithPreset(context, preset),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        );
-      },
+                  ],
+                ],
+              ),
+            );
+          },
+        ),
+      ),
     );
   }
 

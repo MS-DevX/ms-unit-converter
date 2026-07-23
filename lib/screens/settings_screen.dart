@@ -101,6 +101,25 @@ class SettingsScreen extends StatelessWidget {
                       settings.toggleTheme();
                     },
                   ),
+                  _Divider(),
+                  _SettingsTile(
+                    icon: Icons.auto_awesome_rounded,
+                    iconColor: const Color(0xFFA855F7),
+                    title: 'Cosmic Space UI',
+                    subtitle: 'Glassmorphic 3D tiles & animated starfield',
+                    trailing: Switch.adaptive(
+                      value: settings.isCosmicTheme,
+                      activeThumbColor: const Color(0xFFA855F7),
+                      onChanged: (_) {
+                        HapticFeedback.lightImpact();
+                        settings.toggleCosmicTheme();
+                      },
+                    ),
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      settings.toggleCosmicTheme();
+                    },
+                  ),
                 ],
               ),
 

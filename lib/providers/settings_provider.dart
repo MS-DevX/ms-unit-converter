@@ -4,12 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/constants.dart';
+import '../core/ui_constants.dart';
 import '../utils/formatters.dart';
 
 class SettingsProvider extends ChangeNotifier {
   ThemeMode themeMode = ThemeMode.system;
 
   DecimalPrecision decimalPrecision = DecimalPrecision.auto;
+
+  bool isCosmicTheme = true;
 
   bool isLoaded = false;
 
@@ -46,6 +49,9 @@ class SettingsProvider extends ChangeNotifier {
           prefs.getInt(AppConstants.decimalPrecisionKey) ?? 0;
       decimalPrecision = DecimalPrecision.values[precisionIndex];
       Formatters.setPrecision(decimalPrecision);
+
+      isCosmicTheme =
+          prefs.getBool(CosmicUIConstants.cosmicThemeStorageKey) ?? true;
     } catch (_) {
     } finally {
       isLoaded = true;
@@ -86,6 +92,19 @@ class SettingsProvider extends ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setInt(AppConstants.decimalPrecisionKey, precision.index);
+    } catch (_) {
+    }
+  }
+
+  Future<void> toggleCosmicTheme() async {
+    isCosmicTheme = !isCosmicTheme;
+    notifyListeners();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(
+        CosmicUIConstants.cosmicThemeStorageKey,
+        isCosmicTheme,
+      );
     } catch (_) {
     }
   }
