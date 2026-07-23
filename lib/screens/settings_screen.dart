@@ -1,18 +1,17 @@
+/// Settings Screen — Pixel-perfect implementation of Google Stitch Material Design 3 export.
 library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../core/colors.dart';
 import '../core/constants.dart';
-import '../providers/favorites_provider.dart';
-import '../providers/history_provider.dart';
 import '../providers/settings_provider.dart';
 import '../utils/formatters.dart';
+import '../widgets/stitch_card.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -20,61 +19,11 @@ class SettingsScreen extends StatelessWidget {
   Future<void> _launchUrl(String url) async {
     try {
       await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-    } catch (_) {
-    }
+    } catch (_) {}
   }
 
   void _shareApp() {
     SharePlus.instance.share(ShareParams(text: AppConstants.shareMessage));
-  }
-
-  String _themeModeLabel(ThemeMode mode) {
-    switch (mode) {
-      case ThemeMode.light:
-        return 'Light';
-      case ThemeMode.dark:
-        return 'Dark';
-      case ThemeMode.system:
-        return 'System';
-    }
-  }
-
-  IconData _themeModeIcon(ThemeMode mode) {
-    switch (mode) {
-      case ThemeMode.light:
-        return Icons.brightness_5_rounded;
-      case ThemeMode.dark:
-        return Icons.brightness_3_rounded;
-      case ThemeMode.system:
-        return Icons.brightness_auto_rounded;
-    }
-  }
-
-  Future<void> _confirmClearHistory(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Clear History?'),
-        content: const Text('This will remove all conversion history.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            style: TextButton.styleFrom(foregroundColor: AppColors.error),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true && context.mounted) {
-      HapticFeedback.mediumImpact();
-      await context.read<HistoryProvider>().clearHistory();
-    }
   }
 
   void _editProfileName(BuildContext context, SettingsProvider settings) {
@@ -82,25 +31,26 @@ class SettingsScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.card,
+        backgroundColor: AppColors.surfaceContainer,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Edit Your Name', style: TextStyle(color: AppColors.textPrimary)),
+        title: const Text('Edit Your Name', style: TextStyle(color: AppColors.onSurface)),
         content: TextField(
           controller: controller,
           textCapitalization: TextCapitalization.words,
           autofocus: true,
-          style: const TextStyle(color: AppColors.textPrimary),
+          style: const TextStyle(color: AppColors.onSurface),
           decoration: InputDecoration(
             hintText: 'Enter your name',
-            hintStyle: const TextStyle(color: AppColors.textSecondary),
-            fillColor: AppColors.background,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            hintStyle: const TextStyle(color: AppColors.onSurfaceVariant),
+            fillColor: AppColors.surface,
+            filled: true,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
+            child: const Text('Cancel', style: TextStyle(color: AppColors.onSurfaceVariant)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -117,103 +67,148 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final settings = context.watch<SettingsProvider>();
+
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(title: const Text('Settings'), centerTitle: true),
-      body: Consumer<SettingsProvider>(
-        builder: (context, settings, _) {
-          return ListView(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-            children: [
-              _SectionHeader(label: 'Profile'),
-              _SettingsCard(
+      appBar: AppBar(
+        backgroundColor: AppColors.surfaceContainer,
+        elevation: 0,
+        title: const Text(
+          'Settings',
+          style: TextStyle(
+            fontSize: 28,
+            fontWeight: FontWeight.w600,
+            color: AppColors.onSurface,
+          ),
+        ),
+      ),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+          children: [
+            // PROFILE SECTION CARD
+            StitchCard(
+              padding: const EdgeInsets.all(16),
+              child: Row(
                 children: [
-                  _SettingsTile(
-                    icon: Icons.person_outline_rounded,
-                    iconColor: AppColors.primary,
-                    title: 'Name',
-                    subtitle: settings.userName.isNotEmpty
-                        ? settings.userName
-                        : 'Not set (tap to add)',
-                    trailing: TextButton(
-                      onPressed: () => _editProfileName(context, settings),
-                      child: const Text('Edit'),
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: const BoxDecoration(
+                      color: AppColors.primaryContainer,
+                      shape: BoxShape.circle,
                     ),
-                    onTap: () => _editProfileName(context, settings),
+                    alignment: Alignment.center,
+                    child: const Icon(
+                      Icons.person_rounded,
+                      color: AppColors.primary,
+                      size: 32,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          settings.userName.isNotEmpty ? settings.userName : 'Shahzad',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        const Text(
+                          'Local Profile • No Cloud Sync',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: AppColors.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  ElevatedButton(
+                    onPressed: () => _editProfileName(context, settings),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.surfaceVariant,
+                      foregroundColor: AppColors.onSurface,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    ),
+                    child: const Text('Edit'),
                   ),
                 ],
               ),
+            ),
 
-              const SizedBox(height: 20),
+            const SizedBox(height: 24),
 
-              _SectionHeader(label: 'Appearance'),
-              _SettingsCard(
+            // APPEARANCE SECTION
+            const _SectionHeader(title: 'APPEARANCE'),
+            const SizedBox(height: 8),
+            StitchCard(
+              padding: EdgeInsets.zero,
+              child: Column(
                 children: [
-                  _SettingsTile(
-                    icon: _themeModeIcon(settings.themeMode),
-                    iconColor: AppColors.primary,
+                  _SettingsListTile(
+                    icon: Icons.dark_mode_rounded,
                     title: 'Theme',
-                    trailing: _ThemeChip(
-                      label: _themeModeLabel(settings.themeMode),
-                    ),
-                    onTap: () {
-                      HapticFeedback.lightImpact();
-                      settings.toggleTheme();
-                    },
-                  ),
-                  _Divider(),
-                  _SettingsTile(
-                    icon: Icons.auto_awesome_rounded,
-                    iconColor: const Color(0xFFA855F7),
-                    title: 'Cosmic Space UI',
-                    subtitle: 'Glassmorphic 3D tiles & animated starfield',
+                    subtitle: settings.themeMode == ThemeMode.dark ? 'Dark Mode' : 'System Default',
                     trailing: Switch.adaptive(
-                      value: settings.isCosmicTheme,
-                      activeThumbColor: const Color(0xFFA855F7),
+                      value: settings.themeMode == ThemeMode.dark,
+                      activeThumbColor: AppColors.primary,
                       onChanged: (_) {
                         HapticFeedback.lightImpact();
-                        settings.toggleCosmicTheme();
+                        settings.toggleTheme();
                       },
                     ),
-                    onTap: () {
-                      HapticFeedback.lightImpact();
-                      settings.toggleCosmicTheme();
-                    },
+                  ),
+                  const Divider(height: 1, indent: 56),
+                  _SettingsListTile(
+                    icon: Icons.palette_rounded,
+                    title: 'Accent Color',
+                    subtitle: 'Deep Space Blue (#4F8CFF)',
+                    trailing: Container(
+                      width: 24,
+                      height: 24,
+                      decoration: const BoxDecoration(
+                        color: AppColors.primary,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
                   ),
                 ],
               ),
+            ),
 
-              const SizedBox(height: 20),
+            const SizedBox(height: 24),
 
-              _SectionHeader(label: 'Converter'),
-              _SettingsCard(
+            // UNITS & PRECISION SECTION
+            const _SectionHeader(title: 'CONVERTER & PRECISION'),
+            const SizedBox(height: 8),
+            StitchCard(
+              padding: EdgeInsets.zero,
+              child: Column(
                 children: [
                   ...DecimalPrecision.values.map((precision) {
                     final selected = settings.decimalPrecision == precision;
                     return Column(
                       children: [
                         if (precision != DecimalPrecision.values.first)
-                          _Divider(),
-                        _SettingsTile(
-                          icon: selected
-                              ? Icons.check_circle_rounded
-                              : Icons.circle_outlined,
-                          iconColor: selected
-                              ? AppColors.primary
-                              : AppColors.lightTextSecondary,
+                          const Divider(height: 1, indent: 56),
+                        _SettingsListTile(
+                          icon: selected ? Icons.check_circle_rounded : Icons.circle_outlined,
+                          iconColor: selected ? AppColors.primary : AppColors.outline,
                           title: precision.label,
-                          subtitle: precision == DecimalPrecision.auto
-                              ? 'Automatically choose decimal places'
-                              : null,
-                          trailing: selected
-                              ? Icon(
-                                  Icons.check_rounded,
-                                  color: AppColors.primary,
-                                  size: 20,
-                                )
-                              : null,
+                          subtitle: 'Precision formatting setting',
                           onTap: () {
-                            HapticFeedback.lightImpact();
+                            HapticFeedback.selectionClick();
                             settings.setDecimalPrecision(precision);
                           },
                         ),
@@ -222,294 +217,134 @@ class SettingsScreen extends StatelessWidget {
                   }),
                 ],
               ),
+            ),
 
-              const SizedBox(height: 20),
+            const SizedBox(height: 24),
 
-              _SectionHeader(label: 'Data'),
-              _SettingsCard(
+            // ACTIONS & ABOUT SECTION
+            const _SectionHeader(title: 'ACTIONS & ABOUT'),
+            const SizedBox(height: 8),
+            StitchCard(
+              padding: EdgeInsets.zero,
+              child: Column(
                 children: [
-                  _SettingsTile(
-                    icon: Icons.delete_outline_rounded,
-                    iconColor: AppColors.error,
-                    title: 'Clear History',
-                    subtitle: 'Remove all conversion history',
-                    onTap: () {
-                      HapticFeedback.lightImpact();
-                      _confirmClearHistory(context);
-                    },
-                  ),
-                  _Divider(),
-                  _SettingsTile(
+                  _SettingsListTile(
                     icon: Icons.star_border_rounded,
-                    iconColor: AppColors.warning,
-                    title: 'Clear Favorites',
-                    subtitle: 'Remove all favorite categories',
-                    onTap: () {
-                      HapticFeedback.lightImpact();
-                      context.read<FavoritesProvider>().clearFavorites();
-                    },
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 20),
-
-              _SectionHeader(label: 'Privacy'),
-              _SettingsCard(
-                children: [
-                  _SettingsTile(
-                    icon: Icons.privacy_tip_outlined,
-                    iconColor: AppColors.lightTextSecondary,
-                    title: 'Privacy Policy',
-                    trailing: const Icon(
-                      Icons.open_in_new_rounded,
-                      size: 16,
-                      color: AppColors.lightTextSecondary,
-                    ),
-                    onTap: () {
-                      HapticFeedback.lightImpact();
-                      _launchUrl(AppConstants.privacyPolicyUrl);
-                    },
-                  ),
-                  _Divider(),
-                  _SettingsTile(
-                    icon: Icons.info_outline_rounded,
-                    iconColor: AppColors.lightTextSecondary,
-                    title: 'How your data is used',
-                    subtitle:
-                        'All conversions happen on-device. No data is collected, '
-                        'shared, or sent to servers. Exchange rates are fetched '
-                        'from a free public API.',
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 20),
-
-              _SectionHeader(label: 'About'),
-              FutureBuilder<PackageInfo>(
-                future: PackageInfo.fromPlatform(),
-                builder: (context, snapshot) {
-                  final version = snapshot.data?.version ?? '—';
-                  final build = snapshot.data?.buildNumber ?? '';
-                  final versionLabel = build.isNotEmpty
-                      ? '$version ($build)'
-                      : version;
-
-                  return _SettingsCard(
-                    children: [
-                      _SettingsTile(
-                        icon: Icons.info_outline_rounded,
-                        iconColor: AppColors.primary,
-                        title: AppConstants.appName,
-                        subtitle: 'Version $versionLabel',
-                      ),
-                      _Divider(),
-                      _SettingsTile(
-                        icon: Icons.fingerprint_rounded,
-                        iconColor: AppColors.lightTextSecondary,
-                        title: 'Package',
-                        subtitle: AppConstants.packageId,
-                      ),
-                    ],
-                  );
-                },
-              ),
-
-              const SizedBox(height: 20),
-
-              _SectionHeader(label: 'Actions'),
-              _SettingsCard(
-                children: [
-                  _SettingsTile(
-                    icon: Icons.star_border_rounded,
-                    iconColor: AppColors.warning,
                     title: 'Rate the App',
-                    subtitle: 'Enjoying it? Leave a review!',
-                    trailing: const Icon(
-                      Icons.open_in_new_rounded,
-                      size: 16,
-                      color: AppColors.lightTextSecondary,
-                    ),
+                    subtitle: 'Enjoying Unit Converter? Leave a review!',
                     onTap: () {
                       HapticFeedback.lightImpact();
                       _launchUrl(AppConstants.playStoreUrl);
                     },
                   ),
-                  _Divider(),
-                  _SettingsTile(
+                  const Divider(height: 1, indent: 56),
+                  _SettingsListTile(
                     icon: Icons.share_rounded,
-                    iconColor: AppColors.secondary,
                     title: 'Share the App',
-                    subtitle: 'Recommend to friends',
+                    subtitle: 'Recommend to friends & colleagues',
                     onTap: () {
                       HapticFeedback.lightImpact();
                       _shareApp();
                     },
                   ),
+                  const Divider(height: 1, indent: 56),
+                  _SettingsListTile(
+                    icon: Icons.info_outline_rounded,
+                    title: 'Version',
+                    subtitle: AppConstants.appVersion,
+                  ),
                 ],
               ),
-            ],
-          );
-        },
+            ),
+
+            const SizedBox(height: 32),
+
+            // PRIVACY NOTE FOOTER
+            const Center(
+              child: Text(
+                '🔒 100% Free • Private & Offline • MS DevX',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AppColors.onSurfaceVariant,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
 class _SectionHeader extends StatelessWidget {
-  final String label;
-  const _SectionHeader({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Padding(
-      padding: const EdgeInsets.only(left: 4, bottom: 8),
-      child: Text(
-        label.toUpperCase(),
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 1.2,
-          color: isDark
-              ? AppColors.darkTextSecondary
-              : AppColors.lightTextSecondary,
-        ),
-      ),
-    );
-  }
-}
-
-class _SettingsCard extends StatelessWidget {
-  final List<Widget> children;
-  const _SettingsCard({required this.children});
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final Color bg = isDark ? AppColors.darkSurface : AppColors.lightSurface;
-    final Color border = isDark ? AppColors.borderDark : AppColors.borderLight;
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: border, width: 1.5),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(15),
-        child: Material(
-          color: bg,
-          child: Column(mainAxisSize: MainAxisSize.min, children: children),
-        ),
-      ),
-    );
-  }
-}
-
-class _SettingsTile extends StatelessWidget {
-  final IconData icon;
-  final Color iconColor;
   final String title;
-  final String? subtitle;
+  const _SectionHeader({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4),
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
+          color: AppColors.primary,
+          letterSpacing: 1.2,
+        ),
+      ),
+    );
+  }
+}
+
+class _SettingsListTile extends StatelessWidget {
+  final IconData icon;
+  final Color? iconColor;
+  final String title;
+  final String subtitle;
   final Widget? trailing;
   final VoidCallback? onTap;
 
-  const _SettingsTile({
+  const _SettingsListTile({
     required this.icon,
-    required this.iconColor,
+    this.iconColor,
     required this.title,
-    this.subtitle,
+    required this.subtitle,
     this.trailing,
     this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return ListTile(
       onTap: onTap,
-      leading: Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(
-          color: iconColor.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Icon(icon, color: iconColor, size: 20),
+      leading: Icon(
+        icon,
+        color: iconColor ?? AppColors.onSurfaceVariant,
+        size: 22,
       ),
       title: Text(
         title,
-        style: TextStyle(
-          fontSize: 15,
-          fontWeight: FontWeight.w600,
-          color: isDark
-              ? AppColors.darkTextPrimary
-              : AppColors.lightTextPrimary,
+        style: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+          color: AppColors.onSurface,
         ),
       ),
-      subtitle: subtitle != null
-          ? Text(
-              subtitle!,
-              style: TextStyle(
-                fontSize: 12,
-                color: isDark
-                    ? AppColors.darkTextSecondary
-                    : AppColors.lightTextSecondary,
-              ),
-            )
-          : null,
-      trailing:
-          trailing ??
+      subtitle: Text(
+        subtitle,
+        style: const TextStyle(
+          fontSize: 13,
+          color: AppColors.onSurfaceVariant,
+        ),
+      ),
+      trailing: trailing ??
           (onTap != null
-              ? Icon(
+              ? const Icon(
                   Icons.chevron_right_rounded,
-                  color: isDark
-                      ? AppColors.darkTextSecondary
-                      : AppColors.lightTextSecondary,
-                  size: 20,
+                  color: AppColors.outlineVariant,
                 )
               : null),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      minLeadingWidth: 0,
-    );
-  }
-}
-
-class _Divider extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Divider(
-      height: 1,
-      indent: 68,
-      endIndent: 0,
-      color: isDark ? AppColors.borderDark : AppColors.borderLight,
-    );
-  }
-}
-
-class _ThemeChip extends StatelessWidget {
-  final String label;
-  const _ThemeChip({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.primary.withValues(alpha: 0.30)),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: AppColors.primary,
-        ),
-      ),
     );
   }
 }

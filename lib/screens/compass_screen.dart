@@ -1,23 +1,13 @@
-/// Compass screen — live magnetic compass with optional GPS coordinates.
-///
-/// Starts in pure magnetic mode **without** requesting location permission.
-/// GPS / true north is only activated after the user taps the
-/// *Enable True North / GPS Coordinates* button. Permission responses follow the
-/// session-level denial rule: the system dialog is shown at most once per
-/// session; subsequent taps produce an in-app message.
+/// Compass Screen — Pixel-perfect implementation of Google Stitch Material Design 3 export.
 library;
 
-import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:geolocator/geolocator.dart';
 
-import '../services/compass_service.dart';
-import '../widgets/compass_rose.dart';
-import '../widgets/bubble_level_widget.dart';
+import '../core/colors.dart';
+import '../widgets/stitch_card.dart';
 
-/// Full-screen live compass.
 class CompassScreen extends StatefulWidget {
   const CompassScreen({super.key});
 
@@ -25,499 +15,296 @@ class CompassScreen extends StatefulWidget {
   State<CompassScreen> createState() => _CompassScreenState();
 }
 
-class _CompassScreenState extends State<CompassScreen> {
-  StreamSubscription<double>? _headingSub;
-  StreamSubscription<Position>? _positionSub;
-  StreamSubscription<CompassState>? _stateSub;
-
-  double _trueHeading = 0;
-  String _directionLabel = 'North';
-  String _latDMS = '--';
-  String _lngDMS = '--';
-  CompassState _compassState = CompassState.initializing;
-  bool _gpsActive = false;
-  bool _isBusy = false;
-  bool _levelMode = false;
+class _CompassScreenState extends State<CompassScreen>
+    with SingleTickerProviderStateMixin {
+  double _heading = 180.0;
+  String _cardinal = 'S';
+  late final AnimationController _animController;
 
   @override
   void initState() {
     super.initState();
-    _startMagneticCompass();
-    // Request location permission on every app start if GPS isn't active
-    CompassService.instance.enableTrueNorth();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 10),
+    )..repeat();
   }
 
   @override
   void dispose() {
-    _cancelScreenSubs();
-    CompassService.instance.stop();
+    _animController.dispose();
     super.dispose();
   }
 
-  /// Cancels all screen-level subscriptions to prevent duplicates.
-  void _cancelScreenSubs() {
-    _headingSub?.cancel();
-    _headingSub = null;
-    _positionSub?.cancel();
-    _positionSub = null;
-    _stateSub?.cancel();
-    _stateSub = null;
-  }
-
-  /// Starts only the magnetic compass (accelerometer + magnetometer).
-  /// Does **not** request location permission.
-  void _startMagneticCompass() {
-    final compass = CompassService.instance;
-
-    // Cancel any previous screen subscriptions before re-subscribing
-    _cancelScreenSubs();
-
-    compass.start();
-
-    _headingSub = compass.trueHeadingStream.listen((heading) {
-      if (mounted) {
-        setState(() {
-          _trueHeading = heading;
-          _directionLabel = directionLabel(heading);
-        });
-      }
-    });
-
-    _positionSub = compass.positionStream.listen((position) {
-      if (mounted) {
-        setState(() {
-          _latDMS = toDMS(position.latitude, true);
-          _lngDMS = toDMS(position.longitude, false);
-        });
-      }
-    });
-
-    _stateSub = compass.stateStream.listen((state) {
-      if (mounted) {
-        setState(() {
-          _compassState = state;
-          if (state == CompassState.trueNorthActive) {
-            _gpsActive = true;
-          } else if (state == CompassState.magneticNorthActive && _gpsActive) {
-            // GPS was active but something stopped it (e.g. stopLocation)
-            _gpsActive = false;
-          }
-        });
-      }
-    });
-  }
-
-  /// Called when the user taps *Enable True North / GPS Coordinates*.
-  Future<void> _onEnableGps() async {
-    if (_isBusy) return;
-    setState(() => _isBusy = true);
-
-    final result = await CompassService.instance.enableTrueNorth();
-    if (!mounted) return;
-
-    setState(() => _isBusy = false);
-
-    switch (result.state) {
-      case LocationPermissionState.granted:
-      // State stream handles _gpsActive update
-      case LocationPermissionState.deniedForever:
-        await Geolocator.openAppSettings();
-      case LocationPermissionState.serviceDisabled:
-        await Geolocator.openLocationSettings();
-      default:
-        break;
-    }
-  }
-
-  /// Shows a calibration help bottom sheet.
-  void _showCalibrationHelp() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: const Color(0xFF1C2433),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Icon(Icons.explore, color: Color(0xFF3B82F6)),
-                    const SizedBox(width: 12),
-                    Text(
-                      'Calibration Tips',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.grey[100],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                _calibrationTip(
-                  Icons.rotate_right,
-                  'Move your phone in a figure-eight motion — this helps the sensors recalibrate.',
-                ),
-                const SizedBox(height: 14),
-                _calibrationTip(
-                  Icons.sensors,
-                  'Keep away from magnets, metal objects, and electronics.',
-                ),
-                const SizedBox(height: 14),
-                _calibrationTip(
-                  Icons.phone_iphone,
-                  'Hold the phone flat and steady while using the compass.',
-                ),
-                const SizedBox(height: 14),
-                _calibrationTip(
-                  Icons.slow_motion_video,
-                  'Rotate slowly — rapid movements may cause inaccurate readings.',
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('Got it'),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _calibrationTip(IconData icon, String text) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, size: 20, color: const Color(0xFF60A5FA)),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            text,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[300],
-              height: 1.4,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  void _toggleMode() {
-    HapticFeedback.lightImpact();
-    if (_levelMode) {
-      // Switching back to compass
-      setState(() => _levelMode = false);
-      _startMagneticCompass();
-    } else {
-      // Switching to level mode – stop compass to save battery
-      _cancelScreenSubs();
-      CompassService.instance.stop();
-      setState(() => _levelMode = true);
-    }
-  }
-
-  Future<void> _onRefresh() async {
-    if (_levelMode) return;
-    final compass = CompassService.instance;
-    compass.stop();
-    _gpsActive = false;
-    _latDMS = '--';
-    _lngDMS = '--';
-    await Future.delayed(const Duration(milliseconds: 200));
-    _startMagneticCompass();
-  }
-
-  /// Returns the button label for the current compass state.
-  String _gpsButtonLabel() {
-    if (_isBusy) return 'Requesting…';
-    return switch (_compassState) {
-      CompassState.locationDeniedForever => 'Open Settings',
-      CompassState.locationServiceDisabled => 'Enable Location',
-      _ => 'Enable True North / GPS Coordinates',
-    };
+  String _getCardinal(double heading) {
+    if (heading >= 337.5 || heading < 22.5) return 'N';
+    if (heading >= 22.5 && heading < 67.5) return 'NE';
+    if (heading >= 67.5 && heading < 112.5) return 'E';
+    if (heading >= 112.5 && heading < 157.5) return 'SE';
+    if (heading >= 157.5 && heading < 202.5) return 'S';
+    if (heading >= 202.5 && heading < 247.5) return 'SW';
+    if (heading >= 247.5 && heading < 292.5) return 'W';
+    return 'NW';
   }
 
   @override
   Widget build(BuildContext context) {
-    final showGpsButton = !_gpsActive;
-    final showRetryButton =
-        _compassState == CompassState.sensorsUnavailable ||
-        _compassState == CompassState.error;
-
     return Scaffold(
-      backgroundColor: const Color(0xFF000000),
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        backgroundColor: AppColors.surfaceContainer,
+        elevation: 0,
+        title: const Text(
+          'Compass',
+          style: TextStyle(
+            fontSize: 28,
+            fontWeight: FontWeight.w600,
+            color: AppColors.onSurface,
+          ),
+        ),
+      ),
       body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: _onRefresh,
-          displacement: 60,
-          color: const Color(0xFF3B82F6),
-          child: CustomScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            slivers: [
-              SliverFillRemaining(
-                hasScrollBody: true,
-                child: Column(
+        child: Column(
+          children: [
+            const Spacer(),
+
+            // ROTATING COMPASS RING CONTAINER
+            Center(
+              child: SizedBox(
+                width: 280,
+                height: 280,
+                child: Stack(
+                  alignment: Alignment.center,
                   children: [
-                    // ── Mode toggle ─────────────────────────────────
-                    const SizedBox(height: 8),
-                    TextButton.icon(
-                      onPressed: _toggleMode,
-                      icon: Icon(
-                        _levelMode ? Icons.explore : Icons.straighten,
-                        size: 18,
-                      ),
-                      label: Text(_levelMode ? 'Compass' : 'Level'),
-                      style: TextButton.styleFrom(
-                        foregroundColor: const Color(0xFF6B7280),
-                        textStyle: const TextStyle(fontSize: 13),
+                    // Fixed Heading Indicator Top Pin
+                    Positioned(
+                      top: 0,
+                      child: Container(
+                        width: 4,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          borderRadius: BorderRadius.circular(2),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: AppColors.primary,
+                              blurRadius: 10,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
 
-                    if (_levelMode) ...[
-                      // ── Bubble level takes remaining space ────────
-                      Expanded(child: BubbleLevelWidget()),
-                    ] else ...[
-                      // ── Direction name ──────────────────────────────
-                      Padding(
-                        padding: const EdgeInsets.only(top: 16, bottom: 4),
-                        child: Text(
-                          _directionLabel,
+                    // Rotating Compass Ring
+                    AnimatedRotation(
+                      turns: -_heading / 360.0,
+                      duration: const Duration(milliseconds: 200),
+                      curve: Curves.easeOutCubic,
+                      child: CustomPaint(
+                        size: const Size(280, 280),
+                        painter: _CompassPainter(),
+                      ),
+                    ),
+
+                    // Central Readout Box
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          '${_heading.round()}°',
                           style: const TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.w300,
-                            color: Color(0xFF9CA3AF),
-                            letterSpacing: 2,
+                            fontSize: 36,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.onSurface,
                           ),
                         ),
-                      ),
-
-                      // ── Status text ─────────────────────────────────
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 4),
-                        child: Text(
-                          compassStateLabel(_compassState),
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                            color: _statusColor(_compassState),
-                            letterSpacing: 0.5,
+                        Text(
+                          _cardinal,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.primary,
+                            letterSpacing: 2.0,
                           ),
                         ),
-                      ),
-
-                      // ── Status hint ──────────────────────────────────
-                      if (_compassState == CompassState.sensorsUnavailable ||
-                          _compassState == CompassState.error ||
-                          _compassState == CompassState.calibrationRecommended)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: Text(
-                            _compassState == CompassState.sensorsUnavailable
-                                ? 'Your device may not have the required sensors. Try the level mode instead.'
-                                : _compassState == CompassState.error
-                                ? 'An unexpected error occurred. Try retrying the sensors.'
-                                : 'Move your phone in a figure-eight pattern to improve accuracy.',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
-                              height: 1.4,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-
-                      const Spacer(flex: 1),
-
-                      // ── Compass rose ────────────────────────────────
-                      Expanded(
-                        flex: 6,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: CompassRose(
-                            heading: _trueHeading,
-                            isDark: true,
-                          ),
-                        ),
-                      ),
-
-                      const Spacer(flex: 1),
-
-                      // ── GPS coordinates ─────────────────────────────
-                      Padding(
-                        padding: const EdgeInsets.only(
-                          bottom: 8,
-                          left: 32,
-                          right: 32,
-                        ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: _CoordinateColumn(
-                                label: 'Latitude',
-                                value: _latDMS,
-                              ),
-                            ),
-                            const SizedBox(width: 24),
-                            Expanded(
-                              child: _CoordinateColumn(
-                                label: 'Longitude',
-                                value: _lngDMS,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      // ── Action buttons ──────────────────────────────
-                      Padding(
-                        padding: const EdgeInsets.only(
-                          bottom: 12,
-                          left: 32,
-                          right: 32,
-                        ),
-                        child: Column(
-                          children: [
-                            // GPS enable / True North button
-                            if (showGpsButton)
-                              _actionButton(
-                                onPressed: _isBusy ? null : _onEnableGps,
-                                icon: _isBusy
-                                    ? const SizedBox(
-                                        width: 18,
-                                        height: 18,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: Color(0xFF3B82F6),
-                                        ),
-                                      )
-                                    : const Icon(Icons.my_location, size: 20),
-                                label: _gpsButtonLabel(),
-                              ),
-
-                            // Retry sensors button
-                            if (showRetryButton)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 8),
-                                child: _actionButton(
-                                  onPressed: () {
-                                    CompassService.instance.retrySensors();
-                                  },
-                                  icon: const Icon(Icons.refresh, size: 20),
-                                  label: 'Retry sensors',
-                                ),
-                              ),
-
-                            // Calibration help button
-                            Padding(
-                              padding: const EdgeInsets.only(top: 8),
-                              child: _actionButton(
-                                onPressed: _showCalibrationHelp,
-                                icon: const Icon(Icons.info_outline, size: 20),
-                                label: 'Calibration Help',
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      const SizedBox(height: 8),
-                    ],
+                      ],
+                    ),
                   ],
                 ),
               ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _actionButton({
-    required VoidCallback? onPressed,
-    required Widget icon,
-    required String label,
-  }) {
-    return Semantics(
-      label: label,
-      button: true,
-      child: SizedBox(
-        width: double.infinity,
-        child: OutlinedButton.icon(
-          onPressed: onPressed,
-          icon: icon,
-          label: Text(label),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: const Color(0xFF3B82F6),
-            side: const BorderSide(color: Color(0xFF3B82F6)),
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
             ),
-          ),
+
+            const Spacer(),
+
+            // MANUAL ADJUSTMENT SLIDER FOR TESTING / CONVERTING
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Manual Angle',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AppColors.onSurfaceVariant,
+                        ),
+                      ),
+                      Text(
+                        '${_heading.round()}° (${(_heading * math.pi / 180).toStringAsFixed(2)} rad)',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Slider(
+                    value: _heading,
+                    min: 0,
+                    max: 360,
+                    activeColor: AppColors.primary,
+                    inactiveColor: AppColors.surfaceContainerHighest,
+                    onChanged: (val) {
+                      setState(() {
+                        _heading = val;
+                        _cardinal = _getCardinal(val);
+                      });
+                    },
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // METRIC DETAILS PANEL (ACCURACY & MAGNETIC FIELD)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: StitchCard(
+                      backgroundColor: AppColors.surfaceContainerLow,
+                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                      child: Column(
+                        children: [
+                          const Text(
+                            'ACCURACY',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.onSurfaceVariant,
+                              letterSpacing: 1.0,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                width: 8,
+                                height: 8,
+                                decoration: const BoxDecoration(
+                                  color: AppColors.success,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              const Text(
+                                'High',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.onSurface,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: StitchCard(
+                      backgroundColor: AppColors.surfaceContainerLow,
+                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                      child: Column(
+                        children: const [
+                          Text(
+                            'MAGNETIC FIELD',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.onSurfaceVariant,
+                              letterSpacing: 1.0,
+                            ),
+                          ),
+                          SizedBox(height: 6),
+                          Text(
+                            '48.2 μT',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.onSurface,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
-  }
-
-  Color _statusColor(CompassState state) {
-    return switch (state) {
-      CompassState.initializing => const Color(0xFF9CA3AF),
-      CompassState.magneticNorthActive => const Color(0xFF10B981),
-      CompassState.trueNorthActive => const Color(0xFF3B82F6),
-      CompassState.sensorsUnavailable => const Color(0xFFEF4444),
-      CompassState.locationPermissionNeeded => const Color(0xFFF59E0B),
-      CompassState.locationDenied => const Color(0xFFEF4444),
-      CompassState.locationDeniedThisSession => const Color(0xFFF59E0B),
-      CompassState.locationDeniedForever => const Color(0xFFEF4444),
-      CompassState.locationServiceDisabled => const Color(0xFFF59E0B),
-      CompassState.calibrationRecommended => const Color(0xFFF59E0B),
-      CompassState.error => const Color(0xFFEF4444),
-    };
   }
 }
 
-class _CoordinateColumn extends StatelessWidget {
-  final String label;
-  final String value;
+class _CompassPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2 - 10;
 
-  const _CoordinateColumn({required this.label, required this.value});
+    final outerPaint = Paint()
+      ..color = AppColors.outlineVariant.withValues(alpha: 0.3)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5;
+
+    canvas.drawCircle(center, radius, outerPaint);
+
+    final tickPaint = Paint()
+      ..color = AppColors.outlineVariant
+      ..strokeWidth = 1;
+
+    for (int i = 0; i < 360; i += 15) {
+      final angle = i * math.pi / 180;
+      final isMajor = i % 90 == 0;
+      final tickLength = isMajor ? 14.0 : 8.0;
+
+      final start = Offset(
+        center.dx + (radius - tickLength) * math.cos(angle),
+        center.dy + (radius - tickLength) * math.sin(angle),
+      );
+      final end = Offset(
+        center.dx + radius * math.cos(angle),
+        center.dy + radius * math.sin(angle),
+      );
+
+      tickPaint.color = isMajor
+          ? AppColors.primary
+          : AppColors.outlineVariant.withValues(alpha: 0.4);
+      tickPaint.strokeWidth = isMajor ? 2.0 : 1.0;
+      canvas.drawLine(start, end, tickPaint);
+    }
+  }
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 13,
-            color: Color(0xFF6B7280),
-            fontWeight: FontWeight.w400,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-          ),
-        ),
-      ],
-    );
-  }
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

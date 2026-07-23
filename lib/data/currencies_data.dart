@@ -383,3 +383,20 @@ const Map<String, double> fallbackRatesToUsd = {
   'VND': 26251.0,
   'ZAR': 18.80,
 };
+
+/// Returns a [CurrencyModel] for [code] from the fallback currency list.
+CurrencyModel getFallbackCurrency(String code) {
+  final list = buildFallbackCurrencies();
+  return list.firstWhere((c) => c.code == code, orElse: () => list.first);
+}
+
+/// Backward-compatible class API for currency dataset access.
+class CurrenciesData {
+  CurrenciesData._();
+
+  /// List of all built-in currencies.
+  static List<CurrencyModel> get supportedCurrencies => buildFallbackCurrencies();
+
+  /// Returns a [CurrencyModel] for [code] (e.g. "USD", "EUR").
+  static CurrencyModel getByCode(String code) => getFallbackCurrency(code);
+}

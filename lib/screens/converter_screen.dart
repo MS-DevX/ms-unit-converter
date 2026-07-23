@@ -1,24 +1,21 @@
+/// Unit Converter Screen — Pixel-perfect implementation of Google Stitch Material Design 3 export.
+library;
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../core/colors.dart';
 import '../data/units_data.dart';
-import '../providers/favorites_provider.dart';
-import '../models/conversion_result.dart';
 import '../models/history_entry.dart';
-import '../models/unit_model.dart';
 import '../providers/converter_provider.dart';
+import '../providers/favorites_provider.dart';
 import '../providers/history_provider.dart';
-import '../services/conversion_service.dart';
-import '../utils/formatters.dart';
-import '../widgets/category_chip_bar.dart';
-import '../widgets/converter_input_bar.dart';
-import '../widgets/conversion_results_list.dart';
-import '../widgets/converter_connector_bar.dart';
 import '../widgets/decimal_precision_bar.dart';
+import '../widgets/stitch_card.dart';
 
 class ConverterScreen extends StatefulWidget {
   final UnitCategory? initialCategory;
@@ -41,12 +38,55 @@ class ConverterScreen extends StatefulWidget {
 class _ConverterScreenState extends State<ConverterScreen> {
   final TextEditingController _inputController = TextEditingController();
   final FocusNode _inputFocusNode = FocusNode();
-
   bool _initialized = false;
-  bool _formulaExpanded = false;
-
   Timer? _historyDebounce;
   String _lastHistorySignature = '';
+  double _swapRotationAngle = 0.0;
+
+  static IconData _getCategoryIcon(UnitCategory category) {
+    switch (category) {
+      case UnitCategory.length:
+        return Icons.straighten_rounded;
+      case UnitCategory.weight:
+        return Icons.monitor_weight_rounded;
+      case UnitCategory.temperature:
+        return Icons.thermostat_rounded;
+      case UnitCategory.area:
+        return Icons.area_chart_rounded;
+      case UnitCategory.volume:
+        return Icons.opacity_rounded;
+      case UnitCategory.speed:
+        return Icons.speed_rounded;
+      case UnitCategory.data:
+        return Icons.sd_card_rounded;
+      case UnitCategory.time:
+        return Icons.schedule_rounded;
+      case UnitCategory.angle:
+        return Icons.explore_rounded;
+      case UnitCategory.energy:
+        return Icons.bolt_rounded;
+      case UnitCategory.power:
+        return Icons.electric_bolt_rounded;
+      case UnitCategory.pressure:
+        return Icons.compress_rounded;
+      case UnitCategory.force:
+        return Icons.fitness_center_rounded;
+      case UnitCategory.frequency:
+        return Icons.graphic_eq_rounded;
+      case UnitCategory.fuelEconomy:
+        return Icons.local_gas_station_rounded;
+      case UnitCategory.cooking:
+        return Icons.soup_kitchen_rounded;
+      case UnitCategory.shoeSize:
+        return Icons.roller_skating_rounded;
+      case UnitCategory.clothingSize:
+        return Icons.checkroom_rounded;
+      case UnitCategory.numberBase:
+        return Icons.numbers_rounded;
+      case UnitCategory.typography:
+        return Icons.text_fields_rounded;
+    }
+  }
 
   @override
   void dispose() {
@@ -61,7 +101,6 @@ class _ConverterScreenState extends State<ConverterScreen> {
     super.didChangeDependencies();
     if (!_initialized && widget.initialCategory != null) {
       _initialized = true;
-
       WidgetsBinding.instance.addPostFrameCallback((_) {
         final converter = context.read<ConverterProvider>();
         converter.setCategory(widget.initialCategory!);
@@ -88,52 +127,6 @@ class _ConverterScreenState extends State<ConverterScreen> {
         : value.toString();
     _inputController.text = text;
     converter.setInput(text);
-  }
-
-  void _onCategorySelected(BuildContext context, UnitCategory category) {
-    context.read<ConverterProvider>().setCategory(category);
-    _inputController.clear();
-    HapticFeedback.selectionClick();
-    _inputFocusNode.requestFocus();
-  }
-
-  void _onInputChanged(String value) {
-    context.read<ConverterProvider>().setInput(value);
-  }
-
-  void _onRawInputChanged(String value) {
-    context.read<ConverterProvider>().setRawInput(value);
-  }
-
-  void _onUnitChanged(UnitModel unit) {
-    context.read<ConverterProvider>().setFromUnit(unit);
-  }
-
-  void _onResultTap(
-    ConverterProvider converter,
-    HistoryProvider historyProvider,
-    UnitModel unit,
-    ConversionResult? result,
-  ) {
-    if (result == null || !result.isValid || converter.fromUnit == null) {
-      return;
-    }
-    final inputDouble = double.tryParse(converter.inputValue);
-    if (inputDouble == null) return;
-
-    historyProvider.addEntry(
-      HistoryEntry(
-        id: DateTime.now().microsecondsSinceEpoch.toString(),
-        category: converter.selectedCategory.displayName,
-        inputValue: inputDouble,
-        fromUnit: converter.fromUnit!.name,
-        toUnit: unit.name,
-        fromSymbol: converter.fromUnit!.symbol,
-        toSymbol: unit.symbol,
-        result: result.result,
-        timestamp: DateTime.now(),
-      ),
-    );
   }
 
   void _autoSaveHistory(ConverterProvider converter) {
@@ -171,683 +164,534 @@ class _ConverterScreenState extends State<ConverterScreen> {
     });
   }
 
-  void _onBaseFontSizeChanged(String value, ConverterProvider converter) {
-    final parsed = double.tryParse(value);
-    if (parsed != null && parsed > 0) {
-      converter.setBaseFontSize(parsed);
-    }
-  }
-
-  int? _radixForUnit(String name) {
-    switch (name) {
-      case 'Binary':
-        return 2;
-      case 'Octal':
-        return 8;
-      case 'Decimal':
-        return 10;
-      case 'Hexadecimal':
-        return 16;
-      default:
-        return null;
-    }
-  }
-
-  List<({UnitModel unit, ConversionResult? result})> _computeAllResults(
-    ConverterProvider converter,
-  ) {
-    final input = converter.inputValue;
-    final rawInput = converter.rawInput;
-    final from = converter.fromUnit;
-    final category = converter.selectedCategory;
-    final units = converter.currentUnits;
-
-    if (input.isEmpty && rawInput.isEmpty || from == null) {
-      return units.map((u) => (unit: u, result: null)).toList();
-    }
-
-    // ── Number Base: pass raw text ──────────────────────────────────
-    if (category == UnitCategory.numberBase) {
-      final inputStr = rawInput.isEmpty ? input : rawInput;
-      if (inputStr.isEmpty) {
-        return units.map((u) => (unit: u, result: null)).toList();
-      }
-      final fromRadix = _radixForUnit(from.name);
-      if (fromRadix == null) {
-        return units
-            .map((u) => (unit: u, result: ConversionResult.failure('Invalid')))
-            .toList();
-      }
-      final parsedValue = int.tryParse(inputStr, radix: fromRadix);
-      if (parsedValue == null) {
-        return units
-            .map((u) => (unit: u, result: ConversionResult.failure('Invalid')))
-            .toList();
-      }
-      return units.map((u) {
-        if (u == from) {
-          return (
-            unit: u,
-            result: ConversionResult.success(
-              result: 0,
-              formattedResult: inputStr,
-              formula: '',
-            ),
-          );
-        }
-        final toRadix = _radixForUnit(u.name);
-        if (toRadix == null) {
-          return (unit: u, result: ConversionResult.failure('Invalid'));
-        }
-        final resultStr = parsedValue.toRadixString(toRadix).toUpperCase();
-        return (
-          unit: u,
-          result: ConversionResult.success(
-            result: parsedValue.toDouble(),
-            formattedResult: '$resultStr (base $toRadix)',
-            formula: '$inputStr (base $fromRadix) = $resultStr (base $toRadix)',
-          ),
-        );
-      }).toList();
-    }
-
-    final value = double.tryParse(input);
-    if (value == null || value.isNaN || value.isInfinite) {
-      return units
-          .map((u) => (unit: u, result: ConversionResult.failure('Invalid')))
-          .toList();
-    }
-
-    return units.map((u) {
-      if (u == from) {
-        final formatted = Formatters.formatResult(value);
-        return (
-          unit: u,
-          result: ConversionResult.success(
-            result: value,
-            formattedResult: formatted,
-            formula: '',
-          ),
-        );
-      }
-
-      // ── Cooking: check cross-group error ────────────────────────
-      if (category == UnitCategory.cooking) {
-        final err = ConversionService.cookingGroupError(from, u);
-        if (err != null) {
-          return (unit: u, result: ConversionResult.failure(err));
-        }
-      }
-
-      // ── Clothing: pass isMenSize ────────────────────────────────
-      if (category == UnitCategory.clothingSize) {
-        final result = _clothingResult(value, from, u, converter.isMenSize);
-        return (unit: u, result: result);
-      }
-
-      // ── Typography: pass baseFontSize ────────────────────────────
-      if (category == UnitCategory.typography) {
-        final result = _typographyResult(
-          value,
-          from,
-          u,
-          converter.baseFontSize,
-        );
-        return (unit: u, result: result);
-      }
-
-      return (
-        unit: u,
-        result: ConversionService.convert(value, from, u, category),
-      );
-    }).toList();
-  }
-
-  ConversionResult _clothingResult(
-    double value,
-    UnitModel from,
-    UnitModel to,
-    bool isMen,
-  ) {
-    if (to.isSpecialCase || from.isSpecialCase) {
-      final result = _convertClothingDirect(value, from, to, isMen);
-      if (result.isNaN || result.isInfinite) {
-        return ConversionResult.failure('Invalid');
-      }
-      final formatted = Formatters.formatResult(result);
-      return ConversionResult.success(
-        result: result,
-        formattedResult: formatted,
-        formula:
-            '${Formatters.formatResult(value)} ${from.symbol} = $formatted ${to.symbol}',
-      );
-    }
-    return ConversionService.convert(
-      value,
-      from,
-      to,
-      UnitCategory.clothingSize,
+  void _copyToClipboard(String text) {
+    if (text.isEmpty) return;
+    Clipboard.setData(ClipboardData(text: text));
+    HapticFeedback.lightImpact();
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Copied "$text" to clipboard'),
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+      ),
     );
   }
 
-  static double _convertClothingDirect(
-    double value,
-    UnitModel from,
-    UnitModel to,
-    bool isMen,
-  ) {
-    if (from.name == to.name) return value;
-    double us;
-    switch (from.name) {
-      case 'US':
-        us = value;
-        break;
-      case 'EU':
-        us = isMen ? value - 10 : value - 30;
-        break;
-      case 'UK':
-        us = isMen ? value + 1 : value - 4;
-        break;
-      case 'Asian':
-        us = value - 5;
-        break;
-      default:
-        return double.nan;
-    }
-    switch (to.name) {
-      case 'US':
-        return us;
-      case 'EU':
-        return isMen ? us + 10 : us + 30;
-      case 'UK':
-        return isMen ? us - 1 : us + 4;
-      case 'Asian':
-        return us + 5;
-      default:
-        return double.nan;
-    }
+  void _shareResult(ConverterProvider converter) {
+    final result = converter.result;
+    if (result == null || !result.isValid) return;
+    final from = converter.fromUnit;
+    final to = converter.toUnit;
+    if (from == null || to == null) return;
+
+    final text =
+        '${converter.inputValue} ${from.symbol} = ${result.formattedResult} ${to.symbol} (${converter.selectedCategory.displayName})';
+    SharePlus.instance.share(ShareParams(text: text));
   }
 
-  ConversionResult _typographyResult(
-    double value,
-    UnitModel from,
-    UnitModel to,
-    double baseFontSize,
+  void _showUnitPicker(
+    BuildContext context,
+    ConverterProvider converter,
+    bool isFromUnit,
   ) {
-    if (to.isSpecialCase || from.isSpecialCase) {
-      final result = _convertTypographyDirect(value, from, to, baseFontSize);
-      if (result.isNaN || result.isInfinite) {
-        return ConversionResult.failure('Invalid');
-      }
-      final formatted = Formatters.formatResult(result);
-      return ConversionResult.success(
-        result: result,
-        formattedResult: formatted,
-        formula:
-            '${Formatters.formatResult(value)} ${from.symbol} = $formatted ${to.symbol}',
-      );
-    }
-    return ConversionService.convert(value, from, to, UnitCategory.typography);
-  }
+    final units = converter.currentUnits;
+    final selectedUnit = isFromUnit ? converter.fromUnit : converter.toUnit;
 
-  static double _convertTypographyDirect(
-    double value,
-    UnitModel from,
-    UnitModel to,
-    double baseFontSize,
-  ) {
-    if (from.name == to.name) return value;
-    double px;
-    switch (from.name) {
-      case 'Pixels':
-      case 'DP':
-      case 'Points':
-      case 'Inch':
-      case 'Centimeter':
-      case 'Millimeter':
-      case 'Pica':
-        px = value * from.toBase;
-        break;
-      case 'EM':
-      case 'REM':
-        px = value * baseFontSize;
-        break;
-      case 'Percent':
-        px = (value / 100) * baseFontSize;
-        break;
-      default:
-        return double.nan;
-    }
-    switch (to.name) {
-      case 'Pixels':
-      case 'DP':
-      case 'Points':
-      case 'Inch':
-      case 'Centimeter':
-      case 'Millimeter':
-      case 'Pica':
-        return px / to.toBase;
-      case 'EM':
-      case 'REM':
-        return px / baseFontSize;
-      case 'Percent':
-        return (px / baseFontSize) * 100;
-      default:
-        return double.nan;
-    }
-  }
-
-  static const Map<UnitCategory, List<Color>> _categoryGradients = {
-    UnitCategory.length: [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
-    UnitCategory.weight: [Color(0xFF10B981), Color(0xFF047857)],
-    UnitCategory.temperature: [Color(0xFFEF4444), Color(0xFFB91C1C)],
-    UnitCategory.area: [Color(0xFF8B5CF6), Color(0xFF5B21B6)],
-    UnitCategory.volume: [Color(0xFFF59E0B), Color(0xFFD97706)],
-    UnitCategory.speed: [Color(0xFF06B6D4), Color(0xFF0891B2)],
-    UnitCategory.data: [Color(0xFFEC4899), Color(0xFFBE185D)],
-    UnitCategory.time: [Color(0xFF6366F1), Color(0xFF4338CA)],
-    UnitCategory.angle: [Color(0xFF14B8A6), Color(0xFF0F766E)],
-    UnitCategory.energy: [Color(0xFFF97316), Color(0xFFC2410C)],
-    UnitCategory.power: [Color(0xFF8B5CF6), Color(0xFF6D28D9)],
-    UnitCategory.pressure: [Color(0xFF0EA5E9), Color(0xFF0369A1)],
-    UnitCategory.force: [Color(0xFF84CC16), Color(0xFF4D7C0F)],
-    UnitCategory.frequency: [Color(0xFFEC4899), Color(0xFF9D174D)],
-    UnitCategory.fuelEconomy: [Color(0xFF22D3EE), Color(0xFF0E7490)],
-    UnitCategory.cooking: [Color(0xFFF97316), Color(0xFFC2410C)],
-    UnitCategory.shoeSize: [Color(0xFF8B5CF6), Color(0xFF6D28D9)],
-    UnitCategory.clothingSize: [Color(0xFF06B6D4), Color(0xFF0891B2)],
-    UnitCategory.numberBase: [Color(0xFF10B981), Color(0xFF047857)],
-    UnitCategory.typography: [Color(0xFF6366F1), Color(0xFF4338CA)],
-  };
-
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<ConverterProvider>(
-      builder: (context, converter, _) {
-        final isDark = Theme.of(context).brightness == Brightness.dark;
-        final bool canPop = Navigator.of(context).canPop();
-        final results = _computeAllResults(converter);
-        _autoSaveHistory(converter);
-        final isNumberBase =
-            converter.selectedCategory == UnitCategory.numberBase;
-        final isClothing =
-            converter.selectedCategory == UnitCategory.clothingSize;
-        final isTypography =
-            converter.selectedCategory == UnitCategory.typography;
-
-        return GestureDetector(
-          onTap: () => FocusScope.of(context).unfocus(),
-          child: Scaffold(
-            body: SafeArea(
-              child: Column(
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surfaceContainer,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 8, bottom: 12),
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.outlineVariant,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              child: Row(
                 children: [
-                  if (canPop) _buildPremiumHeader(context, converter),
-
-                  if (!canPop)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 16, bottom: 12),
-                      child: CategoryChipBar(
-                        categories: UnitCategory.values,
-                        selected: converter.selectedCategory,
-                        onSelected: (cat) => _onCategorySelected(context, cat),
-                      ),
-                    ),
-
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    child: ConverterInputBar(
-                      controller: _inputController,
-                      focusNode: _inputFocusNode,
-                      sourceUnit: converter.fromUnit,
-                      units: converter.currentUnits,
-                      onInputChanged: isNumberBase
-                          ? _onRawInputChanged
-                          : _onInputChanged,
-                      onUnitChanged: _onUnitChanged,
-                      keyboardType: isNumberBase ? TextInputType.text : null,
-                    ),
-                  ),
-
-                  // ── Clothing: Men/Women toggle ─────────────────────
-                  if (isClothing)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Row(
-                        children: [
-                          _buildToggleChip('Men', true, converter),
-                          const SizedBox(width: 8),
-                          _buildToggleChip('Women', false, converter),
-                        ],
-                      ),
-                    ),
-
-                  // ── Typography: base font size input ───────────────
-                  if (isTypography)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 4,
-                      ),
-                      child: Row(
-                        children: [
-                          Text(
-                            'Base font:',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: isDark
-                                  ? AppColors.darkTextSecondary
-                                  : AppColors.lightTextSecondary,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          SizedBox(
-                            width: 60,
-                            child: TextField(
-                              keyboardType: TextInputType.numberWithOptions(
-                                decimal: true,
-                              ),
-                              decoration: InputDecoration(
-                                isDense: true,
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 6,
-                                ),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  borderSide: BorderSide(
-                                    color: isDark
-                                        ? AppColors.inputBorderDark
-                                        : AppColors.inputBorderLight,
-                                  ),
-                                ),
-                              ),
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: isDark
-                                    ? AppColors.darkTextPrimary
-                                    : AppColors.lightTextPrimary,
-                              ),
-                              controller:
-                                  TextEditingController(
-                                      text: converter.baseFontSize
-                                          .toStringAsFixed(0),
-                                    )
-                                    ..selection = TextSelection.collapsed(
-                                      offset: converter.baseFontSize
-                                          .toStringAsFixed(0)
-                                          .length,
-                                    ),
-                              onChanged: (v) =>
-                                  _onBaseFontSizeChanged(v, converter),
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            'px',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: isDark
-                                  ? AppColors.darkTextSecondary
-                                  : AppColors.lightTextSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                  const DecimalPrecisionBar(),
-
-                  ConverterConnectorBar(
-                    gradientColors:
-                        _categoryGradients[converter.selectedCategory] ??
-                        [AppColors.primary, AppColors.primaryDark],
-                    onSwap: converter.swapUnits,
-                  ),
-
-                  _buildFormulaCard(context, converter),
-
-                  Expanded(
-                    child: ConversionResultsList(
-                      results: results,
-                      sourceUnit: converter.fromUnit,
-                      isDark: isDark,
-                      onResultTapped: (unit, result) => _onResultTap(
-                        converter,
-                        context.read<HistoryProvider>(),
-                        unit,
-                        result,
-                      ),
+                  Text(
+                    isFromUnit ? 'Select Source Unit' : 'Select Target Unit',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.onSurface,
                     ),
                   ),
                 ],
               ),
             ),
-          ),
+            Flexible(
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: units.length,
+                itemBuilder: (ctx, i) {
+                  final unit = units[i];
+                  final isSelected = unit == selectedUnit;
+
+                  return ListTile(
+                    title: Text(
+                      unit.name,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
+                        color: isSelected ? AppColors.primary : AppColors.onSurface,
+                      ),
+                    ),
+                    trailing: Text(
+                      unit.symbol,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                    ),
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      if (isFromUnit) {
+                        converter.setFromUnit(unit);
+                      } else {
+                        converter.setToUnit(unit);
+                      }
+                      Navigator.pop(ctx);
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
         );
       },
     );
   }
 
-  Widget _buildToggleChip(
-    String label,
-    bool isMen,
-    ConverterProvider converter,
-  ) {
-    final selected = converter.isMenSize == isMen;
-    return GestureDetector(
-      onTap: () => converter.setIsMenSize(isMen),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-        decoration: BoxDecoration(
-          color: selected ? AppColors.primary : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: selected ? AppColors.primary : AppColors.inputBorderDark,
-          ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: selected ? Colors.white : AppColors.darkTextSecondary,
-            fontSize: 13,
+  @override
+  Widget build(BuildContext context) {
+    final converter = context.watch<ConverterProvider>();
+    _autoSaveHistory(converter);
+
+    final fromUnit = converter.fromUnit;
+    final toUnit = converter.toUnit;
+    final result = converter.result;
+    final resultStr = result != null && result.isValid
+        ? result.formattedResult
+        : '0.00';
+
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        backgroundColor: AppColors.surfaceContainer,
+        elevation: 0,
+        leading: Navigator.canPop(context)
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back_rounded, color: AppColors.primary),
+                onPressed: () => Navigator.pop(context),
+              )
+            : null,
+        title: Text(
+          converter.selectedCategory.displayName,
+          style: const TextStyle(
+            fontSize: 28,
             fontWeight: FontWeight.w600,
+            color: AppColors.onSurface,
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildPremiumHeader(
-    BuildContext context,
-    ConverterProvider converter,
-  ) {
-    final category = widget.initialCategory ?? converter.selectedCategory;
-    final gradientColors =
-        _categoryGradients[category] ??
-        [AppColors.primary, AppColors.primaryDark];
-    final units = getUnits(category);
-    final favProv = context.read<FavoritesProvider>();
-    final isFav = favProv.isFavorite(category);
-
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: gradientColors,
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: gradientColors.last.withValues(alpha: 0.5),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(4, 8, 16, 16),
-        child: Row(
-          children: [
-            IconButton(
-              icon: const Icon(
-                Icons.arrow_back_rounded,
-                color: Colors.white,
-                size: 24,
-              ),
-              onPressed: () {
-                HapticFeedback.lightImpact();
-                Navigator.of(context).pop();
-              },
-              tooltip: 'Back',
-            ),
-            const SizedBox(width: 4),
-            Text(category.icon, style: const TextStyle(fontSize: 28)),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    category.displayName,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      height: 1.2,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '${units.length} units',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.8),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            IconButton(
-              icon: Icon(
-                isFav ? Icons.star_rounded : Icons.star_outline_rounded,
-                color: isFav ? Colors.amber : Colors.white,
-              ),
-              onPressed: () {
-                HapticFeedback.lightImpact();
-                favProv.toggleFavorite(category);
-              },
-              tooltip: isFav ? 'Remove from favorites' : 'Add to favorites',
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFormulaCard(BuildContext context, ConverterProvider converter) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final category = widget.initialCategory ?? converter.selectedCategory;
-    final explanation = category.formulaExplanation;
-    final textColor = isDark
-        ? AppColors.darkTextSecondary
-        : AppColors.lightTextSecondary;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: GestureDetector(
-        onTap: () {
-          setState(() => _formulaExpanded = !_formulaExpanded);
-          HapticFeedback.selectionClick();
-        },
-        child: AnimatedCrossFade(
-          firstChild: Container(
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: isDark ? AppColors.borderDark : AppColors.borderLight,
-              ),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.info_outline_rounded,
-                  size: 16,
-                  color: AppColors.primary,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'How it works',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: textColor,
-                    ),
-                  ),
-                ),
-                Icon(
-                  Icons.keyboard_arrow_down_rounded,
-                  size: 18,
-                  color: textColor,
-                ),
-              ],
-            ),
-          ),
-          secondChild: Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: isDark ? AppColors.borderDark : AppColors.borderLight,
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // MAIN CONVERSION GLASS CARD
+              StitchCard(
+                padding: const EdgeInsets.all(20),
+                borderRadius: 20,
+                child: Stack(
                   children: [
-                    Icon(
-                      Icons.info_outline_rounded,
-                      size: 16,
-                      color: AppColors.primary,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'How it works',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: textColor,
+                    Positioned(
+                      top: 0,
+                      right: 0,
+                      child: Opacity(
+                        opacity: 0.08,
+                        child: Icon(
+                          _getCategoryIcon(converter.selectedCategory),
+                          size: 120,
+                          color: AppColors.onSurface,
+                        ),
                       ),
                     ),
-                    const Spacer(),
-                    Icon(
-                      Icons.keyboard_arrow_up_rounded,
-                      size: 18,
-                      color: textColor,
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // FROM SECTION
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'FROM',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.primary,
+                                letterSpacing: 1.2,
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AppColors.surface,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: AppColors.outlineVariant.withValues(alpha: 0.3),
+                                ),
+                              ),
+                              child: Row(
+                                children: const [
+                                  Icon(Icons.language_rounded, size: 14, color: AppColors.onSurfaceVariant),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'Standard',
+                                    style: TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: _inputController,
+                                focusNode: _inputFocusNode,
+                                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                style: const TextStyle(
+                                  fontSize: 36,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.onSurface,
+                                ),
+                                decoration: const InputDecoration(
+                                  hintText: '0.00',
+                                  hintStyle: TextStyle(
+                                    fontSize: 36,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.outlineVariant,
+                                  ),
+                                  border: InputBorder.none,
+                                  enabledBorder: InputBorder.none,
+                                  focusedBorder: InputBorder.none,
+                                  filled: false,
+                                  contentPadding: EdgeInsets.zero,
+                                ),
+                                onChanged: (text) => converter.setInput(text),
+                              ),
+                            ),
+
+                            GestureDetector(
+                              onTap: () => _showUnitPicker(context, converter, true),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: AppColors.surface,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: const Border(
+                                    bottom: BorderSide(color: AppColors.primary, width: 2),
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Text(
+                                      fromUnit?.name ?? 'Select',
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w500,
+                                        color: AppColors.onSurface,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    const Icon(Icons.expand_more_rounded, color: AppColors.primary),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        // SWAP DIVIDER & ANIMATED SWAP BUTTON
+                        Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            Divider(
+                              color: AppColors.outlineVariant.withValues(alpha: 0.3),
+                              thickness: 1,
+                            ),
+                            GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _swapRotationAngle += 3.14159;
+                                });
+                                HapticFeedback.mediumImpact();
+                                converter.swapUnits();
+                                _inputController.text = converter.inputValue;
+                              },
+                              child: AnimatedRotation(
+                                turns: _swapRotationAngle / (2 * 3.14159),
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeOutCubic,
+                                child: Container(
+                                  width: 48,
+                                  height: 48,
+                                  decoration: const BoxDecoration(
+                                    color: AppColors.primary,
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Color(0x33000000),
+                                        blurRadius: 8,
+                                        offset: Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: const Icon(
+                                    Icons.swap_vert_rounded,
+                                    color: Colors.white,
+                                    size: 26,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        // TO SECTION
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: const [
+                            Text(
+                              'TO',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.onSurfaceVariant,
+                                letterSpacing: 1.2,
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                resultStr,
+                                style: const TextStyle(
+                                  fontSize: 36,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.primary,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+
+                            GestureDetector(
+                              onTap: () => _showUnitPicker(context, converter, false),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: AppColors.surface,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border(
+                                    bottom: BorderSide(
+                                      color: AppColors.outlineVariant.withValues(alpha: 0.5),
+                                      width: 2,
+                                    ),
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Text(
+                                      toUnit?.name ?? 'Select',
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w500,
+                                        color: AppColors.onSurface,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    const Icon(Icons.expand_more_rounded, color: AppColors.onSurfaceVariant),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
-                Text(
-                  explanation,
-                  style: TextStyle(fontSize: 13, color: textColor, height: 1.5),
+              ),
+
+              const SizedBox(height: 20),
+
+              // QUICK ACTION BUTTONS GRID (COPY, SHARE, SWAP, SAVE)
+              Row(
+                children: [
+                  Expanded(
+                    child: StitchCard(
+                      onTap: () => _copyToClipboard(resultStr),
+                      backgroundColor: AppColors.primaryContainer,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [
+                          Icon(Icons.content_copy_rounded, color: AppColors.primary, size: 20),
+                          SizedBox(height: 4),
+                          Text(
+                            'Copy',
+                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.primary),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: StitchCard(
+                      onTap: () => _shareResult(converter),
+                      backgroundColor: AppColors.surface,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [
+                          Icon(Icons.share_rounded, color: AppColors.onSurfaceVariant, size: 20),
+                          SizedBox(height: 4),
+                          Text(
+                            'Share',
+                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.onSurfaceVariant),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: StitchCard(
+                      onTap: () {
+                        HapticFeedback.mediumImpact();
+                        converter.swapUnits();
+                        _inputController.text = converter.inputValue;
+                      },
+                      backgroundColor: AppColors.surface,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [
+                          Icon(Icons.swap_horiz_rounded, color: AppColors.onSurfaceVariant, size: 20),
+                          SizedBox(height: 4),
+                          Text(
+                            'Swap',
+                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.onSurfaceVariant),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Consumer<FavoritesProvider>(
+                    builder: (context, favProv, _) {
+                      final isFav = favProv.isFavorite(converter.selectedCategory);
+                      return Expanded(
+                        child: StitchCard(
+                          onTap: () {
+                            HapticFeedback.selectionClick();
+                            favProv.toggleFavorite(converter.selectedCategory);
+                          },
+                          backgroundColor: AppColors.surface,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                isFav ? Icons.star_rounded : Icons.star_outline_rounded,
+                                color: isFav ? Colors.amber : AppColors.onSurfaceVariant,
+                                size: 20,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                isFav ? 'Saved' : 'Save',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
+                                  color: isFav ? Colors.amber : AppColors.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 24),
+
+              // FORMULA CARD
+              StitchCard(
+                backgroundColor: AppColors.surfaceContainerLow,
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'FORMULA',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.onSurfaceVariant,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      converter.selectedCategory.formulaExplanation,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: AppColors.onSurface,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // PRECISION BAR
+              const DecimalPrecisionBar(),
+            ],
           ),
-          crossFadeState: _formulaExpanded
-              ? CrossFadeState.showSecond
-              : CrossFadeState.showFirst,
-          duration: const Duration(milliseconds: 200),
         ),
       ),
     );

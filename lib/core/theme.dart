@@ -1,20 +1,36 @@
 import 'package:flutter/material.dart';
 import 'colors.dart';
 
-/// AppTheme — Material 3 2026 Dark Slate Theme System for MS Unit Converter.
+/// AppTheme — Google Stitch Material Design 3 Theme System for MS Unit Converter.
 class AppTheme {
   AppTheme._();
 
   static ThemeData get darkTheme {
     const colorScheme = ColorScheme.dark(
       primary: AppColors.primary,
-      onPrimary: Colors.white,
-      secondary: AppColors.primary,
-      onSecondary: Colors.white,
-      surface: AppColors.card,
-      onSurface: AppColors.textPrimary,
-      error: AppColors.danger,
-      onError: Colors.white,
+      onPrimary: AppColors.onPrimary,
+      primaryContainer: AppColors.primaryContainer,
+      onPrimaryContainer: AppColors.onPrimaryContainer,
+      secondary: AppColors.secondary,
+      onSecondary: AppColors.onSecondary,
+      secondaryContainer: AppColors.secondaryContainer,
+      onSecondaryContainer: AppColors.onSecondaryContainer,
+      tertiary: AppColors.tertiary,
+      onTertiary: AppColors.onTertiary,
+      tertiaryContainer: AppColors.tertiaryContainer,
+      onTertiaryContainer: AppColors.onTertiaryContainer,
+      surface: AppColors.surface,
+      onSurface: AppColors.onSurface,
+      onSurfaceVariant: AppColors.onSurfaceVariant,
+      surfaceContainerLowest: AppColors.surfaceContainerLowest,
+      surfaceContainerLow: AppColors.surfaceContainerLow,
+      surfaceContainer: AppColors.surfaceContainer,
+      surfaceContainerHigh: AppColors.surfaceContainerHigh,
+      surfaceContainerHighest: AppColors.surfaceContainerHighest,
+      outline: AppColors.outline,
+      outlineVariant: AppColors.outlineVariant,
+      error: AppColors.error,
+      onError: AppColors.onError,
     );
 
     return ThemeData(
@@ -23,115 +39,146 @@ class AppTheme {
       colorScheme: colorScheme,
       scaffoldBackgroundColor: AppColors.background,
 
-      // Typography
+      // Stitch M3 Typography Specs
       textTheme: const TextTheme(
+        // Display Large: 36px / 44px line height / bold
         displayLarge: TextStyle(
-          fontSize: 32,
-          fontWeight: FontWeight.w800,
-          color: AppColors.textPrimary,
-          height: 1.2,
-          letterSpacing: -0.5,
-        ),
-        headlineMedium: TextStyle(
-          fontSize: 22,
+          fontSize: 36,
           fontWeight: FontWeight.w700,
-          color: AppColors.textPrimary,
-          height: 1.25,
+          color: AppColors.onSurface,
+          height: 44 / 36,
+          letterSpacing: -0.72,
+        ),
+
+        // Headline Medium: 28px / 36px line height / semi-bold
+        headlineMedium: TextStyle(
+          fontSize: 28,
+          fontWeight: FontWeight.w600,
+          color: AppColors.onSurface,
+          height: 36 / 28,
           letterSpacing: -0.3,
         ),
-        titleLarge: TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.w700,
-          color: AppColors.textPrimary,
-          height: 1.3,
-        ),
-        bodyLarge: TextStyle(
-          fontSize: 15,
-          fontWeight: FontWeight.w400,
-          color: AppColors.textSecondary,
-          height: 1.4,
-        ),
-        bodySmall: TextStyle(
-          fontSize: 12,
+
+        // Title Medium: 22px / 28px line height / medium
+        titleMedium: TextStyle(
+          fontSize: 22,
           fontWeight: FontWeight.w500,
-          color: AppColors.textMuted,
-          height: 1.4,
+          color: AppColors.onSurface,
+          height: 28 / 22,
+        ),
+
+        // Title Large (Compatibility)
+        titleLarge: TextStyle(
+          fontSize: 22,
+          fontWeight: FontWeight.w600,
+          color: AppColors.onSurface,
+          height: 28 / 22,
+        ),
+
+        // Body Large: 16px / 24px line height / regular
+        bodyLarge: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w400,
+          color: AppColors.onSurface,
+          height: 24 / 16,
+        ),
+
+        // Label Medium: 15px / 20px line height / medium
+        labelMedium: TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.w500,
+          color: AppColors.onSurface,
+          height: 20 / 15,
+        ),
+
+        // Caption Small (bodySmall): 13px / 16px line height / regular
+        bodySmall: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w400,
+          color: AppColors.onSurfaceVariant,
+          height: 16 / 13,
+        ),
+
+        labelSmall: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w500,
+          color: AppColors.onSurfaceVariant,
+          height: 14 / 11,
         ),
       ),
 
       // App Bar Theme
       appBarTheme: const AppBarTheme(
-        centerTitle: true,
+        centerTitle: false,
         elevation: 0,
-        backgroundColor: AppColors.background,
-        foregroundColor: AppColors.textPrimary,
+        backgroundColor: AppColors.surfaceContainer,
+        foregroundColor: AppColors.onSurface,
         scrolledUnderElevation: 0,
         titleTextStyle: TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.w700,
-          color: AppColors.textPrimary,
+          fontSize: 28,
+          fontWeight: FontWeight.w600,
+          color: AppColors.onSurface,
         ),
       ),
 
       // Material 3 Navigation Bar Theme
       navigationBarTheme: NavigationBarThemeData(
-        height: 68,
+        height: 72,
         backgroundColor: AppColors.surface,
         elevation: 4,
-        indicatorColor: AppColors.primary.withValues(alpha: 0.15),
+        indicatorColor: AppColors.secondaryContainer,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         iconTheme: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return const IconThemeData(color: AppColors.primary, size: 24);
+            return const IconThemeData(color: AppColors.onSecondaryContainer, size: 24);
           }
-          return const IconThemeData(color: AppColors.textSecondary, size: 24);
+          return const IconThemeData(color: AppColors.onSurfaceVariant, size: 24);
         }),
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
             return const TextStyle(
               fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: AppColors.primary,
+              fontWeight: FontWeight.w600,
+              color: AppColors.onSecondaryContainer,
             );
           }
           return const TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w500,
-            color: AppColors.textSecondary,
+            color: AppColors.onSurfaceVariant,
           );
         }),
       ),
 
-      // Card Theme (16dp rounded corners, neutral slate container)
+      // Card Theme (16/20px rounded corners, Stitch customCard)
       cardTheme: CardThemeData(
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: AppColors.borderDark, width: 1),
         ),
-        color: AppColors.card,
+        color: AppColors.customCard,
       ),
 
-      // Input Decoration Theme (M3 Rounded Search/Inputs)
+      // Input Decoration Theme
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppColors.card,
+        fillColor: AppColors.surface,
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: 18,
+          horizontal: 16,
           vertical: 16,
         ),
         hintStyle: const TextStyle(
-          color: AppColors.textSecondary,
-          fontSize: 15,
+          color: AppColors.outline,
+          fontSize: 16,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppColors.borderDark),
+          borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppColors.borderDark),
+          borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
@@ -143,7 +190,7 @@ class AppTheme {
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           elevation: 0,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           minimumSize: const Size(0, 48),
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
@@ -152,13 +199,12 @@ class AppTheme {
       ),
 
       dividerTheme: const DividerThemeData(
-        color: AppColors.divider,
+        color: AppColors.outlineVariant,
         thickness: 1,
         space: 1,
       ),
     );
   }
 
-  // Light theme fallback mapping to dark for unified 2026 Slate aesthetic
   static ThemeData get lightTheme => darkTheme;
 }
