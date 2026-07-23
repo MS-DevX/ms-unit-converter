@@ -1,5 +1,5 @@
 /// Adaptive navigation shell — hosts all five main tabs with responsive layout
-/// support for phones (Bottom Navigation) and foldables/tablets (Navigation Rail + Split Pane).
+/// support for phones (Material 3 NavigationBar) and foldables/tablets (Navigation Rail + Split Pane).
 library;
 
 import 'package:flutter/material.dart';
@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import '../core/colors.dart';
 import '../services/navigation_service.dart';
 import '../utils/responsive_helper.dart';
+import '../widgets/welcome_name_dialog.dart';
 import 'compass_screen.dart';
 import 'converter_screen.dart';
 import 'currency_screen.dart';
@@ -15,8 +16,7 @@ import 'history_screen.dart';
 import 'home_screen.dart';
 import 'settings_screen.dart';
 
-/// Page physics that require a longer horizontal drag before a page
-/// transition starts.
+/// Page physics that require a longer horizontal drag before a page transition starts.
 class _ReducedSensitivityPhysics extends PageScrollPhysics {
   const _ReducedSensitivityPhysics({super.parent});
 
@@ -51,13 +51,13 @@ class _MainShellState extends State<MainShell> {
 
   static const List<NavigationRailDestination> _railDestinations = [
     NavigationRailDestination(
-      icon: Icon(Icons.home_outlined),
-      selectedIcon: Icon(Icons.home_rounded),
+      icon: Icon(Icons.grid_view_outlined),
+      selectedIcon: Icon(Icons.grid_view_rounded),
       label: Text('Home'),
     ),
     NavigationRailDestination(
-      icon: Icon(Icons.monetization_on_outlined),
-      selectedIcon: Icon(Icons.monetization_on_rounded),
+      icon: Icon(Icons.currency_exchange_outlined),
+      selectedIcon: Icon(Icons.currency_exchange_rounded),
       label: Text('Currency'),
     ),
     NavigationRailDestination(
@@ -77,30 +77,30 @@ class _MainShellState extends State<MainShell> {
     ),
   ];
 
-  static const List<BottomNavigationBarItem> _navItems = [
-    BottomNavigationBarItem(
-      icon: Icon(Icons.home_outlined),
-      activeIcon: Icon(Icons.home_rounded),
+  static const List<NavigationDestination> _navDestinations = [
+    NavigationDestination(
+      icon: Icon(Icons.grid_view_outlined),
+      selectedIcon: Icon(Icons.grid_view_rounded),
       label: 'Home',
     ),
-    BottomNavigationBarItem(
-      icon: Icon(Icons.monetization_on_outlined),
-      activeIcon: Icon(Icons.monetization_on_rounded),
+    NavigationDestination(
+      icon: Icon(Icons.currency_exchange_outlined),
+      selectedIcon: Icon(Icons.currency_exchange_rounded),
       label: 'Currency',
     ),
-    BottomNavigationBarItem(
+    NavigationDestination(
       icon: Icon(Icons.explore_outlined),
-      activeIcon: Icon(Icons.explore_rounded),
+      selectedIcon: Icon(Icons.explore_rounded),
       label: 'Compass',
     ),
-    BottomNavigationBarItem(
+    NavigationDestination(
       icon: Icon(Icons.history_outlined),
-      activeIcon: Icon(Icons.history_rounded),
+      selectedIcon: Icon(Icons.history_rounded),
       label: 'History',
     ),
-    BottomNavigationBarItem(
+    NavigationDestination(
       icon: Icon(Icons.settings_outlined),
-      activeIcon: Icon(Icons.settings_rounded),
+      selectedIcon: Icon(Icons.settings_rounded),
       label: 'Settings',
     ),
   ];
@@ -111,6 +111,10 @@ class _MainShellState extends State<MainShell> {
     _pageController = PageController(initialPage: 0);
     appNavigator.register((index) {
       _onTabTapped(index);
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      WelcomeNameDialog.showIfNeeded(context);
     });
   }
 
@@ -127,8 +131,8 @@ class _MainShellState extends State<MainShell> {
     if (_pageController.hasClients) {
       _pageController.animateToPage(
         index,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOutCubic,
       );
     } else {
       setState(() {});
@@ -138,7 +142,6 @@ class _MainShellState extends State<MainShell> {
   @override
   Widget build(BuildContext context) {
     final isExpanded = ResponsiveHelper.isExpanded(context);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return AppNavigator(
       notifier: appNavigator,
@@ -151,16 +154,17 @@ class _MainShellState extends State<MainShell> {
         },
         child: Scaffold(
           body: isExpanded
-              ? _buildExpandedLayout(isDark)
+              ? _buildExpandedLayout()
               : _buildCompactLayout(),
         ),
       ),
     );
   }
 
-  /// Single-column layout for Compact screens (phones in portrait).
+  /// Single-column layout for Compact screens (phones in portrait) using M3 NavigationBar.
   Widget _buildCompactLayout() {
     return Scaffold(
+      backgroundColor: AppColors.background,
       body: PageView(
         controller: _pageController,
         physics: const _ReducedSensitivityPhysics(),
@@ -171,19 +175,16 @@ class _MainShellState extends State<MainShell> {
           return _KeepAlivePage(child: screen);
         }).toList(),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: _onTabTapped,
-        items: _navItems,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.lightTextSecondary,
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _currentIndex,
+        onDestinationSelected: _onTabTapped,
+        destinations: _navDestinations,
       ),
     );
   }
 
   /// Split-pane dual-column layout for Expanded screens (foldables / tablets).
-  Widget _buildExpandedLayout(bool isDark) {
+  Widget _buildExpandedLayout() {
     return Row(
       children: [
         // Material 3 Navigation Rail
@@ -196,26 +197,20 @@ class _MainShellState extends State<MainShell> {
           },
           labelType: NavigationRailLabelType.selected,
           destinations: _railDestinations,
-          backgroundColor: isDark
-              ? AppColors.darkSurface
-              : AppColors.lightSurface,
+          backgroundColor: AppColors.surface,
           selectedIconTheme: const IconThemeData(color: AppColors.primary),
           selectedLabelTextStyle: const TextStyle(
             color: AppColors.primary,
             fontWeight: FontWeight.w700,
             fontSize: 12,
           ),
-          unselectedIconTheme: IconThemeData(
-            color: isDark
-                ? AppColors.darkTextSecondary
-                : AppColors.lightTextSecondary,
-          ),
+          unselectedIconTheme: const IconThemeData(color: AppColors.textSecondary),
         ),
 
-        VerticalDivider(
+        const VerticalDivider(
           thickness: 1,
           width: 1,
-          color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
+          color: AppColors.divider,
         ),
 
         // Main content area
@@ -234,7 +229,7 @@ class _MainShellState extends State<MainShell> {
   /// Split pane for Home screen tab: Left pane (Categories/Search), Right pane (Active Converter).
   Widget _buildHomeSplitPane() {
     final screenWidth = MediaQuery.of(context).size.width;
-    final leftPaneWidth = screenWidth > 1100 ? 400.0 : 350.0;
+    final leftPaneWidth = screenWidth > 1100 ? 420.0 : 360.0;
 
     return Row(
       children: [
@@ -244,12 +239,10 @@ class _MainShellState extends State<MainShell> {
           child: const HomeScreen(),
         ),
 
-        VerticalDivider(
+        const VerticalDivider(
           thickness: 1,
           width: 1,
-          color: Theme.of(context).brightness == Brightness.dark
-              ? AppColors.dividerDark
-              : AppColors.dividerLight,
+          color: AppColors.divider,
         ),
 
         // Detail Pane (Active Live Converter)

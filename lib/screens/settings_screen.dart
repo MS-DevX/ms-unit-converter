@@ -77,15 +77,75 @@ class SettingsScreen extends StatelessWidget {
     }
   }
 
+  void _editProfileName(BuildContext context, SettingsProvider settings) {
+    final controller = TextEditingController(text: settings.userName);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.card,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Edit Your Name', style: TextStyle(color: AppColors.textPrimary)),
+        content: TextField(
+          controller: controller,
+          textCapitalization: TextCapitalization.words,
+          autofocus: true,
+          style: const TextStyle(color: AppColors.textPrimary),
+          decoration: InputDecoration(
+            hintText: 'Enter your name',
+            hintStyle: const TextStyle(color: AppColors.textSecondary),
+            fillColor: AppColors.background,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              settings.setUserName(controller.text.trim());
+              Navigator.of(ctx).pop();
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(title: const Text('Settings'), centerTitle: true),
       body: Consumer<SettingsProvider>(
         builder: (context, settings, _) {
           return ListView(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
             children: [
+              _SectionHeader(label: 'Profile'),
+              _SettingsCard(
+                children: [
+                  _SettingsTile(
+                    icon: Icons.person_outline_rounded,
+                    iconColor: AppColors.primary,
+                    title: 'Name',
+                    subtitle: settings.userName.isNotEmpty
+                        ? settings.userName
+                        : 'Not set (tap to add)',
+                    trailing: TextButton(
+                      onPressed: () => _editProfileName(context, settings),
+                      child: const Text('Edit'),
+                    ),
+                    onTap: () => _editProfileName(context, settings),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 20),
+
               _SectionHeader(label: 'Appearance'),
               _SettingsCard(
                 children: [

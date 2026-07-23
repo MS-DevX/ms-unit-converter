@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../data/units_data.dart';
 
 /// Represents a single conversion stored in history.
 ///
@@ -45,6 +46,14 @@ class HistoryEntry {
     required this.result,
     required this.timestamp,
   });
+
+  /// Returns the corresponding [UnitCategory] for this entry.
+  UnitCategory get categoryEnum {
+    return UnitCategory.values.firstWhere(
+      (c) => c.displayName.toLowerCase() == category.toLowerCase(),
+      orElse: () => UnitCategory.length,
+    );
+  }
 
   /// Serializes this entry to a JSON-compatible map.
   Map<String, dynamic> toJson() {

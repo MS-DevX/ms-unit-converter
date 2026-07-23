@@ -12,9 +12,13 @@ class SettingsProvider extends ChangeNotifier {
 
   DecimalPrecision decimalPrecision = DecimalPrecision.auto;
 
-  bool isCosmicTheme = true;
+  bool isCosmicTheme = false;
+
+  String userName = '';
 
   bool isLoaded = false;
+
+  static const String userNameStorageKey = 'user_profile_name';
 
   ThemeMode _modeFromString(String? value) {
     switch (value) {
@@ -38,6 +42,22 @@ class SettingsProvider extends ChangeNotifier {
     }
   }
 
+  /// Calculates dynamic time-based greeting for local profile (e.g. Good Afternoon, Shahzad 👋)
+  String getGreeting() {
+    final hour = DateTime.now().hour;
+    final timeGreeting = hour < 12
+        ? 'Good Morning'
+        : hour < 17
+            ? 'Good Afternoon'
+            : 'Good Evening';
+
+    final name = userName.trim();
+    if (name.isNotEmpty) {
+      return '$timeGreeting, $name 👋';
+    }
+    return '$timeGreeting 👋';
+  }
+
   Future<void> loadSettings() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -51,12 +71,23 @@ class SettingsProvider extends ChangeNotifier {
       Formatters.setPrecision(decimalPrecision);
 
       isCosmicTheme =
-          prefs.getBool(CosmicUIConstants.cosmicThemeStorageKey) ?? true;
+          prefs.getBool(CosmicUIConstants.cosmicThemeStorageKey) ?? false;
+
+      userName = prefs.getString(userNameStorageKey) ?? '';
     } catch (_) {
     } finally {
       isLoaded = true;
       notifyListeners();
     }
+  }
+
+  Future<void> setUserName(String name) async {
+    userName = name.trim();
+    notifyListeners();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(userNameStorageKey, userName);
+    } catch (_) {}
   }
 
   Future<void> toggleTheme() async {
@@ -81,8 +112,7 @@ class SettingsProvider extends ChangeNotifier {
         AppConstants.themeModeStorageKey,
         _modeToString(mode),
       );
-    } catch (_) {
-    }
+    } catch (_) {}
   }
 
   Future<void> setDecimalPrecision(DecimalPrecision precision) async {
@@ -92,8 +122,7 @@ class SettingsProvider extends ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setInt(AppConstants.decimalPrecisionKey, precision.index);
-    } catch (_) {
-    }
+    } catch (_) {}
   }
 
   Future<void> toggleCosmicTheme() async {
@@ -105,7 +134,6 @@ class SettingsProvider extends ChangeNotifier {
         CosmicUIConstants.cosmicThemeStorageKey,
         isCosmicTheme,
       );
-    } catch (_) {
-    }
+    } catch (_) {}
   }
 }
