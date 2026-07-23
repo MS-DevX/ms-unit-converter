@@ -18,6 +18,7 @@ import '../widgets/category_chip_bar.dart';
 import '../widgets/converter_input_bar.dart';
 import '../widgets/conversion_results_list.dart';
 import '../widgets/converter_connector_bar.dart';
+import '../widgets/decimal_precision_bar.dart';
 
 class ConverterScreen extends StatefulWidget {
   final UnitCategory? initialCategory;
@@ -596,6 +597,8 @@ class _ConverterScreenState extends State<ConverterScreen> {
                         ],
                       ),
                     ),
+
+                  const DecimalPrecisionBar(),
 
                   ConverterConnectorBar(
                     gradientColors:
