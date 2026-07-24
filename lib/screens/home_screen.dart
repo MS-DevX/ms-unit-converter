@@ -11,6 +11,7 @@ import '../providers/converter_provider.dart';
 import '../providers/favorites_provider.dart';
 import '../providers/history_provider.dart';
 import '../providers/settings_provider.dart';
+import '../providers/usage_provider.dart';
 import '../services/conversion_service.dart';
 import '../services/smart_parse_service.dart';
 import '../utils/formatters.dart';
@@ -135,6 +136,8 @@ class _HomeScreenState extends State<HomeScreen> {
     double? presetInputValue,
   }) {
     final converterProv = context.read<ConverterProvider>();
+
+    context.read<UsageProvider>().trackCategoryUsage(category);
 
     converterProv.setCategory(category);
 
@@ -471,49 +474,72 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SliverToBoxAdapter(child: SizedBox(height: 12)),
 
                   SliverToBoxAdapter(
-                    child: SizedBox(
-                      height: 120,
-                      child: ListView(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        children: [
-                          _FrequentlyUsedCard(
-                            category: UnitCategory.length,
-                            title: 'Length',
-                            unitCount: '42 Units',
-                            borderColor: AppColors.primary,
-                            icon: Icons.straighten_rounded,
-                            onTap: () => _openConverter(context, UnitCategory.length),
+                    child: Builder(
+                      builder: (context) {
+                        final usageProv = context.watch<UsageProvider>();
+                        final topCategories = usageProv.getTopCategories(limit: 4);
+
+                        if (topCategories.isEmpty) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: StitchCard(
+                              padding: const EdgeInsets.all(16),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 44,
+                                    height: 44,
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primary.withValues(alpha: 0.15),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.auto_graph_rounded,
+                                      color: AppColors.primary,
+                                      size: 22,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 14),
+                                  const Expanded(
+                                    child: Text(
+                                      'Start converting units and your most-used categories will appear here.',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: AppColors.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }
+
+                        return SizedBox(
+                          height: 120,
+                          child: ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            itemCount: topCategories.length,
+                            separatorBuilder: (context, index) => const SizedBox(width: 14),
+                            itemBuilder: (context, index) {
+                              final entry = topCategories[index];
+                              final category = entry.key;
+                              final count = entry.value;
+
+                              return _FrequentlyUsedCard(
+                                key: ValueKey(category.name),
+                                category: category,
+                                title: category.displayName,
+                                unitCount: count == 1 ? 'Used 1 time' : 'Used $count times',
+                                borderColor: _getCategoryIconColor(category),
+                                icon: _getCategoryIcon(category),
+                                onTap: () => _openConverter(context, category),
+                              );
+                            },
                           ),
-                          const SizedBox(width: 14),
-                          _FrequentlyUsedCard(
-                            category: UnitCategory.weight,
-                            title: 'Weight',
-                            unitCount: '28 Units',
-                            borderColor: AppColors.tertiary,
-                            icon: Icons.monitor_weight_rounded,
-                            onTap: () => _openConverter(context, UnitCategory.weight),
-                          ),
-                          const SizedBox(width: 14),
-                          _FrequentlyUsedCard(
-                            category: UnitCategory.temperature,
-                            title: 'Temp',
-                            unitCount: '8 Units',
-                            borderColor: AppColors.error,
-                            icon: Icons.thermostat_rounded,
-                            onTap: () => _openConverter(context, UnitCategory.temperature),
-                          ),
-                          const SizedBox(width: 14),
-                          _FrequentlyUsedCard(
-                            category: UnitCategory.volume,
-                            title: 'Volume',
-                            unitCount: '30 Units',
-                            borderColor: AppColors.secondary,
-                            icon: Icons.opacity_rounded,
-                            onTap: () => _openConverter(context, UnitCategory.volume),
-                          ),
-                        ],
-                      ),
+                        );
+                      },
                     ),
                   ),
 
@@ -843,6 +869,7 @@ class _FrequentlyUsedCard extends StatelessWidget {
   final VoidCallback onTap;
 
   const _FrequentlyUsedCard({
+    super.key,
     required this.category,
     required this.title,
     required this.unitCount,

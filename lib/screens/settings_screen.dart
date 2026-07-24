@@ -11,6 +11,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../core/colors.dart';
 import '../core/constants.dart';
 import '../providers/settings_provider.dart';
+import '../providers/usage_provider.dart';
 import '../services/in_app_update_service.dart';
 import '../utils/formatters.dart';
 import '../widgets/stitch_card.dart';
@@ -18,6 +19,45 @@ import '../widgets/user_avatar.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
+
+  void _confirmResetUsage(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surfaceContainer,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Reset Usage History?', style: TextStyle(color: AppColors.onSurface)),
+        content: const Text(
+          'This will clear your frequently used categories and usage statistics.',
+          style: TextStyle(color: AppColors.onSurfaceVariant),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel', style: TextStyle(color: AppColors.onSurfaceVariant)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () {
+              HapticFeedback.mediumImpact();
+              context.read<UsageProvider>().resetUsage();
+              Navigator.of(ctx).pop();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Usage statistics reset successfully.'),
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            },
+            child: const Text('Reset'),
+          ),
+        ],
+      ),
+    );
+  }
 
   Future<void> _launchUrl(String url) async {
     try {
@@ -449,6 +489,13 @@ class SettingsScreen extends StatelessWidget {
                       HapticFeedback.lightImpact();
                       InAppUpdateService.instance.checkForUpdate(context: context);
                     },
+                  ),
+                  const Divider(height: 1, indent: 56),
+                  _SettingsListTile(
+                    icon: Icons.restart_alt_rounded,
+                    title: 'Reset Usage Statistics',
+                    subtitle: 'Clear category usage history',
+                    onTap: () => _confirmResetUsage(context),
                   ),
                   const Divider(height: 1, indent: 56),
                   _SettingsListTile(

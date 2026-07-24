@@ -9,6 +9,7 @@ import 'providers/currency_provider.dart';
 import 'providers/favorites_provider.dart';
 import 'providers/history_provider.dart';
 import 'providers/settings_provider.dart';
+import 'providers/usage_provider.dart';
 import 'screens/splash_screen.dart';
 
 Future<void> main() async {
@@ -30,6 +31,7 @@ class _MyAppState extends State<MyApp> {
   final CurrencyProvider _currency = CurrencyProvider();
   final HistoryProvider _history = HistoryProvider();
   final FavoritesProvider _favorites = FavoritesProvider();
+  final UsageProvider _usage = UsageProvider();
 
   @override
   void initState() {
@@ -37,6 +39,7 @@ class _MyAppState extends State<MyApp> {
     _settings.loadSettings();
     _history.loadHistory();
     _favorites.loadFavorites();
+    _usage.loadUsage();
   }
 
   @override
@@ -48,6 +51,7 @@ class _MyAppState extends State<MyApp> {
         ChangeNotifierProvider<CurrencyProvider>.value(value: _currency),
         ChangeNotifierProvider<HistoryProvider>.value(value: _history),
         ChangeNotifierProvider<FavoritesProvider>.value(value: _favorites),
+        ChangeNotifierProvider<UsageProvider>.value(value: _usage),
       ],
       child: Consumer<SettingsProvider>(
         builder: (context, settings, _) {
