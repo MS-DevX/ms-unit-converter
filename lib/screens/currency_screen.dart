@@ -1,4 +1,4 @@
-/// Currency Exchange Screen — Pixel-perfect implementation of Google Stitch Material Design 3 export.
+/// Live FX Currency Exchange Screen — Real-time offline fallback with Frankfurter.app API.
 library;
 
 import 'package:flutter/material.dart';
@@ -8,7 +8,9 @@ import 'package:provider/provider.dart';
 import '../core/colors.dart';
 import '../data/currencies_data.dart';
 import '../models/currency_model.dart';
+import '../models/history_entry.dart';
 import '../providers/currency_provider.dart';
+import '../providers/history_provider.dart';
 import '../widgets/stitch_card.dart';
 
 class CurrencyScreen extends StatefulWidget {
@@ -19,17 +21,18 @@ class CurrencyScreen extends StatefulWidget {
 }
 
 class _CurrencyScreenState extends State<CurrencyScreen> {
-  final TextEditingController _amountController = TextEditingController();
+  final TextEditingController _amountController = TextEditingController(text: '1');
   final FocusNode _amountFocusNode = FocusNode();
-  CurrencyModel _targetCurrency = CurrenciesData.getByCode('EUR');
+  CurrencyModel _targetCurrency = defaultCurrencies.firstWhere((c) => c.code == 'EUR');
+  String _lastSavedSignature = '';
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final provider = context.read<CurrencyProvider>();
-      _amountController.text = provider.inputValue;
-      _amountFocusNode.requestFocus();
+      if (mounted) {
+        context.read<CurrencyProvider>().fetchRates();
+      }
     });
   }
 
@@ -40,102 +43,155 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
     super.dispose();
   }
 
+  void _autoSaveHistory(CurrencyProvider currencyProv) {
+    final fromCurr = currencyProv.fromCurrency ?? defaultCurrencies.first;
+    final toCurr = _targetCurrency;
+    final inputVal = double.tryParse(currencyProv.inputValue) ?? 1.0;
+    final resultVal = currencyProv.convert(fromCurr, toCurr);
+
+    final signature = '${currencyProv.inputValue}|${fromCurr.code}|${toCurr.code}';
+    if (signature == _lastSavedSignature) return;
+    _lastSavedSignature = signature;
+
+    context.read<HistoryProvider>().addEntry(
+      HistoryEntry(
+        id: DateTime.now().microsecondsSinceEpoch.toString(),
+        category: 'Currency',
+        fromUnit: fromCurr.name,
+        fromSymbol: fromCurr.symbol,
+        toUnit: toCurr.name,
+        toSymbol: toCurr.symbol,
+        inputValue: inputVal,
+        result: resultVal,
+        timestamp: DateTime.now(),
+      ),
+    );
+  }
+
   void _showCurrencyPicker(
     BuildContext context,
-    CurrencyProvider provider,
+    CurrencyProvider currencyProv,
     bool isFromCurrency,
   ) {
-    final currencies = provider.currencies.isNotEmpty
-        ? provider.currencies
-        : CurrenciesData.supportedCurrencies;
-    final selectedCode = isFromCurrency
-        ? (provider.fromCurrency?.code ?? 'USD')
-        : _targetCurrency.code;
+    final colorScheme = Theme.of(context).colorScheme;
+    final selectedCode = isFromCurrency ? (currencyProv.fromCurrency?.code ?? 'USD') : _targetCurrency.code;
+    final searchController = TextEditingController();
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.surfaceContainer,
+      isScrollControlled: true,
+      backgroundColor: colorScheme.surfaceContainer,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) {
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              margin: const EdgeInsets.only(top: 8, bottom: 12),
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.outlineVariant,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              child: Row(
-                children: [
-                  Text(
-                    isFromCurrency ? 'Select Base Currency' : 'Select Target Currency',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.onSurface,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Flexible(
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: currencies.length,
-                itemBuilder: (ctx, i) {
-                  final curr = currencies[i];
-                  final isSelected = curr.code == selectedCode;
+        return StatefulBuilder(
+          builder: (ctx, setModalState) {
+            final query = searchController.text.trim().toLowerCase();
+            final filtered = defaultCurrencies.where((c) {
+              return c.code.toLowerCase().contains(query) ||
+                  c.name.toLowerCase().contains(query);
+            }).toList();
 
-                  return ListTile(
-                    leading: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: const BoxDecoration(
-                        color: AppColors.surfaceVariant,
-                        shape: BoxShape.circle,
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        curr.flag,
-                        style: const TextStyle(fontSize: 20),
-                      ),
-                    ),
-                    title: Text(
-                      '${curr.code} - ${curr.name}',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
-                        color: isSelected ? AppColors.primary : AppColors.onSurface,
+            return DraggableScrollableSheet(
+              initialChildSize: 0.7,
+              minChildSize: 0.4,
+              maxChildSize: 0.9,
+              expand: false,
+              builder: (ctx, scrollController) {
+                return Column(
+                  children: [
+                    Container(
+                      margin: const EdgeInsets.only(top: 8, bottom: 12),
+                      width: 36,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: colorScheme.outlineVariant,
+                        borderRadius: BorderRadius.circular(2),
                       ),
                     ),
-                    subtitle: Text(
-                      curr.symbol,
-                      style: const TextStyle(fontSize: 13, color: AppColors.onSurfaceVariant),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                      child: Row(
+                        children: [
+                          Text(
+                            isFromCurrency ? 'Select Source Currency' : 'Select Target Currency',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: colorScheme.onSurface,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    onTap: () {
-                      HapticFeedback.selectionClick();
-                      if (isFromCurrency) {
-                        provider.setFromCurrency(curr);
-                      } else {
-                        setState(() {
-                          _targetCurrency = curr;
-                        });
-                      }
-                      Navigator.pop(ctx);
-                    },
-                  );
-                },
-              ),
-            ),
-          ],
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                      child: TextField(
+                        controller: searchController,
+                        onChanged: (_) => setModalState(() {}),
+                        style: TextStyle(color: colorScheme.onSurface),
+                        decoration: InputDecoration(
+                          hintText: 'Search by currency name or code...',
+                          hintStyle: TextStyle(color: colorScheme.outline),
+                          prefixIcon: Icon(Icons.search_rounded, color: colorScheme.outline),
+                          filled: true,
+                          fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: ListView.builder(
+                        controller: scrollController,
+                        itemCount: filtered.length,
+                        itemBuilder: (ctx, index) {
+                          final c = filtered[index];
+                          final isSelected = c.code == selectedCode;
+
+                          return ListTile(
+                            leading: Text(c.flag, style: const TextStyle(fontSize: 24)),
+                            title: Text(
+                              '${c.code} — ${c.name}',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
+                                color: isSelected ? colorScheme.primary : colorScheme.onSurface,
+                              ),
+                            ),
+                            subtitle: Text(
+                              c.symbol,
+                              style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant),
+                            ),
+                            trailing: Text(
+                              c.symbol,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                            onTap: () {
+                              HapticFeedback.selectionClick();
+                              if (isFromCurrency) {
+                                currencyProv.setFromCurrency(c);
+                              } else {
+                                setState(() {
+                                  _targetCurrency = c;
+                                });
+                              }
+                              Navigator.pop(ctx);
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                );
+              },
+            );
+          },
         );
       },
     );
@@ -144,21 +200,11 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
   @override
   Widget build(BuildContext context) {
     final currencyProv = context.watch<CurrencyProvider>();
-    final fromCurr = currencyProv.fromCurrency ?? CurrenciesData.getByCode('USD');
-    final allResults = currencyProv.getAllResults();
+    final colorScheme = Theme.of(context).colorScheme;
+    final fromCurr = currencyProv.fromCurrency ?? defaultCurrencies.first;
+    final targetRow = currencyProv.getConvertedRow(_targetCurrency);
 
-    final targetRow = allResults.firstWhere(
-      (r) => r.currency.code == _targetCurrency.code,
-      orElse: () => allResults.isNotEmpty
-          ? allResults.first
-          : CurrencyResultRow(
-              currency: _targetCurrency,
-              rate: 1.0,
-              convertedValue: 1.0,
-              formattedResult: '1.00',
-              formattedRate: '1.00',
-            ),
-    );
+    _autoSaveHistory(currencyProv);
 
     final screenWidth = MediaQuery.of(context).size.width;
 
@@ -167,7 +213,7 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
         title: const Text('Currency Exchange'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh_rounded, color: AppColors.onSurface),
+            icon: Icon(Icons.refresh_rounded, color: colorScheme.onSurface),
             onPressed: () {
               HapticFeedback.mediumImpact();
               currencyProv.refreshRates();
@@ -177,7 +223,7 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -185,10 +231,10 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceContainerLow,
+                  color: colorScheme.surfaceContainerLow,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: AppColors.outlineVariant.withValues(alpha: 0.3),
+                    color: colorScheme.outlineVariant.withValues(alpha: 0.3),
                   ),
                 ),
                 child: Row(
@@ -205,40 +251,28 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                         children: [
                           Text(
                             currencyProv.isOffline ? 'Offline Mode' : 'Live FX Rates Active',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 15,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.onSurface,
+                              fontWeight: FontWeight.w600,
+                              color: colorScheme.onSurface,
                             ),
                           ),
                           Text(
-                            currencyProv.isUsingCached
-                                ? 'Using cached rates'
-                                : 'Rates refreshed',
-                            style: const TextStyle(
+                            currencyProv.isUsingCached ? 'Using cached rates' : 'Rates refreshed',
+                            style: TextStyle(
                               fontSize: 13,
-                              color: AppColors.onSurfaceVariant,
+                              color: colorScheme.onSurfaceVariant,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    ElevatedButton.icon(
+                    IconButton.filledTonal(
                       onPressed: () {
                         HapticFeedback.lightImpact();
                         currencyProv.refreshRates();
                       },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.surfaceVariant,
-                        foregroundColor: AppColors.onSurface,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                      ),
-                      icon: const Icon(Icons.refresh_rounded, size: 16),
-                      label: const Text('Refresh'),
+                      icon: const Icon(Icons.refresh_rounded, size: 18),
                     ),
                   ],
                 ),
@@ -256,13 +290,13 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                     // FROM CURRENCY HEADER
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: const [
+                      children: [
                         Text(
                           'FROM',
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.primary,
+                            color: colorScheme.primary,
                             letterSpacing: 1.2,
                           ),
                         ),
@@ -271,7 +305,7 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
 
                     const SizedBox(height: 12),
 
-                    // FROM CURRENCY INPUT ROW — PROMINENT LEFT-ALIGNED INPUT
+                    // FROM CURRENCY INPUT ROW
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
@@ -286,19 +320,18 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                                 focusNode: _amountFocusNode,
                                 autofocus: true,
                                 keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
-                                textAlign: TextAlign.start,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 44,
                                   fontWeight: FontWeight.w700,
-                                  color: AppColors.onSurface,
+                                  color: colorScheme.onSurface,
                                   height: 1.1,
                                 ),
-                                decoration: const InputDecoration(
+                                decoration: InputDecoration(
                                   hintText: '1.00',
                                   hintStyle: TextStyle(
                                     fontSize: 44,
                                     fontWeight: FontWeight.w700,
-                                    color: AppColors.outlineVariant,
+                                    color: colorScheme.outline.withValues(alpha: 0.4),
                                     height: 1.1,
                                   ),
                                   border: InputBorder.none,
@@ -317,7 +350,7 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
 
                         const SizedBox(width: 12),
 
-                        // ALIGNED CURRENCY SELECTOR BUTTON ON RIGHT
+                        // ALIGNED CURRENCY SELECTOR BUTTON
                         ConstrainedBox(
                           constraints: BoxConstraints(
                             maxWidth: screenWidth * 0.42,
@@ -327,10 +360,10 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                               decoration: BoxDecoration(
-                                color: AppColors.surface,
+                                color: colorScheme.surfaceContainerHigh,
                                 borderRadius: BorderRadius.circular(16),
-                                border: const Border(
-                                  bottom: BorderSide(color: AppColors.primary, width: 2),
+                                border: Border(
+                                  bottom: BorderSide(color: colorScheme.primary, width: 2),
                                 ),
                               ),
                               child: Row(
@@ -346,15 +379,15 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                                       fromCurr.code,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 15,
                                         fontWeight: FontWeight.w600,
-                                        color: AppColors.onSurface,
+                                        color: colorScheme.onSurface,
                                       ),
                                     ),
                                   ),
                                   const SizedBox(width: 4),
-                                  const Icon(Icons.expand_more_rounded, color: AppColors.primary, size: 20),
+                                  Icon(Icons.expand_more_rounded, color: colorScheme.primary, size: 20),
                                 ],
                               ),
                             ),
@@ -379,12 +412,12 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                         child: Container(
                           width: 48,
                           height: 48,
-                          decoration: const BoxDecoration(
-                            color: AppColors.primary,
+                          decoration: BoxDecoration(
+                            color: colorScheme.primary,
                             shape: BoxShape.circle,
-                            boxShadow: [
+                            boxShadow: const [
                               BoxShadow(
-                                color: Color(0x33000000),
+                                color: Color(0x25000000),
                                 blurRadius: 8,
                                 offset: Offset(0, 4),
                               ),
@@ -404,13 +437,13 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                     // TO CURRENCY HEADER
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: const [
+                      children: [
                         Text(
                           'TO',
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.onSurfaceVariant,
+                            color: colorScheme.onSurfaceVariant,
                             letterSpacing: 1.2,
                           ),
                         ),
@@ -419,7 +452,7 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
 
                     const SizedBox(height: 12),
 
-                    // TO CURRENCY RESULT ROW — PROMINENT LEFT-ALIGNED RESULT
+                    // TO CURRENCY RESULT ROW
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
@@ -438,27 +471,15 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                                   ),
                                 );
                               },
-                              child: Column(
+                              child: Text(
                                 key: ValueKey(targetRow.formattedResult),
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    targetRow.formattedResult,
-                                    style: const TextStyle(
-                                      fontSize: 44,
-                                      fontWeight: FontWeight.w700,
-                                      color: AppColors.primary,
-                                      height: 1.1,
-                                    ),
-                                  ),
-                                  Text(
-                                    '1 ${fromCurr.code} = ${targetRow.formattedRate} ${_targetCurrency.code}',
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      color: AppColors.onSurfaceVariant,
-                                    ),
-                                  ),
-                                ],
+                                targetRow.formattedResult,
+                                style: TextStyle(
+                                  fontSize: 44,
+                                  fontWeight: FontWeight.w700,
+                                  color: colorScheme.primary,
+                                  height: 1.1,
+                                ),
                               ),
                             ),
                           ),
@@ -466,7 +487,7 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
 
                         const SizedBox(width: 12),
 
-                        // ALIGNED CURRENCY SELECTOR BUTTON ON RIGHT
+                        // TO CURRENCY SELECTOR BUTTON
                         ConstrainedBox(
                           constraints: BoxConstraints(
                             maxWidth: screenWidth * 0.42,
@@ -476,11 +497,11 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                               decoration: BoxDecoration(
-                                color: AppColors.surface,
+                                color: colorScheme.surfaceContainerHigh,
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border(
                                   bottom: BorderSide(
-                                    color: AppColors.outlineVariant.withValues(alpha: 0.5),
+                                    color: colorScheme.outlineVariant,
                                     width: 2,
                                   ),
                                 ),
@@ -498,15 +519,15 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                                       _targetCurrency.code,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 15,
                                         fontWeight: FontWeight.w600,
-                                        color: AppColors.onSurface,
+                                        color: colorScheme.onSurface,
                                       ),
                                     ),
                                   ),
                                   const SizedBox(width: 4),
-                                  const Icon(Icons.expand_more_rounded, color: AppColors.onSurfaceVariant, size: 20),
+                                  Icon(Icons.expand_more_rounded, color: colorScheme.onSurfaceVariant, size: 20),
                                 ],
                               ),
                             ),
@@ -520,90 +541,72 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
 
               const SizedBox(height: 24),
 
-              // ALL LIVE RATES LIST HEADER
-              const Text(
-                'LIVE FX RATES',
+              // POPULAR FX RATES CAROUSEL
+              Text(
+                'Popular FX Rates',
                 style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.primary,
-                  letterSpacing: 1.2,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.onSurface,
                 ),
               ),
 
               const SizedBox(height: 12),
 
-              // LIST OF ALL OTHER CURRENCIES
-              ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: allResults.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 8),
-                itemBuilder: (context, i) {
-                  final row = allResults[i];
-                  final isSelectedTarget = row.currency.code == _targetCurrency.code;
-
-                  return StitchCard(
-                    onTap: () {
-                      HapticFeedback.selectionClick();
-                      setState(() {
-                        _targetCurrency = row.currency;
-                      });
-                    },
-                    backgroundColor: isSelectedTarget
-                        ? AppColors.primaryContainer.withValues(alpha: 0.5)
-                        : AppColors.surfaceContainerLow,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: const BoxDecoration(
-                            color: AppColors.surfaceVariant,
-                            shape: BoxShape.circle,
-                          ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            row.currency.flag,
-                            style: const TextStyle(fontSize: 20),
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '${row.currency.code} — ${row.currency.name}',
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: isSelectedTarget ? FontWeight.w700 : FontWeight.w500,
-                                  color: AppColors.onSurface,
+              Column(
+                children: defaultCurrencies
+                    .where((c) => c.code != fromCurr.code && c.code != _targetCurrency.code)
+                    .take(6)
+                    .map((c) {
+                  final row = currencyProv.getConvertedRow(c);
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 10),
+                    child: StitchCard(
+                      onTap: () {
+                        setState(() {
+                          _targetCurrency = c;
+                        });
+                      },
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      child: Row(
+                        children: [
+                          Text(c.flag, style: const TextStyle(fontSize: 22)),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '${c.code} — ${c.name}',
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                    color: colorScheme.onSurface,
+                                  ),
                                 ),
-                              ),
-                              Text(
-                                '1 ${fromCurr.code} = ${row.formattedRate} ${row.currency.symbol}',
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: AppColors.onSurfaceVariant,
+                                Text(
+                                  '1 ${fromCurr.code} = ${row.formattedRate} ${c.code}',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
-                        Text(
-                          '${row.currency.symbol} ${row.formattedResult}',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: isSelectedTarget ? AppColors.primary : AppColors.onSurface,
+                          Text(
+                            row.formattedResult,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: colorScheme.primary,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   );
-                },
+                }).toList(),
               ),
             ],
           ),

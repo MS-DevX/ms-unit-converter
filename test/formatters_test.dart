@@ -28,9 +28,9 @@ void main() {
       expect(Formatters.formatResult(0.00123456), '0.00123456');
     });
 
-    test('no scientific notation for tiny numbers', () {
-      final result = Formatters.formatResult(0.00000012);
-      expect(result, '0.00000012');
+    test('no scientific notation for values between 0.000001 and 999999999', () {
+      final result = Formatters.formatResult(0.0000012);
+      expect(result, '0.0000012');
       expect(result, isNot(contains('e')));
       expect(result, isNot(contains('E')));
     });

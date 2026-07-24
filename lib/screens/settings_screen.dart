@@ -21,20 +21,22 @@ class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
   void _confirmResetUsage(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surfaceContainer,
+        backgroundColor: colorScheme.surfaceContainer,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Reset Usage History?', style: TextStyle(color: AppColors.onSurface)),
-        content: const Text(
+        title: Text('Reset Usage History?', style: TextStyle(color: colorScheme.onSurface)),
+        content: Text(
           'This will clear your frequently used categories and usage statistics.',
-          style: TextStyle(color: AppColors.onSurfaceVariant),
+          style: TextStyle(color: colorScheme.onSurfaceVariant),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel', style: TextStyle(color: AppColors.onSurfaceVariant)),
+            child: Text('Cancel', style: TextStyle(color: colorScheme.onSurfaceVariant)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -70,9 +72,11 @@ class SettingsScreen extends StatelessWidget {
   }
 
   Future<void> _showAvatarOptions(BuildContext context, SettingsProvider settings) async {
+    final colorScheme = Theme.of(context).colorScheme;
+
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.surfaceContainer,
+      backgroundColor: colorScheme.surfaceContainer,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -86,12 +90,12 @@ class SettingsScreen extends StatelessWidget {
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                color: AppColors.outlineVariant,
+                color: colorScheme.outlineVariant,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
@@ -99,14 +103,14 @@ class SettingsScreen extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.onSurface,
+                    color: colorScheme.onSurface,
                   ),
                 ),
               ),
             ),
             ListTile(
-              leading: const Icon(Icons.photo_library_rounded, color: AppColors.primary),
-              title: const Text('Choose from Gallery', style: TextStyle(color: AppColors.onSurface)),
+              leading: Icon(Icons.photo_library_rounded, color: colorScheme.primary),
+              title: Text('Choose from Gallery', style: TextStyle(color: colorScheme.onSurface)),
               onTap: () async {
                 Navigator.pop(ctx);
                 try {
@@ -120,8 +124,8 @@ class SettingsScreen extends StatelessWidget {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.camera_alt_rounded, color: AppColors.primary),
-              title: const Text('Take a Photo', style: TextStyle(color: AppColors.onSurface)),
+              leading: Icon(Icons.camera_alt_rounded, color: colorScheme.primary),
+              title: Text('Take a Photo', style: TextStyle(color: colorScheme.onSurface)),
               onTap: () async {
                 Navigator.pop(ctx);
                 try {
@@ -152,21 +156,23 @@ class SettingsScreen extends StatelessWidget {
 
   void _editProfileName(BuildContext context, SettingsProvider settings) {
     final controller = TextEditingController(text: settings.userName);
+    final colorScheme = Theme.of(context).colorScheme;
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surfaceContainer,
+        backgroundColor: colorScheme.surfaceContainer,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Edit Your Name', style: TextStyle(color: AppColors.onSurface)),
+        title: Text('Edit Your Name', style: TextStyle(color: colorScheme.onSurface)),
         content: TextField(
           controller: controller,
           textCapitalization: TextCapitalization.words,
           autofocus: true,
-          style: const TextStyle(color: AppColors.onSurface),
+          style: TextStyle(color: colorScheme.onSurface),
           decoration: InputDecoration(
             hintText: 'Enter your name',
-            hintStyle: const TextStyle(color: AppColors.onSurfaceVariant),
-            fillColor: AppColors.surface,
+            hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
+            fillColor: colorScheme.surface,
             filled: true,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
           ),
@@ -174,7 +180,7 @@ class SettingsScreen extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel', style: TextStyle(color: AppColors.onSurfaceVariant)),
+            child: Text('Cancel', style: TextStyle(color: colorScheme.onSurfaceVariant)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -190,9 +196,11 @@ class SettingsScreen extends StatelessWidget {
   }
 
   void _showThemeSelector(BuildContext context, SettingsProvider settings) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.surfaceContainer,
+      backgroundColor: colorScheme.surfaceContainer,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -205,12 +213,12 @@ class SettingsScreen extends StatelessWidget {
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                color: AppColors.outlineVariant,
+                color: colorScheme.outlineVariant,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
@@ -218,16 +226,16 @@ class SettingsScreen extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.onSurface,
+                    color: colorScheme.onSurface,
                   ),
                 ),
               ),
             ),
             ListTile(
-              leading: const Icon(Icons.brightness_auto_rounded, color: AppColors.primary),
-              title: const Text('System Default', style: TextStyle(color: AppColors.onSurface)),
+              leading: Icon(Icons.brightness_auto_rounded, color: colorScheme.primary),
+              title: Text('System Default', style: TextStyle(color: colorScheme.onSurface)),
               trailing: settings.themeMode == ThemeMode.system
-                  ? const Icon(Icons.check_rounded, color: AppColors.primary)
+                  ? Icon(Icons.check_rounded, color: colorScheme.primary)
                   : null,
               onTap: () {
                 HapticFeedback.selectionClick();
@@ -236,10 +244,10 @@ class SettingsScreen extends StatelessWidget {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.light_mode_rounded, color: AppColors.primary),
-              title: const Text('Light', style: TextStyle(color: AppColors.onSurface)),
+              leading: Icon(Icons.light_mode_rounded, color: colorScheme.primary),
+              title: Text('Light', style: TextStyle(color: colorScheme.onSurface)),
               trailing: settings.themeMode == ThemeMode.light
-                  ? const Icon(Icons.check_rounded, color: AppColors.primary)
+                  ? Icon(Icons.check_rounded, color: colorScheme.primary)
                   : null,
               onTap: () {
                 HapticFeedback.selectionClick();
@@ -248,10 +256,10 @@ class SettingsScreen extends StatelessWidget {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.dark_mode_rounded, color: AppColors.primary),
-              title: const Text('Dark', style: TextStyle(color: AppColors.onSurface)),
+              leading: Icon(Icons.dark_mode_rounded, color: colorScheme.primary),
+              title: Text('Dark', style: TextStyle(color: colorScheme.onSurface)),
               trailing: settings.themeMode == ThemeMode.dark
-                  ? const Icon(Icons.check_rounded, color: AppColors.primary)
+                  ? Icon(Icons.check_rounded, color: colorScheme.primary)
                   : null,
               onTap: () {
                 HapticFeedback.selectionClick();
@@ -267,9 +275,11 @@ class SettingsScreen extends StatelessWidget {
   }
 
   void _showPrecisionSelector(BuildContext context, SettingsProvider settings) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.surfaceContainer,
+      backgroundColor: colorScheme.surfaceContainer,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -282,12 +292,12 @@ class SettingsScreen extends StatelessWidget {
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                color: AppColors.outlineVariant,
+                color: colorScheme.outlineVariant,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
@@ -295,7 +305,7 @@ class SettingsScreen extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.onSurface,
+                    color: colorScheme.onSurface,
                   ),
                 ),
               ),
@@ -305,12 +315,12 @@ class SettingsScreen extends StatelessWidget {
               return ListTile(
                 leading: Icon(
                   selected ? Icons.check_circle_rounded : Icons.circle_outlined,
-                  color: selected ? AppColors.primary : AppColors.outline,
+                  color: selected ? colorScheme.primary : colorScheme.outline,
                 ),
                 title: Text(
                   precision.label,
                   style: TextStyle(
-                    color: selected ? AppColors.primary : AppColors.onSurface,
+                    color: selected ? colorScheme.primary : colorScheme.onSurface,
                     fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
                   ),
                 ),
@@ -342,20 +352,11 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final settings = context.watch<SettingsProvider>();
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.surfaceContainer,
-        elevation: 0,
-        title: const Text(
-          'Settings',
-          style: TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.w600,
-            color: AppColors.onSurface,
-          ),
-        ),
+        title: const Text('Settings'),
       ),
       body: SafeArea(
         child: ListView(
@@ -378,18 +379,18 @@ class SettingsScreen extends StatelessWidget {
                       children: [
                         Text(
                           settings.userName.isNotEmpty ? settings.userName : 'Shahzad',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.onSurface,
+                            color: colorScheme.onSurface,
                           ),
                         ),
                         const SizedBox(height: 2),
-                        const Text(
+                        Text(
                           'Local Profile • No Cloud Sync',
                           style: TextStyle(
                             fontSize: 13,
-                            color: AppColors.onSurfaceVariant,
+                            color: colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ],
@@ -398,8 +399,8 @@ class SettingsScreen extends StatelessWidget {
                   ElevatedButton(
                     onPressed: () => _editProfileName(context, settings),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.surfaceVariant,
-                      foregroundColor: AppColors.onSurface,
+                      backgroundColor: colorScheme.surfaceContainerHighest,
+                      foregroundColor: colorScheme.onSurface,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),
@@ -428,14 +429,14 @@ class SettingsScreen extends StatelessWidget {
                   children: [
                     Text(
                       _getThemeLabel(settings.themeMode),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
-                        color: AppColors.primary,
+                        color: colorScheme.primary,
                       ),
                     ),
                     const SizedBox(width: 4),
-                    const Icon(Icons.arrow_drop_down_rounded, color: AppColors.primary),
+                    Icon(Icons.arrow_drop_down_rounded, color: colorScheme.primary),
                   ],
                 ),
                 onTap: () => _showThemeSelector(context, settings),
@@ -458,14 +459,14 @@ class SettingsScreen extends StatelessWidget {
                   children: [
                     Text(
                       settings.decimalPrecision.label,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
-                        color: AppColors.primary,
+                        color: colorScheme.primary,
                       ),
                     ),
                     const SizedBox(width: 4),
-                    const Icon(Icons.arrow_drop_down_rounded, color: AppColors.primary),
+                    Icon(Icons.arrow_drop_down_rounded, color: colorScheme.primary),
                   ],
                 ),
                 onTap: () => _showPrecisionSelector(context, settings),
@@ -490,14 +491,14 @@ class SettingsScreen extends StatelessWidget {
                       InAppUpdateService.instance.checkForUpdate(context: context);
                     },
                   ),
-                  const Divider(height: 1, indent: 56),
+                  Divider(height: 1, indent: 56, color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
                   _SettingsListTile(
                     icon: Icons.restart_alt_rounded,
                     title: 'Reset Usage Statistics',
                     subtitle: 'Clear category usage history',
                     onTap: () => _confirmResetUsage(context),
                   ),
-                  const Divider(height: 1, indent: 56),
+                  Divider(height: 1, indent: 56, color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
                   _SettingsListTile(
                     icon: Icons.star_border_rounded,
                     title: 'Rate the App',
@@ -507,7 +508,7 @@ class SettingsScreen extends StatelessWidget {
                       _launchUrl(AppConstants.playStoreUrl);
                     },
                   ),
-                  const Divider(height: 1, indent: 56),
+                  Divider(height: 1, indent: 56, color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
                   _SettingsListTile(
                     icon: Icons.share_rounded,
                     title: 'Share the App',
@@ -517,7 +518,7 @@ class SettingsScreen extends StatelessWidget {
                       _shareApp();
                     },
                   ),
-                  const Divider(height: 1, indent: 56),
+                  Divider(height: 1, indent: 56, color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
                   _SettingsListTile(
                     icon: Icons.info_outline_rounded,
                     title: 'Version',
@@ -530,12 +531,12 @@ class SettingsScreen extends StatelessWidget {
             const SizedBox(height: 32),
 
             // PRIVACY NOTE FOOTER
-            const Center(
+            Center(
               child: Text(
                 '🔒 100% Free • Private & Offline • MS DevX',
                 style: TextStyle(
                   fontSize: 13,
-                  color: AppColors.onSurfaceVariant,
+                  color: colorScheme.onSurfaceVariant,
                 ),
               ),
             ),
@@ -552,14 +553,16 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Padding(
       padding: const EdgeInsets.only(left: 4),
       child: Text(
         title,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.w700,
-          color: AppColors.primary,
+          color: colorScheme.primary,
           letterSpacing: 1.2,
         ),
       ),
@@ -584,33 +587,35 @@ class _SettingsListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return ListTile(
       onTap: onTap,
       leading: Icon(
         icon,
-        color: AppColors.onSurfaceVariant,
+        color: colorScheme.onSurfaceVariant,
         size: 22,
       ),
       title: Text(
         title,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w500,
-          color: AppColors.onSurface,
+          color: colorScheme.onSurface,
         ),
       ),
       subtitle: Text(
         subtitle,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 13,
-          color: AppColors.onSurfaceVariant,
+          color: colorScheme.onSurfaceVariant,
         ),
       ),
       trailing: trailing ??
           (onTap != null
-              ? const Icon(
+              ? Icon(
                   Icons.chevron_right_rounded,
-                  color: AppColors.outlineVariant,
+                  color: colorScheme.outlineVariant,
                 )
               : null),
     );

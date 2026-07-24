@@ -46,6 +46,16 @@ class Formatters {
     _precision = (value == DecimalPrecision.auto) ? null : value;
   }
 
+  /// Formats a [DateTime] timestamp into a user-friendly string (e.g. "Just now", "2m ago", "10:30 AM").
+  static String formatTimestamp(DateTime dt) {
+    final now = DateTime.now();
+    final diff = now.difference(dt);
+    if (diff.inSeconds < 60) return 'Just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    return '${dt.day}/${dt.month}/${dt.year}';
+  }
+
   /// Cleans up IEEE 754 binary floating-point representation artifacts
   /// (e.g. 0.1 + 0.2 = 0.30000000000000004 -> 0.3).
   static double cleanFloatingPoint(double val) {

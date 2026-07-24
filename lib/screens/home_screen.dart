@@ -189,9 +189,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final query = _searchController.text.trim();
     final settings = context.watch<SettingsProvider>();
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Consumer2<FavoritesProvider, HistoryProvider>(
           builder: (context, favProv, historyProv, _) {
@@ -263,26 +263,26 @@ class _HomeScreenState extends State<HomeScreen> {
                                 settings.getGreeting(),
                                 style: TextStyle(
                                   fontSize: 13,
-                                  color: AppColors.onSurfaceVariant.withValues(alpha: 0.8),
+                                  color: colorScheme.onSurfaceVariant,
                                 ),
                               ),
                               const SizedBox(height: 4),
-                              const Text(
+                              Text(
                                 'Unit Converter',
                                 style: TextStyle(
                                   fontSize: 36,
                                   fontWeight: FontWeight.w700,
-                                  color: AppColors.primary,
+                                  color: colorScheme.primary,
                                   height: 1.1,
                                   letterSpacing: -0.72,
                                 ),
                               ),
                               const SizedBox(height: 4),
-                              const Text(
+                              Text(
                                 '250+ Units • Fast • Accurate • Offline',
                                 style: TextStyle(
                                   fontSize: 13,
-                                  color: AppColors.onSurfaceVariant,
+                                  color: colorScheme.onSurfaceVariant,
                                 ),
                               ),
                             ],
@@ -362,25 +362,25 @@ class _HomeScreenState extends State<HomeScreen> {
                                         children: [
                                           Text(
                                             res.category.displayName,
-                                            style: const TextStyle(
+                                            style: TextStyle(
                                               fontSize: 16,
                                               fontWeight: FontWeight.w600,
-                                              color: AppColors.onSurface,
+                                              color: colorScheme.onSurface,
                                             ),
                                           ),
                                           Text(
                                             '${res.category.unitSymbols.length} Units supported',
-                                            style: const TextStyle(
+                                            style: TextStyle(
                                               fontSize: 13,
-                                              color: AppColors.onSurfaceVariant,
+                                              color: colorScheme.onSurfaceVariant,
                                             ),
                                           ),
                                         ],
                                       ),
                                     ),
-                                    const Icon(
+                                    Icon(
                                       Icons.chevron_right_rounded,
-                                      color: AppColors.outline,
+                                      color: colorScheme.outline,
                                     ),
                                   ],
                                 ),
@@ -440,12 +440,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       child: Row(
                         children: [
-                          const Text(
+                          Text(
                             'Frequently Used',
                             style: TextStyle(
                               fontSize: 22,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.onSurface,
+                              fontWeight: FontWeight.w600,
+                              color: colorScheme.onSurface,
                             ),
                           ),
                           const Spacer(),
@@ -457,12 +457,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                 curve: Curves.easeOutCubic,
                               );
                             },
-                            child: const Text(
+                            child: Text(
                               'See More',
                               style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w500,
-                                color: AppColors.primary,
+                                color: colorScheme.primary,
                               ),
                             ),
                           ),
@@ -490,22 +490,22 @@ class _HomeScreenState extends State<HomeScreen> {
                                     width: 44,
                                     height: 44,
                                     decoration: BoxDecoration(
-                                      color: AppColors.primary.withValues(alpha: 0.15),
+                                      color: colorScheme.primary.withValues(alpha: 0.15),
                                       shape: BoxShape.circle,
                                     ),
-                                    child: const Icon(
+                                    child: Icon(
                                       Icons.auto_graph_rounded,
-                                      color: AppColors.primary,
+                                      color: colorScheme.primary,
                                       size: 22,
                                     ),
                                   ),
                                   const SizedBox(width: 14),
-                                  const Expanded(
+                                  Expanded(
                                     child: Text(
                                       'Start converting units and your most-used categories will appear here.',
                                       style: TextStyle(
                                         fontSize: 13,
-                                        color: AppColors.onSurfaceVariant,
+                                        color: colorScheme.onSurfaceVariant,
                                       ),
                                     ),
                                   ),
@@ -551,10 +551,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       child: Text(
                         filterSectionTitle,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 22,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.onSurface,
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.onSurface,
                         ),
                       ),
                     ),
@@ -587,7 +587,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           crossAxisCount: ResponsiveHelper.isExpanded(context) ? 4 : 2,
                           crossAxisSpacing: 12,
                           mainAxisSpacing: 12,
-                          childAspectRatio: 2.2,
+                          childAspectRatio: ResponsiveHelper.isExpanded(context) ? 2.2 : 1.9,
                         ),
                         delegate: SliverChildBuilderDelegate((context, index) {
                           final category = displayCategories[index];
@@ -601,7 +601,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               children: [
                                 Icon(
                                   _getCategoryIcon(category),
-                                  color: isFav ? Colors.amber : AppColors.onSurfaceVariant,
+                                  color: isFav ? Colors.amber : colorScheme.onSurfaceVariant,
                                   size: 20,
                                 ),
                                 const SizedBox(width: 10),
@@ -612,19 +612,19 @@ class _HomeScreenState extends State<HomeScreen> {
                                     children: [
                                       Text(
                                         category.displayName,
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontSize: 14,
                                           fontWeight: FontWeight.w500,
-                                          color: AppColors.onSurface,
+                                          color: colorScheme.onSurface,
                                         ),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                       Text(
                                         '${category.unitSymbols.length} Units',
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontSize: 11,
-                                          color: AppColors.onSurfaceVariant,
+                                          color: colorScheme.onSurfaceVariant,
                                         ),
                                       ),
                                     ],
@@ -639,7 +639,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     padding: const EdgeInsets.all(4),
                                     child: Icon(
                                       isFav ? Icons.star_rounded : Icons.star_outline_rounded,
-                                      color: isFav ? Colors.amber : AppColors.outline,
+                                      color: isFav ? Colors.amber : colorScheme.outline,
                                       size: 18,
                                     ),
                                   ),
@@ -658,12 +658,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: const Text(
+                        child: Text(
                           'Recent Conversions',
                           style: TextStyle(
                             fontSize: 22,
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.onSurface,
+                            fontWeight: FontWeight.w600,
+                            color: colorScheme.onSurface,
                           ),
                         ),
                       ),
@@ -684,8 +684,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                   Container(
                                     width: 44,
                                     height: 44,
-                                    decoration: const BoxDecoration(
-                                      color: AppColors.surfaceContainer,
+                                    decoration: BoxDecoration(
+                                      color: colorScheme.surfaceContainerHighest,
                                       shape: BoxShape.circle,
                                     ),
                                     child: Icon(
@@ -703,25 +703,28 @@ class _HomeScreenState extends State<HomeScreen> {
                                           children: [
                                             Text(
                                               '${Formatters.cleanFloatingPoint(entry.inputValue)} ${entry.fromSymbol}',
-                                              style: const TextStyle(
+                                              style: TextStyle(
                                                 fontSize: 15,
                                                 fontWeight: FontWeight.w500,
-                                                color: AppColors.onSurface,
+                                                color: colorScheme.onSurface,
                                               ),
                                             ),
                                             const SizedBox(width: 4),
-                                            const Icon(
+                                            Icon(
                                               Icons.arrow_forward_rounded,
                                               size: 14,
-                                              color: AppColors.outline,
+                                              color: colorScheme.outline,
                                             ),
                                             const SizedBox(width: 4),
-                                            Text(
-                                              '${Formatters.cleanFloatingPoint(entry.result)} ${entry.toSymbol}',
-                                              style: const TextStyle(
-                                                fontSize: 15,
-                                                fontWeight: FontWeight.w500,
-                                                color: AppColors.onSurface,
+                                            Expanded(
+                                              child: Text(
+                                                '${Formatters.cleanFloatingPoint(entry.result)} ${entry.toSymbol}',
+                                                style: TextStyle(
+                                                  fontSize: 15,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: colorScheme.primary,
+                                                ),
+                                                overflow: TextOverflow.ellipsis,
                                               ),
                                             ),
                                           ],
@@ -729,18 +732,18 @@ class _HomeScreenState extends State<HomeScreen> {
                                         const SizedBox(height: 2),
                                         Text(
                                           '${entry.category} • Saved',
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             fontSize: 13,
-                                            color: AppColors.onSurfaceVariant,
+                                            color: colorScheme.onSurfaceVariant,
                                           ),
                                         ),
                                       ],
                                     ),
                                   ),
                                   IconButton(
-                                    icon: const Icon(
+                                    icon: Icon(
                                       Icons.refresh_rounded,
-                                      color: AppColors.onSurfaceVariant,
+                                      color: colorScheme.onSurfaceVariant,
                                       size: 20,
                                     ),
                                     onPressed: () {
@@ -771,26 +774,26 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: AppColors.surfaceContainerLow,
+                          color: colorScheme.surfaceContainerLow,
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: AppColors.outlineVariant.withValues(alpha: 0.3),
+                            color: colorScheme.outlineVariant.withValues(alpha: 0.3),
                           ),
                         ),
                         child: Row(
-                          children: const [
+                          children: [
                             Icon(
                               Icons.shield_outlined,
-                              color: AppColors.primary,
+                              color: colorScheme.primary,
                               size: 22,
                             ),
-                            SizedBox(width: 12),
+                            const SizedBox(width: 12),
                             Expanded(
                               child: Text(
                                 '100% Offline • No Tracking • Instant Results',
                                 style: TextStyle(
                                   fontSize: 13,
-                                  color: AppColors.onSurfaceVariant,
+                                  color: colorScheme.onSurfaceVariant,
                                 ),
                               ),
                             ),
@@ -824,6 +827,8 @@ class _QuickFilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return GestureDetector(
       onTap: () {
         HapticFeedback.selectionClick();
@@ -833,7 +838,7 @@ class _QuickFilterChip extends StatelessWidget {
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : AppColors.surfaceContainerHighest.withValues(alpha: 0.4),
+          color: isSelected ? colorScheme.primary : colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
           borderRadius: BorderRadius.circular(24),
         ),
         child: Row(
@@ -841,7 +846,7 @@ class _QuickFilterChip extends StatelessWidget {
           children: [
             Icon(
               icon,
-              color: isSelected ? Colors.white : AppColors.onSurfaceVariant,
+              color: isSelected ? Colors.white : colorScheme.onSurfaceVariant,
               size: 18,
             ),
             const SizedBox(width: 8),
@@ -850,7 +855,7 @@ class _QuickFilterChip extends StatelessWidget {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: isSelected ? Colors.white : AppColors.onSurfaceVariant,
+                color: isSelected ? Colors.white : colorScheme.onSurfaceVariant,
               ),
             ),
           ],
@@ -880,6 +885,8 @@ class _FrequentlyUsedCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return SizedBox(
       width: 160,
       child: StitchCard(
@@ -904,17 +911,17 @@ class _FrequentlyUsedCard extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.onSurface,
+                    color: colorScheme.onSurface,
                   ),
                 ),
                 Text(
                   unitCount,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
-                    color: AppColors.onSurfaceVariant,
+                    color: colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -939,6 +946,7 @@ class _SmartConvertCard extends StatelessWidget {
   Widget build(BuildContext context) {
     if (!result.isRecognized || result.category == null) return const SizedBox.shrink();
 
+    final colorScheme = Theme.of(context).colorScheme;
     final category = result.category!;
     final units = unitsData[category] ?? [];
     final fromName = result.fromUnitName ?? '';
@@ -955,9 +963,9 @@ class _SmartConvertCard extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 14),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.primary, width: 1.5),
+          border: Border.all(color: colorScheme.primary, width: 1.5),
         ),
         child: Row(
           children: [
@@ -965,10 +973,10 @@ class _SmartConvertCard extends StatelessWidget {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.15),
+                color: colorScheme.primary.withValues(alpha: 0.15),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.bolt_rounded, color: AppColors.primary, size: 24),
+              child: Icon(Icons.bolt_rounded, color: colorScheme.primary, size: 24),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -977,21 +985,21 @@ class _SmartConvertCard extends StatelessWidget {
                 children: [
                   Text(
                     '${Formatters.cleanFloatingPoint(inputVal)} ${fromUnit.symbol} = $outputStr ${toUnit.symbol}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.onSurface,
+                      color: colorScheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     'Tap to open ${category.displayName} converter',
-                    style: const TextStyle(fontSize: 12, color: AppColors.primary),
+                    style: TextStyle(fontSize: 12, color: colorScheme.primary),
                   ),
                 ],
               ),
             ),
-            const Icon(Icons.arrow_forward_rounded, color: AppColors.primary),
+            Icon(Icons.arrow_forward_rounded, color: colorScheme.primary),
           ],
         ),
       ),

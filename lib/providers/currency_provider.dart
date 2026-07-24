@@ -247,4 +247,34 @@ class CurrencyProvider extends ChangeNotifier {
     );
     return '1 ${_fromCurrency!.symbol} = $formatted €';
   }
+
+  /// Alias for [refreshRates].
+  Future<void> fetchRates() => refreshRates();
+
+  /// Converts an amount between two currencies.
+  double convert(CurrencyModel from, CurrencyModel to) {
+    final amount = double.tryParse(_inputValue) ?? 1.0;
+    final fromRate = _rates[from.code] ?? 1.0;
+    final toRate = _rates[to.code] ?? 1.0;
+    if (fromRate == 0) return 0.0;
+    return amount * (toRate / fromRate);
+  }
+
+  /// Calculates result row for [target] currency based on [fromCurrency] and [inputValue].
+  CurrencyResultRow getConvertedRow(CurrencyModel target) {
+    final from = _fromCurrency ?? _currencies.first;
+    final amount = double.tryParse(_inputValue) ?? 1.0;
+    final sourceRate = _rates[from.code] ?? 1.0;
+    final targetRate = _rates[target.code] ?? 1.0;
+    final rate = sourceRate == 0 ? 0.0 : targetRate / sourceRate;
+    final converted = amount * rate;
+
+    return CurrencyResultRow(
+      currency: target,
+      rate: rate,
+      convertedValue: converted,
+      formattedResult: Formatters.formatResult(converted, currencyDecimals: target.decimalDigits),
+      formattedRate: Formatters.formatResult(rate, currencyDecimals: target.decimalDigits),
+    );
+  }
 }

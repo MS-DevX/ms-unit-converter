@@ -1,4 +1,4 @@
-/// Unit Converter Screen — Enhanced interactions matching Google Stitch specifications.
+/// Converter Screen — High precision unit conversion screen with Material 3 polish.
 library;
 
 import 'dart:async';
@@ -8,13 +8,13 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
-import '../core/colors.dart';
 import '../data/units_data.dart';
 import '../models/history_entry.dart';
 import '../providers/converter_provider.dart';
 import '../providers/favorites_provider.dart';
 import '../providers/history_provider.dart';
-import '../widgets/decimal_precision_bar.dart';
+import '../providers/usage_provider.dart';
+import '../utils/formatters.dart';
 import '../widgets/stitch_card.dart';
 
 class ConverterScreen extends StatefulWidget {
@@ -41,8 +41,6 @@ class _ConverterScreenState extends State<ConverterScreen> {
   bool _initialized = false;
   Timer? _historyDebounce;
   String _lastHistorySignature = '';
-  double _swapRotationAngle = 0.0;
-  bool _isSwapPressed = false;
 
   @override
   void initState() {
@@ -68,25 +66,37 @@ class _ConverterScreenState extends State<ConverterScreen> {
     if (!_initialized && widget.initialCategory != null) {
       _initialized = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
         final converter = context.read<ConverterProvider>();
         converter.setCategory(widget.initialCategory!);
-        _applyPreset(converter);
-        _inputFocusNode.requestFocus();
+        context.read<UsageProvider>().trackCategoryUsage(widget.initialCategory!);
+
+        if (widget.presetValue != null) {
+          _applyPreset(converter, widget.presetValue!, widget.presetFromUnitName, widget.presetToUnitName);
+        } else {
+          _inputController.text = converter.inputValue;
+        }
       });
     }
   }
 
-  void _applyPreset(ConverterProvider converter) {
-    final value = widget.presetValue;
-    final fromName = widget.presetFromUnitName;
-    final toName = widget.presetToUnitName;
-    if (value == null || fromName == null || toName == null) return;
-
+  void _applyPreset(
+    ConverterProvider converter,
+    double value,
+    String? fromName,
+    String? toName,
+  ) {
     final units = converter.currentUnits;
-    final matchedFrom = units.where((u) => u.name == fromName).toList();
-    final matchedTo = units.where((u) => u.name == toName).toList();
+    if (units.isEmpty) return;
 
+    final matchedFrom = fromName != null
+        ? units.where((u) => u.name.toLowerCase() == fromName.toLowerCase()).toList()
+        : <dynamic>[];
     if (matchedFrom.isNotEmpty) converter.setFromUnit(matchedFrom.first);
+
+    final matchedTo = toName != null
+        ? units.where((u) => u.name.toLowerCase() == toName.toLowerCase()).toList()
+        : <dynamic>[];
     if (matchedTo.isNotEmpty) converter.setToUnit(matchedTo.first);
 
     final text = value == value.roundToDouble()
@@ -119,42 +129,16 @@ class _ConverterScreenState extends State<ConverterScreen> {
         HistoryEntry(
           id: DateTime.now().microsecondsSinceEpoch.toString(),
           category: converter.selectedCategory.displayName,
-          inputValue: inputDouble,
           fromUnit: fromUnit.name,
-          toUnit: toUnit.name,
           fromSymbol: fromUnit.symbol,
+          toUnit: toUnit.name,
           toSymbol: toUnit.symbol,
+          inputValue: inputDouble,
           result: result.result,
           timestamp: DateTime.now(),
         ),
       );
     });
-  }
-
-  void _copyToClipboard(String text) {
-    if (text.isEmpty) return;
-    Clipboard.setData(ClipboardData(text: text));
-    HapticFeedback.lightImpact();
-    ScaffoldMessenger.of(context).clearSnackBars();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Copied "$text" to clipboard'),
-        duration: const Duration(seconds: 2),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
-  void _shareResult(ConverterProvider converter) {
-    final result = converter.result;
-    if (result == null || !result.isValid) return;
-    final from = converter.fromUnit;
-    final to = converter.toUnit;
-    if (from == null || to == null) return;
-
-    final text =
-        '${converter.inputValue} ${from.symbol} = ${result.formattedResult} ${to.symbol} (${converter.selectedCategory.displayName})';
-    SharePlus.instance.share(ShareParams(text: text));
   }
 
   void _showUnitPicker(
@@ -164,10 +148,11 @@ class _ConverterScreenState extends State<ConverterScreen> {
   ) {
     final units = converter.currentUnits;
     final selectedUnit = isFromUnit ? converter.fromUnit : converter.toUnit;
+    final colorScheme = Theme.of(context).colorScheme;
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.surfaceContainer,
+      backgroundColor: colorScheme.surfaceContainer,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -180,7 +165,7 @@ class _ConverterScreenState extends State<ConverterScreen> {
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                color: AppColors.outlineVariant,
+                color: colorScheme.outlineVariant,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -190,10 +175,10 @@ class _ConverterScreenState extends State<ConverterScreen> {
                 children: [
                   Text(
                     isFromUnit ? 'Select Source Unit' : 'Select Target Unit',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.onSurface,
+                      color: colorScheme.onSurface,
                     ),
                   ),
                 ],
@@ -213,14 +198,14 @@ class _ConverterScreenState extends State<ConverterScreen> {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
-                        color: isSelected ? AppColors.primary : AppColors.onSurface,
+                        color: isSelected ? colorScheme.primary : colorScheme.onSurface,
                       ),
                     ),
                     trailing: Text(
                       unit.symbol,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
-                        color: AppColors.onSurfaceVariant,
+                        color: colorScheme.onSurfaceVariant,
                       ),
                     ),
                     onTap: () {
@@ -242,17 +227,47 @@ class _ConverterScreenState extends State<ConverterScreen> {
     );
   }
 
+  void _copyToClipboard(String text) {
+    if (text.isEmpty || text == '—') return;
+    Clipboard.setData(ClipboardData(text: text));
+    HapticFeedback.mediumImpact();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Copied "$text" to clipboard'),
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _shareResult(ConverterProvider converter) {
+    final res = converter.result;
+    if (res == null || !res.isValid) return;
+    HapticFeedback.lightImpact();
+
+    final fromSymbol = converter.fromUnit?.symbol ?? '';
+    final toSymbol = converter.toUnit?.symbol ?? '';
+    final text =
+        '${converter.inputValue} $fromSymbol = ${Formatters.formatResult(res.result)} $toSymbol (${converter.selectedCategory.displayName}) via MS Unit Converter';
+
+    SharePlus.instance.share(ShareParams(text: text));
+  }
+
   @override
   Widget build(BuildContext context) {
     final converter = context.watch<ConverterProvider>();
+    final colorScheme = Theme.of(context).colorScheme;
+
     _autoSaveHistory(converter);
 
     final fromUnit = converter.fromUnit;
     final toUnit = converter.toUnit;
-    final result = converter.result;
-    final resultStr = result != null && result.isValid
-        ? result.formattedResult
-        : '0.00';
+    final res = converter.result;
+    final resultStr = res != null && res.isValid
+        ? Formatters.formatResult(res.result)
+        : res != null && !res.isValid
+            ? 'Invalid'
+            : '0.00';
 
     final screenWidth = MediaQuery.of(context).size.width;
 
@@ -260,7 +275,7 @@ class _ConverterScreenState extends State<ConverterScreen> {
       appBar: AppBar(
         leading: Navigator.canPop(context)
             ? IconButton(
-                icon: const Icon(Icons.arrow_back_rounded, color: AppColors.primary),
+                icon: Icon(Icons.arrow_back_rounded, color: colorScheme.primary),
                 onPressed: () => Navigator.pop(context),
               )
             : null,
@@ -270,316 +285,282 @@ class _ConverterScreenState extends State<ConverterScreen> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // MAIN CONVERSION GLASS CARD
+              // MAIN CONVERSION CARD (FORMER STITCH CARD)
               StitchCard(
-                padding: const EdgeInsets.all(20),
                 borderRadius: 20,
+                padding: const EdgeInsets.all(20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                        // FROM SECTION HEADER
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              'FROM',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.primary,
-                                letterSpacing: 1.2,
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: AppColors.surface,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: AppColors.outlineVariant.withValues(alpha: 0.3),
-                                ),
-                              ),
-                              child: Row(
-                                children: const [
-                                  Icon(Icons.language_rounded, size: 13, color: AppColors.onSurfaceVariant),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    'Standard',
-                                    style: TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
+                    // FROM SECTION HEADER
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'FROM',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: colorScheme.primary,
+                            letterSpacing: 1.2,
+                          ),
                         ),
-
-                        const SizedBox(height: 12),
-
-                        // FROM INPUT ROW — PROMINENT AUTO-FOCUSED 48px INPUT
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Expanded(
-                              child: FittedBox(
-                                fit: BoxFit.scaleDown,
-                                alignment: Alignment.centerLeft,
-                                child: SizedBox(
-                                  width: screenWidth * 0.5,
-                                  child: TextField(
-                                    controller: _inputController,
-                                    focusNode: _inputFocusNode,
-                                    autofocus: true,
-                                    keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
-                                    style: const TextStyle(
-                                      fontSize: 48,
-                                      fontWeight: FontWeight.w700,
-                                      color: AppColors.onSurface,
-                                      height: 1.1,
-                                    ),
-                                    decoration: const InputDecoration(
-                                      hintText: '0.00',
-                                      hintStyle: TextStyle(
-                                        fontSize: 48,
-                                        fontWeight: FontWeight.w700,
-                                        color: AppColors.outlineVariant,
-                                        height: 1.1,
-                                      ),
-                                      border: InputBorder.none,
-                                      enabledBorder: InputBorder.none,
-                                      focusedBorder: InputBorder.none,
-                                      filled: false,
-                                      contentPadding: EdgeInsets.zero,
-                                    ),
-                                    onChanged: (text) => converter.setInput(text),
-                                  ),
-                                ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.language_rounded, size: 13, color: colorScheme.onSurfaceVariant),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Standard',
+                                style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant),
                               ),
-                            ),
-
-                            const SizedBox(width: 12),
-
-                            // ALIGNED RESPONSIVE UNIT SELECTOR
-                            ConstrainedBox(
-                              constraints: BoxConstraints(
-                                maxWidth: screenWidth * 0.42,
-                              ),
-                              child: GestureDetector(
-                                onTap: () => _showUnitPicker(context, converter, true),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.surface,
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: const Border(
-                                      bottom: BorderSide(color: AppColors.primary, width: 2),
-                                    ),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Flexible(
-                                        child: Text(
-                                          fromUnit?.name ?? 'Select',
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.w600,
-                                            color: AppColors.onSurface,
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 4),
-                                      const Icon(Icons.expand_more_rounded, color: AppColors.primary, size: 20),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        // SWAP BUTTON WITH HAPTIC & SCALE ANIMATION
-                        Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            Divider(
-                              color: AppColors.outlineVariant.withValues(alpha: 0.3),
-                              thickness: 1,
-                            ),
-                            GestureDetector(
-                              onTapDown: (_) => setState(() => _isSwapPressed = true),
-                              onTapUp: (_) => setState(() => _isSwapPressed = false),
-                              onTapCancel: () => setState(() => _isSwapPressed = false),
-                              onTap: () {
-                                setState(() {
-                                  _swapRotationAngle += 3.14159;
-                                });
-                                HapticFeedback.mediumImpact();
-                                converter.swapUnits();
-                                _inputController.text = converter.inputValue;
-                              },
-                              child: AnimatedScale(
-                                scale: _isSwapPressed ? 0.90 : 1.0,
-                                duration: const Duration(milliseconds: 150),
-                                curve: Curves.easeOut,
-                                child: AnimatedRotation(
-                                  turns: _swapRotationAngle / (2 * 3.14159),
-                                  duration: const Duration(milliseconds: 300),
-                                  curve: Curves.easeOutCubic,
-                                  child: Container(
-                                    width: 56,
-                                    height: 56,
-                                    decoration: const BoxDecoration(
-                                      color: AppColors.primary,
-                                      shape: BoxShape.circle,
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Color(0x40000000),
-                                          blurRadius: 10,
-                                          offset: Offset(0, 4),
-                                        ),
-                                      ],
-                                    ),
-                                    child: const Icon(
-                                      Icons.swap_vert_rounded,
-                                      color: Colors.white,
-                                      size: 28,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        // TO SECTION HEADER
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: const [
-                            Text(
-                              'TO',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.onSurfaceVariant,
-                                letterSpacing: 1.2,
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 12),
-
-                        // TO RESULT ROW — ANIMATED FADE & SCALE TRANSITION ON RESULT CHANGE
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Expanded(
-                              child: FittedBox(
-                                fit: BoxFit.scaleDown,
-                                alignment: Alignment.centerLeft,
-                                child: AnimatedSwitcher(
-                                  duration: const Duration(milliseconds: 200),
-                                  transitionBuilder: (child, anim) {
-                                    return FadeTransition(
-                                      opacity: anim,
-                                      child: ScaleTransition(
-                                        scale: Tween<double>(begin: 0.95, end: 1.0).animate(anim),
-                                        child: child,
-                                      ),
-                                    );
-                                  },
-                                  child: Text(
-                                    resultStr,
-                                    key: ValueKey(resultStr),
-                                    style: const TextStyle(
-                                      fontSize: 48,
-                                      fontWeight: FontWeight.w700,
-                                      color: AppColors.primary,
-                                      height: 1.1,
-                                    ),
-                                    maxLines: 1,
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                            const SizedBox(width: 12),
-
-                            // ALIGNED RESPONSIVE UNIT SELECTOR
-                            ConstrainedBox(
-                              constraints: BoxConstraints(
-                                maxWidth: screenWidth * 0.42,
-                              ),
-                              child: GestureDetector(
-                                onTap: () => _showUnitPicker(context, converter, false),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.surface,
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border(
-                                      bottom: BorderSide(
-                                        color: AppColors.outlineVariant.withValues(alpha: 0.5),
-                                        width: 2,
-                                      ),
-                                    ),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Flexible(
-                                        child: Text(
-                                          toUnit?.name ?? 'Select',
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.w600,
-                                            color: AppColors.onSurface,
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 4),
-                                      const Icon(Icons.expand_more_rounded, color: AppColors.onSurfaceVariant, size: 20),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ],
                     ),
-                  ),
+
+                    const SizedBox(height: 12),
+
+                    // FROM INPUT ROW
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _inputController,
+                            focusNode: _inputFocusNode,
+                            autofocus: true,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                            style: TextStyle(
+                              fontSize: 36,
+                              fontWeight: FontWeight.w700,
+                              color: colorScheme.onSurface,
+                              height: 1.1,
+                            ),
+                            decoration: InputDecoration(
+                              hintText: '0.00',
+                              hintStyle: TextStyle(
+                                fontSize: 36,
+                                fontWeight: FontWeight.w700,
+                                color: colorScheme.outline.withValues(alpha: 0.4),
+                                height: 1.1,
+                              ),
+                              border: InputBorder.none,
+                              enabledBorder: InputBorder.none,
+                              focusedBorder: InputBorder.none,
+                              filled: false,
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                            onChanged: (text) => converter.setInput(text),
+                          ),
+                        ),
+
+                        const SizedBox(width: 12),
+
+                        // ALIGNED UNIT SELECTOR BUTTON
+                        ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxWidth: screenWidth * 0.42,
+                          ),
+                          child: GestureDetector(
+                            onTap: () => _showUnitPicker(context, converter, true),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                              decoration: BoxDecoration(
+                                color: colorScheme.surfaceContainerHigh,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border(
+                                  bottom: BorderSide(color: colorScheme.primary, width: 2),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      fromUnit?.name ?? 'Select',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w600,
+                                        color: colorScheme.onSurface,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Icon(Icons.expand_more_rounded, color: colorScheme.primary, size: 20),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // SWAP BUTTON
+                    Center(
+                      child: GestureDetector(
+                        onTap: () {
+                          HapticFeedback.mediumImpact();
+                          converter.swapUnits();
+                          _inputController.text = converter.inputValue;
+                        },
+                        child: Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: colorScheme.primary,
+                            shape: BoxShape.circle,
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Color(0x25000000),
+                                blurRadius: 8,
+                                offset: Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.swap_vert_rounded,
+                            color: Colors.white,
+                            size: 26,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // TO SECTION HEADER
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'TO',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: colorScheme.onSurfaceVariant,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // TO RESULT ROW
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 200),
+                              transitionBuilder: (child, anim) {
+                                return FadeTransition(
+                                  opacity: anim,
+                                  child: ScaleTransition(
+                                    scale: Tween<double>(begin: 0.95, end: 1.0).animate(anim),
+                                    child: child,
+                                  ),
+                                );
+                              },
+                              child: Text(
+                                key: ValueKey(resultStr),
+                                resultStr,
+                                style: TextStyle(
+                                  fontSize: 44,
+                                  fontWeight: FontWeight.w700,
+                                  color: colorScheme.primary,
+                                  height: 1.1,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(width: 12),
+
+                        // TO UNIT SELECTOR BUTTON
+                        ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxWidth: screenWidth * 0.42,
+                          ),
+                          child: GestureDetector(
+                            onTap: () => _showUnitPicker(context, converter, false),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                              decoration: BoxDecoration(
+                                color: colorScheme.surfaceContainerHigh,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border(
+                                  bottom: BorderSide(
+                                    color: colorScheme.outlineVariant,
+                                    width: 2,
+                                  ),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      toUnit?.name ?? 'Select',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w600,
+                                        color: colorScheme.onSurface,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Icon(Icons.expand_more_rounded, color: colorScheme.onSurfaceVariant, size: 20),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
 
               const SizedBox(height: 16),
 
-              // COMPACT ACTION BUTTONS GRID WITH HAPTIC FEEDBACK (COPY, SHARE, SWAP, SAVE)
+              // ACTION BUTTONS GRID (COPY, SHARE, SWAP, SAVE)
               Row(
                 children: [
                   Expanded(
                     child: StitchCard(
                       onTap: () => _copyToClipboard(resultStr),
-                      backgroundColor: AppColors.primaryContainer,
-                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      backgroundColor: colorScheme.primaryContainer,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
-                          Icon(Icons.content_copy_rounded, color: AppColors.primary, size: 18),
-                          SizedBox(width: 0, height: 3),
+                        children: [
+                          Icon(Icons.content_copy_rounded, color: colorScheme.primary, size: 18),
+                          const SizedBox(height: 3),
                           Text(
                             'Copy',
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.primary),
+                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: colorScheme.primary),
                           ),
                         ],
                       ),
@@ -589,16 +570,16 @@ class _ConverterScreenState extends State<ConverterScreen> {
                   Expanded(
                     child: StitchCard(
                       onTap: () => _shareResult(converter),
-                      backgroundColor: AppColors.surface,
-                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      backgroundColor: colorScheme.surfaceContainerHigh,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
-                          Icon(Icons.share_rounded, color: AppColors.onSurfaceVariant, size: 18),
-                          SizedBox(width: 0, height: 3),
+                        children: [
+                          Icon(Icons.share_rounded, color: colorScheme.onSurfaceVariant, size: 18),
+                          const SizedBox(height: 3),
                           Text(
                             'Share',
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.onSurfaceVariant),
+                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: colorScheme.onSurfaceVariant),
                           ),
                         ],
                       ),
@@ -612,16 +593,16 @@ class _ConverterScreenState extends State<ConverterScreen> {
                         converter.swapUnits();
                         _inputController.text = converter.inputValue;
                       },
-                      backgroundColor: AppColors.surface,
-                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      backgroundColor: colorScheme.surfaceContainerHigh,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
-                          Icon(Icons.swap_horiz_rounded, color: AppColors.onSurfaceVariant, size: 18),
-                          SizedBox(width: 0, height: 3),
+                        children: [
+                          Icon(Icons.swap_horiz_rounded, color: colorScheme.onSurfaceVariant, size: 18),
+                          const SizedBox(height: 3),
                           Text(
                             'Swap',
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.onSurfaceVariant),
+                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: colorScheme.onSurfaceVariant),
                           ),
                         ],
                       ),
@@ -637,23 +618,23 @@ class _ConverterScreenState extends State<ConverterScreen> {
                             HapticFeedback.selectionClick();
                             favProv.toggleFavorite(converter.selectedCategory);
                           },
-                          backgroundColor: AppColors.surface,
-                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          backgroundColor: colorScheme.surfaceContainerHigh,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Icon(
                                 isFav ? Icons.star_rounded : Icons.star_outline_rounded,
-                                color: isFav ? Colors.amber : AppColors.onSurfaceVariant,
+                                color: isFav ? Colors.amber : colorScheme.onSurfaceVariant,
                                 size: 18,
                               ),
                               const SizedBox(height: 3),
                               Text(
                                 isFav ? 'Saved' : 'Save',
                                 style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w500,
-                                  color: isFav ? Colors.amber : AppColors.onSurfaceVariant,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: isFav ? Colors.amber : colorScheme.onSurfaceVariant,
                                 ),
                               ),
                             ],
@@ -667,43 +648,117 @@ class _ConverterScreenState extends State<ConverterScreen> {
 
               const SizedBox(height: 16),
 
-              // REFINED FORMULA CARD
+              // FORMULA CARD
               StitchCard(
-                backgroundColor: AppColors.surfaceContainerLow,
-                padding: const EdgeInsets.all(14),
+                backgroundColor: colorScheme.surfaceContainerLow,
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'FORMULA',
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.onSurfaceVariant,
+                        color: colorScheme.primary,
                         letterSpacing: 1.2,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 6),
                     Text(
-                      converter.selectedCategory.formulaExplanation,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: AppColors.onSurface,
-                        height: 1.4,
+                      res?.formula ?? '1 ${fromUnit?.symbol ?? ''} = ... ${toUnit?.symbol ?? ''}',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: colorScheme.onSurface,
                       ),
                     ),
                   ],
                 ),
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
 
-              // RESPONSIVE DECIMAL PRECISION SELECTOR
-              const DecimalPrecisionBar(),
+              // QUICK PRESETS
+              const Text(
+                'Quick Presets',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 40,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    _PresetChip(
+                      label: '1 ${fromUnit?.symbol ?? 'unit'}',
+                      onTap: () {
+                        _inputController.text = '1';
+                        converter.setInput('1');
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    _PresetChip(
+                      label: '10 ${fromUnit?.symbol ?? 'units'}',
+                      onTap: () {
+                        _inputController.text = '10';
+                        converter.setInput('10');
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    _PresetChip(
+                      label: '50 ${fromUnit?.symbol ?? 'units'}',
+                      onTap: () {
+                        _inputController.text = '50';
+                        converter.setInput('50');
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    _PresetChip(
+                      label: '100 ${fromUnit?.symbol ?? 'units'}',
+                      onTap: () {
+                        _inputController.text = '100';
+                        converter.setInput('100');
+                      },
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+class _PresetChip extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
+
+  const _PresetChip({required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return ActionChip(
+      label: Text(label),
+      onPressed: () {
+        HapticFeedback.lightImpact();
+        onTap();
+      },
+      backgroundColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+      labelStyle: TextStyle(
+        fontSize: 13,
+        fontWeight: FontWeight.w500,
+        color: colorScheme.onSurface,
+      ),
+      side: BorderSide(color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     );
   }
 }

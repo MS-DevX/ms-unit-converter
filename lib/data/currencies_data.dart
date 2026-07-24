@@ -400,3 +400,6 @@ class CurrenciesData {
   /// Returns a [CurrencyModel] for [code] (e.g. "USD", "EUR").
   static CurrencyModel getByCode(String code) => getFallbackCurrency(code);
 }
+
+/// Global fallback currencies list.
+final List<CurrencyModel> defaultCurrencies = buildFallbackCurrencies();

@@ -1,26 +1,14 @@
+/// Reusable Empty State Widget with Material 3 styling, pulse container,
+/// clear typography hierarchy, and optional action button.
+library;
+
 import 'package:flutter/material.dart';
 
-import '../core/colors.dart';
-
-/// Reusable empty state widget with an icon, message, optional subtitle,
-/// and optional action button.
-///
-/// Used throughout the app to display placeholder content when no
-/// data is available (e.g. empty search results, empty history).
 class EmptyStateWidget extends StatelessWidget {
-  /// The icon to display (defaults to a search icon).
   final IconData icon;
-
-  /// The primary message.
   final String message;
-
-  /// Optional secondary text shown below the message.
   final String? subtitle;
-
-  /// Optional label for an action button below the subtitle.
   final String? actionLabel;
-
-  /// Optional callback for the action button.
   final VoidCallback? onAction;
 
   const EmptyStateWidget({
@@ -34,47 +22,59 @@ class EmptyStateWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final color = isDark
-        ? AppColors.darkTextSecondary
-        : AppColors.lightTextSecondary;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 64, color: color.withValues(alpha: 0.3)),
-            const SizedBox(height: 20),
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: colorScheme.primary.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: Icon(
+                icon,
+                size: 38,
+                color: colorScheme.primary,
+              ),
+            ),
+            const SizedBox(height: 16),
             Text(
               message,
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
-                color: color,
+                color: colorScheme.onSurface,
+                letterSpacing: -0.2,
               ),
               textAlign: TextAlign.center,
             ),
             if (subtitle != null) ...[
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
               Text(
                 subtitle!,
                 style: TextStyle(
-                  fontSize: 14,
-                  height: 1.5,
-                  color: color.withValues(alpha: 0.6),
+                  fontSize: 13,
+                  height: 1.4,
+                  color: colorScheme.onSurfaceVariant,
                 ),
                 textAlign: TextAlign.center,
               ),
             ],
             if (actionLabel != null && onAction != null) ...[
-              const SizedBox(height: 24),
-              FilledButton.tonalIcon(
+              const SizedBox(height: 20),
+              FilledButton.icon(
                 onPressed: onAction,
                 icon: Icon(icon, size: 18),
                 label: Text(actionLabel!),
                 style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
