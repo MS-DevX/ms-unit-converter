@@ -1,7 +1,8 @@
 /// Pure-logic conversion engine for MS Unit Converter.
 ///
 /// All conversions — normal, temperature, fuel economy, cooking, shoe size,
-/// clothing size, number base, and typography — pass through [convert].
+/// clothing size, number base, typography, pace, blood sugar, and all other
+/// special cases — pass through [convert].
 /// The service is stateless and deterministic;
 /// it holds no UI, storage, or network dependencies.
 library;
@@ -55,6 +56,12 @@ class ConversionService {
         result = _convertNumberBase(value, from, to);
       case UnitCategory.typography:
         result = _convertTypography(value, from, to);
+      case UnitCategory.pace:
+        result = _convertPace(value, from, to);
+      case UnitCategory.bloodSugar:
+        result = _convertBloodSugar(value, from, to);
+      case UnitCategory.percentageRatio:
+        result = _convertPercentageRatio(value, from, to);
       default:
         result = (value * from.toBase) / to.toBase;
     }
@@ -111,6 +118,14 @@ class ConversionService {
         return (value - 32) * 5 / 9;
       case 'Kelvin':
         return value - 273.15;
+      case 'Rankine':
+        return (value - 491.67) * 5 / 9;
+      case 'Delisle':
+        return 100 - (value * 2 / 3);
+      case 'Newton':
+        return value * 100 / 33;
+      case 'Réaumur':
+        return value * 5 / 4;
       default:
         return double.nan;
     }
@@ -124,6 +139,14 @@ class ConversionService {
         return (celsius * 9 / 5) + 32;
       case 'Kelvin':
         return celsius + 273.15;
+      case 'Rankine':
+        return (celsius + 273.15) * 9 / 5;
+      case 'Delisle':
+        return (100 - celsius) * 3 / 2;
+      case 'Newton':
+        return celsius * 33 / 100;
+      case 'Réaumur':
+        return celsius * 4 / 5;
       default:
         return double.nan;
     }
@@ -141,19 +164,29 @@ class ConversionService {
   }
 
   static double _toKmPerL(double value, UnitModel from) {
-    if (from.name == 'Liters per 100km') {
-      if (value == 0) return double.nan;
-      return 100 / value;
+    switch (from.name) {
+      case 'Liters per 100km':
+        if (value == 0) return double.nan;
+        return 100 / value;
+      case 'Liters per Mile':
+        if (value == 0) return double.nan;
+        return 1.60934 / value;
+      default:
+        return value * from.toBase;
     }
-    return value * from.toBase;
   }
 
   static double _fromKmPerL(double kmPerL, UnitModel to) {
-    if (to.name == 'Liters per 100km') {
-      if (kmPerL == 0) return double.nan;
-      return 100 / kmPerL;
+    switch (to.name) {
+      case 'Liters per 100km':
+        if (kmPerL == 0) return double.nan;
+        return 100 / kmPerL;
+      case 'Liters per Mile':
+        if (kmPerL == 0) return double.nan;
+        return 1.60934 / kmPerL;
+      default:
+        return kmPerL / to.toBase;
     }
-    return kmPerL / to.toBase;
   }
 
   // ── Cooking (volume vs weight groups) ─────────────────────────
@@ -345,5 +378,111 @@ class ConversionService {
       default:
         return double.nan;
     }
+  }
+
+  // ── Pace (running pace ↔ speed) ───────────────────────────────
+
+  /// Converts running pace and speed using seconds/meter as intermediate.
+  static double _convertPace(double value, UnitModel from, UnitModel to) {
+    // Convert to seconds per meter first
+    final double sPerM = _paceToSecondsPerMeter(value, from.name);
+    if (sPerM.isNaN || sPerM <= 0) return double.nan;
+    return _secondsPerMeterToPace(sPerM, to.name);
+  }
+
+  static double _paceToSecondsPerMeter(double value, String fromName) {
+    switch (fromName) {
+      case 'Min per Kilometer':
+        // value is min/km → s/m
+        return (value * 60) / 1000;
+      case 'Min per Mile':
+        // value is min/mi → s/m
+        return (value * 60) / 1609.344;
+      case 'Seconds per Meter':
+        return value;
+      case 'Kilometers per Hour':
+        // km/h → m/s → s/m
+        if (value == 0) return double.nan;
+        return 1 / (value / 3.6);
+      case 'Miles per Hour':
+        if (value == 0) return double.nan;
+        return 1 / (value * 0.44704);
+      default:
+        return double.nan;
+    }
+  }
+
+  static double _secondsPerMeterToPace(double sPerM, String toName) {
+    switch (toName) {
+      case 'Min per Kilometer':
+        return (sPerM * 1000) / 60;
+      case 'Min per Mile':
+        return (sPerM * 1609.344) / 60;
+      case 'Seconds per Meter':
+        return sPerM;
+      case 'Kilometers per Hour':
+        return (1 / sPerM) * 3.6;
+      case 'Miles per Hour':
+        return (1 / sPerM) / 0.44704;
+      default:
+        return double.nan;
+    }
+  }
+
+  // ── Blood Sugar ───────────────────────────────────────────────
+
+  /// Converts blood glucose between mg/dL, mmol/L, and μmol/L.
+  static double _convertBloodSugar(
+    double value,
+    UnitModel from,
+    UnitModel to,
+  ) {
+    // Convert to mg/dL first (base)
+    final double mgdl = _bloodSugarToMgdl(value, from.name);
+    if (mgdl.isNaN) return double.nan;
+    return _mgdlToBloodSugar(mgdl, to.name);
+  }
+
+  static double _bloodSugarToMgdl(double value, String fromName) {
+    switch (fromName) {
+      case 'mg/dL':
+        return value;
+      case 'mmol/L':
+        return value * 18.01559;
+      case 'μmol/L':
+        return value * 0.018016;
+      default:
+        return double.nan;
+    }
+  }
+
+  static double _mgdlToBloodSugar(double mgdl, String toName) {
+    switch (toName) {
+      case 'mg/dL':
+        return mgdl;
+      case 'mmol/L':
+        return mgdl / 18.01559;
+      case 'μmol/L':
+        return mgdl / 0.018016;
+      default:
+        return double.nan;
+    }
+  }
+
+  // ── Percentage & Ratio ────────────────────────────────────────
+
+  /// Converts between percentage, fraction, ppm, ppb, ppt, basis points.
+  /// Degrees (slope) is a special pass-through label.
+  static double _convertPercentageRatio(
+    double value,
+    UnitModel from,
+    UnitModel to,
+  ) {
+    if (from.name == 'Degrees (slope)' || to.name == 'Degrees (slope)') {
+      return value; // pass-through label only
+    }
+    // Convert to fraction first (base = 1)
+    final double fraction = value * from.toBase;
+    return fraction / to.toBase;
   }
 }

@@ -38,6 +38,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   static IconData _getCategoryIcon(UnitCategory category) {
     switch (category) {
+      // ── Existing Core ────────────────────────────────────────────
       case UnitCategory.length:
         return Icons.straighten_rounded;
       case UnitCategory.weight:
@@ -78,6 +79,99 @@ class _HomeScreenState extends State<HomeScreen> {
         return Icons.numbers_rounded;
       case UnitCategory.typography:
         return Icons.text_fields_rounded;
+      // ── Electrical ──────────────────────────────────────────────
+      case UnitCategory.voltage:
+        return Icons.electrical_services_rounded;
+      case UnitCategory.current:
+        return Icons.power_rounded;
+      case UnitCategory.resistance:
+        return Icons.waves_rounded;
+      case UnitCategory.capacitance:
+        return Icons.battery_charging_full_rounded;
+      case UnitCategory.inductance:
+        return Icons.loop_rounded;
+      case UnitCategory.electricCharge:
+        return Icons.battery_full_rounded;
+      case UnitCategory.conductance:
+        return Icons.link_rounded;
+      // ── Light ────────────────────────────────────────────────────
+      case UnitCategory.illuminance:
+        return Icons.wb_sunny_rounded;
+      case UnitCategory.luminousFlux:
+        return Icons.lightbulb_rounded;
+      case UnitCategory.luminousIntensity:
+        return Icons.flashlight_on_rounded;
+      case UnitCategory.luminance:
+        return Icons.brightness_high_rounded;
+      // ── Heat ─────────────────────────────────────────────────────
+      case UnitCategory.specificHeat:
+        return Icons.whatshot_rounded;
+      case UnitCategory.thermalConductivity:
+        return Icons.device_thermostat_rounded;
+      case UnitCategory.thermalResistance:
+        return Icons.house_rounded;
+      case UnitCategory.heatFluxDensity:
+        return Icons.wb_incandescent_rounded;
+      // ── Physics ──────────────────────────────────────────────────
+      case UnitCategory.torque:
+        return Icons.settings_rounded;
+      case UnitCategory.momentum:
+        return Icons.rocket_launch_rounded;
+      case UnitCategory.angularVelocity:
+        return Icons.rotate_right_rounded;
+      case UnitCategory.density:
+        return Icons.water_drop_rounded;
+      case UnitCategory.surfaceTension:
+        return Icons.bubble_chart_rounded;
+      case UnitCategory.kinematicViscosity:
+        return Icons.oil_barrel_rounded;
+      case UnitCategory.dynamicViscosity:
+        return Icons.invert_colors_rounded;
+      case UnitCategory.acceleration:
+        return Icons.electric_car_rounded;
+      // ── Engineering ──────────────────────────────────────────────
+      case UnitCategory.flowRate:
+        return Icons.water_rounded;
+      case UnitCategory.massFlowRate:
+        return Icons.air_rounded;
+      // ── Radiation ────────────────────────────────────────────────
+      case UnitCategory.radioactivity:
+        return Icons.warning_amber_rounded;
+      case UnitCategory.radiationDose:
+        return Icons.health_and_safety_rounded;
+      case UnitCategory.radiationExposure:
+        return Icons.science_rounded;
+      // ── Astronomy ────────────────────────────────────────────────
+      case UnitCategory.astronomicalLength:
+        return Icons.public_rounded;
+      // ── Lifestyle ────────────────────────────────────────────────
+      case UnitCategory.pace:
+        return Icons.directions_run_rounded;
+      case UnitCategory.heartRate:
+        return Icons.favorite_rounded;
+      case UnitCategory.bloodSugar:
+        return Icons.bloodtype_rounded;
+      case UnitCategory.bloodPressure:
+        return Icons.monitor_heart_rounded;
+      case UnitCategory.bmi:
+        return Icons.person_rounded;
+      // ── Finance ──────────────────────────────────────────────────
+      case UnitCategory.percentageRatio:
+        return Icons.percent_rounded;
+      // ── Sound ────────────────────────────────────────────────────
+      case UnitCategory.soundLevel:
+        return Icons.volume_up_rounded;
+      // ── Concentration ────────────────────────────────────────────
+      case UnitCategory.concentration:
+        return Icons.science_rounded;
+      // ── Magnetic ─────────────────────────────────────────────────
+      case UnitCategory.magneticField:
+        return Icons.radar_rounded;
+      case UnitCategory.magneticFlux:
+        return Icons.blur_circular_rounded;
+      // ── Spectroscopy ─────────────────────────────────────────────
+      case UnitCategory.wavenumber:
+        return Icons.ssid_chart_rounded;
     }
   }
 
