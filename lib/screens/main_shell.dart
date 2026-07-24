@@ -109,15 +109,15 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
   void _onTabTapped(int index) {
     if (index == _currentIndex) return;
     HapticFeedback.selectionClick();
-    _currentIndex = index;
+    setState(() {
+      _currentIndex = index;
+    });
     if (_pageController.hasClients) {
       _pageController.animateToPage(
         index,
         duration: const Duration(milliseconds: 250),
         curve: Curves.easeOutCubic,
       );
-    } else {
-      setState(() {});
     }
   }
 
