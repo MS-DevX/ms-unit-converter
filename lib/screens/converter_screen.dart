@@ -44,51 +44,6 @@ class _ConverterScreenState extends State<ConverterScreen> {
   double _swapRotationAngle = 0.0;
   bool _isSwapPressed = false;
 
-  static IconData _getCategoryIcon(UnitCategory category) {
-    switch (category) {
-      case UnitCategory.length:
-        return Icons.straighten_rounded;
-      case UnitCategory.weight:
-        return Icons.monitor_weight_rounded;
-      case UnitCategory.temperature:
-        return Icons.thermostat_rounded;
-      case UnitCategory.area:
-        return Icons.area_chart_rounded;
-      case UnitCategory.volume:
-        return Icons.opacity_rounded;
-      case UnitCategory.speed:
-        return Icons.speed_rounded;
-      case UnitCategory.data:
-        return Icons.sd_card_rounded;
-      case UnitCategory.time:
-        return Icons.schedule_rounded;
-      case UnitCategory.angle:
-        return Icons.explore_rounded;
-      case UnitCategory.energy:
-        return Icons.bolt_rounded;
-      case UnitCategory.power:
-        return Icons.electric_bolt_rounded;
-      case UnitCategory.pressure:
-        return Icons.compress_rounded;
-      case UnitCategory.force:
-        return Icons.fitness_center_rounded;
-      case UnitCategory.frequency:
-        return Icons.graphic_eq_rounded;
-      case UnitCategory.fuelEconomy:
-        return Icons.local_gas_station_rounded;
-      case UnitCategory.cooking:
-        return Icons.soup_kitchen_rounded;
-      case UnitCategory.shoeSize:
-        return Icons.roller_skating_rounded;
-      case UnitCategory.clothingSize:
-        return Icons.checkroom_rounded;
-      case UnitCategory.numberBase:
-        return Icons.numbers_rounded;
-      case UnitCategory.typography:
-        return Icons.text_fields_rounded;
-    }
-  }
-
   @override
   void initState() {
     super.initState();
@@ -331,23 +286,9 @@ class _ConverterScreenState extends State<ConverterScreen> {
               StitchCard(
                 padding: const EdgeInsets.all(20),
                 borderRadius: 20,
-                child: Stack(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Positioned(
-                      top: -10,
-                      right: -10,
-                      child: Opacity(
-                        opacity: 0.06,
-                        child: Icon(
-                          _getCategoryIcon(converter.selectedCategory),
-                          size: 140,
-                          color: AppColors.onSurface,
-                        ),
-                      ),
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
                         // FROM SECTION HEADER
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -627,9 +568,7 @@ class _ConverterScreenState extends State<ConverterScreen> {
                         ),
                       ],
                     ),
-                  ],
-                ),
-              ),
+                  ),
 
               const SizedBox(height: 16),
 
