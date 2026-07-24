@@ -117,18 +117,8 @@ class _CompassScreenState extends State<CompassScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.surfaceContainer,
-        elevation: 0,
-        title: const Text(
-          'Compass',
-          style: TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.w600,
-            color: AppColors.onSurface,
-          ),
-        ),
+        title: const Text('Compass'),
       ),
       body: SafeArea(
         child: _isLoading

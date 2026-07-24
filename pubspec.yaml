@@ -45,6 +45,7 @@ dependencies:
   geolocator: ^14.0.3
   geomag: ^0.3.0
   in_app_update: ^5.0.0
+  image_picker: ^1.1.2
 
 dev_dependencies:
   flutter_test:

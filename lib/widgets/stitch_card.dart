@@ -36,7 +36,13 @@ class _StitchCardState extends State<StitchCard> {
 
   @override
   Widget build(BuildContext context) {
-    final bgColor = widget.backgroundColor ?? AppColors.customCard;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = widget.backgroundColor ??
+        (isDark ? AppColors.customCard : Colors.white);
+
+    final defaultBorderColor = isDark
+        ? AppColors.outlineVariant.withValues(alpha: 0.2)
+        : const Color(0xFFE2E8F0);
 
     Widget cardContent = Container(
       padding: widget.padding,
@@ -47,7 +53,7 @@ class _StitchCardState extends State<StitchCard> {
             (widget.leftBorderColor != null
                 ? null
                 : Border.all(
-                    color: AppColors.outlineVariant.withValues(alpha: 0.2),
+                    color: defaultBorderColor,
                     width: 1,
                   )),
       ),

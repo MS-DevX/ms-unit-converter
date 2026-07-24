@@ -1,42 +1,30 @@
-/// Adaptive navigation shell using Google Stitch Material 3 Bottom Navigation bar.
+/// Main Shell Screen — Preserves navigation state with fluid animations.
 library;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
-import '../core/colors.dart';
-import '../services/in_app_update_service.dart';
-import '../services/navigation_service.dart';
 import '../utils/responsive_helper.dart';
 import '../widgets/stitch_bottom_nav.dart';
-import '../widgets/welcome_name_dialog.dart';
 import 'compass_screen.dart';
 import 'currency_screen.dart';
 import 'history_screen.dart';
 import 'home_screen.dart';
 import 'settings_screen.dart';
 
-class _ReducedSensitivityPhysics extends PageScrollPhysics {
-  const _ReducedSensitivityPhysics({super.parent});
-
-  @override
-  _ReducedSensitivityPhysics applyTo(ScrollPhysics? ancestor) {
-    return _ReducedSensitivityPhysics(parent: ancestor);
-  }
-
-  @override
-  double get dragStartDistanceMotionThreshold => 28.0;
-}
-
 class MainShell extends StatefulWidget {
-  const MainShell({super.key});
+  final int initialIndex;
+
+  const MainShell({
+    super.key,
+    this.initialIndex = 0,
+  });
 
   @override
   State<MainShell> createState() => _MainShellState();
 }
 
-class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
-  int _currentIndex = 0;
+class _MainShellState extends State<MainShell> {
+  late int _currentIndex;
   late final PageController _pageController;
 
   static const List<Widget> _screens = [
@@ -54,8 +42,8 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
       label: 'Home',
     ),
     StitchNavItem(
-      icon: Icons.payments_outlined,
-      selectedIcon: Icons.payments_rounded,
+      icon: Icons.currency_exchange_outlined,
+      selectedIcon: Icons.currency_exchange_rounded,
       label: 'Currency',
     ),
     StitchNavItem(
@@ -78,40 +66,23 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
-    _pageController = PageController(initialPage: 0);
-    appNavigator.register((index) {
-      _onTabTapped(index);
-    });
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      WelcomeNameDialog.showIfNeeded(context);
-      // Check for Google Play In-App Updates on launch
-      InAppUpdateService.instance.checkForUpdate(context: context);
-    });
+    _currentIndex = widget.initialIndex.clamp(0, 4);
+    _pageController = PageController(initialPage: _currentIndex);
   }
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
     _pageController.dispose();
     super.dispose();
   }
 
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      // Check for Google Play In-App Updates when app resumes from background
-      InAppUpdateService.instance.checkForUpdate(context: context);
-    }
-  }
-
   void _onTabTapped(int index) {
     if (index == _currentIndex) return;
-    HapticFeedback.selectionClick();
+
     setState(() {
       _currentIndex = index;
     });
+
     if (_pageController.hasClients) {
       _pageController.animateToPage(
         index,
@@ -125,9 +96,8 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     final isExpanded = ResponsiveHelper.isExpanded(context);
 
-    return AppNavigator(
-      notifier: appNavigator,
-      child: PopScope(
+    return Scaffold(
+      body: PopScope(
         canPop: _currentIndex == 0,
         onPopInvokedWithResult: (didPop, _) {
           if (!didPop) {
@@ -135,7 +105,6 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
           }
         },
         child: Scaffold(
-          backgroundColor: AppColors.background,
           body: isExpanded
               ? _buildExpandedLayout()
               : _buildCompactLayout(),
@@ -146,7 +115,6 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
 
   Widget _buildCompactLayout() {
     return Scaffold(
-      backgroundColor: AppColors.background,
       body: PageView(
         controller: _pageController,
         physics: const _ReducedSensitivityPhysics(),
@@ -168,23 +136,25 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
   }
 
   Widget _buildExpandedLayout() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Row(
       children: [
         NavigationRail(
           selectedIndex: _currentIndex,
           onDestinationSelected: _onTabTapped,
           labelType: NavigationRailLabelType.all,
-          backgroundColor: AppColors.surfaceContainer,
-          indicatorColor: AppColors.primaryContainer,
-          selectedIconTheme: const IconThemeData(color: AppColors.primary),
-          unselectedIconTheme: const IconThemeData(color: AppColors.onSurfaceVariant),
-          selectedLabelTextStyle: const TextStyle(
-            color: AppColors.primary,
+          backgroundColor: colorScheme.surface,
+          indicatorColor: colorScheme.secondaryContainer,
+          selectedIconTheme: IconThemeData(color: colorScheme.onSecondaryContainer),
+          unselectedIconTheme: IconThemeData(color: colorScheme.onSurfaceVariant),
+          selectedLabelTextStyle: TextStyle(
+            color: colorScheme.onSecondaryContainer,
             fontSize: 12,
             fontWeight: FontWeight.w600,
           ),
-          unselectedLabelTextStyle: const TextStyle(
-            color: AppColors.onSurfaceVariant,
+          unselectedLabelTextStyle: TextStyle(
+            color: colorScheme.onSurfaceVariant,
             fontSize: 12,
           ),
           destinations: _navItems
@@ -197,7 +167,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
               )
               .toList(),
         ),
-        const VerticalDivider(thickness: 1, width: 1, color: AppColors.outlineVariant),
+        VerticalDivider(thickness: 1, width: 1, color: colorScheme.outlineVariant),
         Expanded(
           child: IndexedStack(
             index: _currentIndex,
@@ -206,5 +176,19 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
         ),
       ],
     );
+  }
+}
+
+class _ReducedSensitivityPhysics extends ScrollPhysics {
+  const _ReducedSensitivityPhysics({super.parent});
+
+  @override
+  _ReducedSensitivityPhysics applyTo(ScrollPhysics? ancestor) {
+    return _ReducedSensitivityPhysics(parent: buildParent(ancestor));
+  }
+
+  @override
+  double applyPhysicsToUserOffset(ScrollMetrics position, double offset) {
+    return offset * 0.45;
   }
 }

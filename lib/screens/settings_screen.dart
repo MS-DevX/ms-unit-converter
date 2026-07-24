@@ -3,6 +3,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -13,6 +14,7 @@ import '../providers/settings_provider.dart';
 import '../services/in_app_update_service.dart';
 import '../utils/formatters.dart';
 import '../widgets/stitch_card.dart';
+import '../widgets/user_avatar.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -25,6 +27,87 @@ class SettingsScreen extends StatelessWidget {
 
   void _shareApp() {
     SharePlus.instance.share(ShareParams(text: AppConstants.shareMessage));
+  }
+
+  Future<void> _showAvatarOptions(BuildContext context, SettingsProvider settings) async {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surfaceContainer,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        final picker = ImagePicker();
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 8, bottom: 12),
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.outlineVariant,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Profile Avatar',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.onSurface,
+                  ),
+                ),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_rounded, color: AppColors.primary),
+              title: const Text('Choose from Gallery', style: TextStyle(color: AppColors.onSurface)),
+              onTap: () async {
+                Navigator.pop(ctx);
+                try {
+                  final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+                  if (image != null) {
+                    settings.setUserAvatarPath(image.path);
+                  }
+                } catch (e) {
+                  debugPrint('[AvatarPicker] Error: $e');
+                }
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt_rounded, color: AppColors.primary),
+              title: const Text('Take a Photo', style: TextStyle(color: AppColors.onSurface)),
+              onTap: () async {
+                Navigator.pop(ctx);
+                try {
+                  final XFile? photo = await picker.pickImage(source: ImageSource.camera);
+                  if (photo != null) {
+                    settings.setUserAvatarPath(photo.path);
+                  }
+                } catch (e) {
+                  debugPrint('[AvatarPicker] Error: $e');
+                }
+              },
+            ),
+            if (settings.userAvatarPath.isNotEmpty)
+              ListTile(
+                leading: const Icon(Icons.delete_outline_rounded, color: AppColors.error),
+                title: const Text('Remove Photo', style: TextStyle(color: AppColors.error)),
+                onTap: () {
+                  settings.removeUserAvatar();
+                  Navigator.pop(ctx);
+                },
+              ),
+            const SizedBox(height: 16),
+          ],
+        );
+      },
+    );
   }
 
   void _editProfileName(BuildContext context, SettingsProvider settings) {
@@ -238,24 +321,15 @@ class SettingsScreen extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
           children: [
-            // PROFILE SECTION CARD
+            // PROFILE SECTION CARD WITH USER AVATAR
             StitchCard(
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
-                  Container(
-                    width: 56,
-                    height: 56,
-                    decoration: const BoxDecoration(
-                      color: AppColors.primaryContainer,
-                      shape: BoxShape.circle,
-                    ),
-                    alignment: Alignment.center,
-                    child: const Icon(
-                      Icons.person_rounded,
-                      color: AppColors.primary,
-                      size: 32,
-                    ),
+                  UserAvatar(
+                    size: 56,
+                    showEditBadge: true,
+                    onTap: () => _showAvatarOptions(context, settings),
                   ),
                   const SizedBox(width: 16),
                   Expanded(

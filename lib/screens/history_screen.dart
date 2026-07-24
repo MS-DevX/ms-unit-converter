@@ -136,18 +136,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
     }
 
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.surfaceContainer,
-        elevation: 0,
-        title: const Text(
-          'History',
-          style: TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.w600,
-            color: AppColors.primary,
-          ),
-        ),
+        title: const Text('History'),
       ),
       body: SafeArea(
         child: Column(

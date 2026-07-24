@@ -163,18 +163,8 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
     final screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.surfaceContainer,
-        elevation: 0,
-        title: const Text(
-          'Currency Exchange',
-          style: TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.w600,
-            color: AppColors.onSurface,
-          ),
-        ),
+        title: const Text('Currency Exchange'),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded, color: AppColors.onSurface),

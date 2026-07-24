@@ -3,7 +3,6 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../core/colors.dart';
 
 class StitchNavItem {
   final IconData icon;
@@ -31,14 +30,17 @@ class StitchBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Container(
       height: 72,
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: colorScheme.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
         border: Border(
           top: BorderSide(
-            color: AppColors.outlineVariant.withValues(alpha: 0.5),
+            color: colorScheme.outlineVariant.withValues(alpha: 0.5),
             width: 1,
           ),
         ),
@@ -62,7 +64,7 @@ class StitchBottomNav extends StatelessWidget {
                   ? const EdgeInsets.symmetric(horizontal: 18, vertical: 8)
                   : const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: isSelected ? AppColors.secondaryContainer : Colors.transparent,
+                color: isSelected ? colorScheme.secondaryContainer : Colors.transparent,
                 borderRadius: BorderRadius.circular(24),
               ),
               child: Row(
@@ -70,17 +72,17 @@ class StitchBottomNav extends StatelessWidget {
                 children: [
                   Icon(
                     isSelected ? item.selectedIcon : item.icon,
-                    color: isSelected ? AppColors.onSecondaryContainer : AppColors.onSurfaceVariant,
+                    color: isSelected ? colorScheme.onSecondaryContainer : colorScheme.onSurfaceVariant,
                     size: 22,
                   ),
                   if (isSelected) ...[
                     const SizedBox(width: 8),
                     Text(
                       item.label,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.onSecondaryContainer,
+                        color: colorScheme.onSecondaryContainer,
                       ),
                     ),
                   ],

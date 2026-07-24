@@ -2,7 +2,6 @@
 library;
 
 import 'package:flutter/material.dart';
-import '../core/colors.dart';
 
 class StitchSearchBar extends StatelessWidget {
   final TextEditingController controller;
@@ -22,36 +21,42 @@ class StitchSearchBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       height: 56,
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.3),
+          width: 1,
+        ),
       ),
       child: TextField(
         controller: controller,
         focusNode: focusNode,
         onChanged: onChanged,
-        style: const TextStyle(
-          color: AppColors.onSurface,
+        style: TextStyle(
+          color: colorScheme.onSurface,
           fontSize: 16,
         ),
         decoration: InputDecoration(
           hintText: hintText,
           hintStyle: TextStyle(
-            color: AppColors.outline.withValues(alpha: 0.6),
+            color: colorScheme.outline.withValues(alpha: 0.6),
             fontSize: 16,
           ),
-          prefixIcon: const Icon(
+          prefixIcon: Icon(
             Icons.search_rounded,
-            color: AppColors.outline,
+            color: colorScheme.outline,
             size: 22,
           ),
           suffixIcon: controller.text.isNotEmpty
               ? IconButton(
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.clear_rounded,
-                    color: AppColors.onSurfaceVariant,
+                    color: colorScheme.onSurfaceVariant,
                     size: 18,
                   ),
                   onPressed: () {
@@ -60,15 +65,10 @@ class StitchSearchBar extends StatelessWidget {
                   },
                 )
               : null,
-          filled: true,
-          fillColor: Colors.transparent,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           border: InputBorder.none,
           enabledBorder: InputBorder.none,
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(color: AppColors.primary, width: 2),
-          ),
+          focusedBorder: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         ),
       ),
     );

@@ -19,6 +19,7 @@ import '../utils/search_helper.dart';
 import '../widgets/empty_state_widget.dart';
 import '../widgets/stitch_card.dart';
 import '../widgets/stitch_search_bar.dart';
+import '../widgets/user_avatar.dart';
 import 'converter_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -150,43 +151,28 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     if (presetInputValue != null) {
-      converterProv.setInput(presetInputValue.toString());
+      final text = presetInputValue == presetInputValue.roundToDouble()
+          ? presetInputValue.toInt().toString()
+          : presetInputValue.toString();
+      converterProv.setInput(text);
     }
 
-    if (ResponsiveHelper.isExpanded(context)) {
-      return;
-    }
-
-    Navigator.push(
-      context,
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) {
-          return ConverterScreen(
-            initialCategory: category,
-            presetFromUnitName: presetFromUnitName,
-            presetToUnitName: presetToUnitName,
-            presetValue: presetInputValue,
-          );
-        },
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return FadeTransition(
-            opacity: animation,
-            child: ScaleTransition(
-              scale: Tween<double>(begin: 0.95, end: 1.0).animate(
-                CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
-              ),
-              child: child,
-            ),
-          );
-        },
-        transitionDuration: const Duration(milliseconds: 250),
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ConverterScreen(
+          initialCategory: category,
+          presetValue: presetInputValue,
+          presetFromUnitName: presetFromUnitName,
+          presetToUnitName: presetToUnitName,
+        ),
       ),
     );
   }
 
-  void _onSmartResultTap(SmartParseResult result) {
-    if (!result.isRecognized || result.category == null) return;
-    HapticFeedback.lightImpact();
+  void _onSmartResultTap(SmartParseResult? result) {
+    if (result == null || !result.isRecognized || result.category == null) return;
+    HapticFeedback.mediumImpact();
+
     _openConverter(
       context,
       result.category!,
@@ -214,6 +200,47 @@ class _HomeScreenState extends State<HomeScreen> {
             final detailedResults = query.isNotEmpty
                 ? SearchHelper.searchDetailed(query)
                 : <CategorySearchResult>[];
+
+            List<UnitCategory> displayCategories;
+            String filterSectionTitle;
+
+            switch (_activeFilterIndex) {
+              case 0: // Favorites
+                filterSectionTitle = 'Favorite Categories (${favProv.favorites.length})';
+                displayCategories = UnitCategory.values
+                    .where((cat) => favProv.isFavorite(cat))
+                    .toList();
+                break;
+              case 1: // Recent
+                filterSectionTitle = 'Recently Opened';
+                final recentCatEnums = <UnitCategory>[];
+                for (final entry in historyProv.entries) {
+                  final cat = entry.categoryEnum;
+                  if (!recentCatEnums.contains(cat)) {
+                    recentCatEnums.add(cat);
+                  }
+                }
+                displayCategories = recentCatEnums;
+                break;
+              case 2: // Popular
+                filterSectionTitle = 'Popular Converters';
+                displayCategories = const [
+                  UnitCategory.length,
+                  UnitCategory.weight,
+                  UnitCategory.temperature,
+                  UnitCategory.area,
+                  UnitCategory.volume,
+                  UnitCategory.speed,
+                  UnitCategory.data,
+                  UnitCategory.time,
+                ];
+                break;
+              case 3: // Browse All
+              default:
+                filterSectionTitle = 'Browse Categories';
+                displayCategories = UnitCategory.values;
+                break;
+            }
 
             return CustomScrollView(
               controller: _scrollController,
@@ -258,19 +285,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             ],
                           ),
                         ),
-                        Container(
-                          width: 48,
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: AppColors.surfaceContainer,
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: const Icon(
-                            Icons.architecture_rounded,
-                            color: AppColors.primary,
-                            size: 28,
-                          ),
-                        ),
+                        const UserAvatar(size: 48),
                       ],
                     ),
                   ),
@@ -416,7 +431,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   const SliverToBoxAdapter(child: SizedBox(height: 24)),
 
-                  // 4. FREQUENTLY USED (CAROUSEL WITH LEFT BORDER ACCENTS)
+                  // 4. FREQUENTLY USED CAROUSEL
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -504,13 +519,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   const SliverToBoxAdapter(child: SizedBox(height: 24)),
 
-                  // 5. BROWSE CATEGORIES (BENTO GRID STYLE)
+                  // 5. FILTERED CATEGORIES (BENTO GRID STYLE)
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: const Text(
-                        'Browse Categories',
-                        style: TextStyle(
+                      child: Text(
+                        filterSectionTitle,
+                        style: const TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.w500,
                           color: AppColors.onSurface,
@@ -521,65 +536,94 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   const SliverToBoxAdapter(child: SizedBox(height: 12)),
 
-                  SliverPadding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    sliver: SliverGrid(
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: MediaQuery.of(context).size.width > 600 ? 4 : 2,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                        childAspectRatio: 2.2,
+                  if (displayCategories.isEmpty)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                        child: EmptyStateWidget(
+                          icon: _activeFilterIndex == 0
+                              ? Icons.star_border_rounded
+                              : Icons.history_rounded,
+                          message: _activeFilterIndex == 0
+                              ? 'No Favorites Saved Yet'
+                              : 'No Recent Conversions',
+                          subtitle: _activeFilterIndex == 0
+                              ? 'Tap the star icon on any category to add it to your favorites.'
+                              : 'Conversions you perform will automatically appear here.',
+                        ),
                       ),
-                      delegate: SliverChildBuilderDelegate((context, index) {
-                        final category = UnitCategory.values[index];
-                        return StitchCard(
-                          onTap: () => _openConverter(context, category),
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                          borderRadius: 12,
-                          child: Row(
-                            children: [
-                              Icon(
-                                _getCategoryIcon(category),
-                                color: AppColors.onSurfaceVariant,
-                                size: 20,
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      category.displayName,
-                                      style: const TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w500,
-                                        color: AppColors.onSurface,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    Text(
-                                      '${category.unitSymbols.length} Units',
-                                      style: const TextStyle(
-                                        fontSize: 11,
-                                        color: AppColors.onSurfaceVariant,
-                                      ),
-                                    ),
-                                  ],
+                    )
+                  else
+                    SliverPadding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      sliver: SliverGrid(
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: ResponsiveHelper.isExpanded(context) ? 4 : 2,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                          childAspectRatio: 2.2,
+                        ),
+                        delegate: SliverChildBuilderDelegate((context, index) {
+                          final category = displayCategories[index];
+                          final isFav = favProv.isFavorite(category);
+
+                          return StitchCard(
+                            onTap: () => _openConverter(context, category),
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                            borderRadius: 12,
+                            child: Row(
+                              children: [
+                                Icon(
+                                  _getCategoryIcon(category),
+                                  color: isFav ? Colors.amber : AppColors.onSurfaceVariant,
+                                  size: 20,
                                 ),
-                              ),
-                              const Icon(
-                                Icons.chevron_right_rounded,
-                                color: AppColors.outline,
-                                size: 16,
-                              ),
-                            ],
-                          ),
-                        );
-                      }, childCount: UnitCategory.values.length),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        category.displayName,
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500,
+                                          color: AppColors.onSurface,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      Text(
+                                        '${category.unitSymbols.length} Units',
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          color: AppColors.onSurfaceVariant,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                GestureDetector(
+                                  onTap: () {
+                                    HapticFeedback.selectionClick();
+                                    favProv.toggleFavorite(category);
+                                  },
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(4),
+                                    child: Icon(
+                                      isFav ? Icons.star_rounded : Icons.star_outline_rounded,
+                                      color: isFav ? Colors.amber : AppColors.outline,
+                                      size: 18,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }, childCount: displayCategories.length),
+                      ),
                     ),
-                  ),
 
                   const SliverToBoxAdapter(child: SizedBox(height: 24)),
 
@@ -701,21 +745,30 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: AppColors.surfaceContainerLow.withValues(alpha: 0.5),
+                          color: AppColors.surfaceContainerLow,
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
                             color: AppColors.outlineVariant.withValues(alpha: 0.3),
-                            width: 1,
                           ),
                         ),
-                        child: const Text(
-                          'Private & Offline: ✓ Works Offline, ✓ No Login, ✓ Free Forever, ✓ Data Never Leaves Your Device',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: AppColors.onSurfaceVariant,
-                            height: 1.4,
-                          ),
+                        child: Row(
+                          children: const [
+                            Icon(
+                              Icons.shield_outlined,
+                              color: AppColors.primary,
+                              size: 22,
+                            ),
+                            SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                '100% Offline • No Tracking • Instant Results',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: AppColors.onSurfaceVariant,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),

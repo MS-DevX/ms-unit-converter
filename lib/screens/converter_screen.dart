@@ -257,10 +257,7 @@ class _ConverterScreenState extends State<ConverterScreen> {
     final screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.surfaceContainer,
-        elevation: 0,
         leading: Navigator.canPop(context)
             ? IconButton(
                 icon: const Icon(Icons.arrow_back_rounded, color: AppColors.primary),
@@ -269,11 +266,6 @@ class _ConverterScreenState extends State<ConverterScreen> {
             : null,
         title: Text(
           converter.selectedCategory.displayName,
-          style: const TextStyle(
-            fontSize: 26,
-            fontWeight: FontWeight.w600,
-            color: AppColors.onSurface,
-          ),
         ),
       ),
       body: SafeArea(
