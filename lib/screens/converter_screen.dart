@@ -22,6 +22,7 @@ class ConverterScreen extends StatefulWidget {
   final double? presetValue;
   final String? presetFromUnitName;
   final String? presetToUnitName;
+  final bool isCompanion;
 
   const ConverterScreen({
     super.key,
@@ -29,6 +30,7 @@ class ConverterScreen extends StatefulWidget {
     this.presetValue,
     this.presetFromUnitName,
     this.presetToUnitName,
+    this.isCompanion = false,
   });
 
   @override
@@ -136,7 +138,7 @@ class _ConverterScreenState extends State<ConverterScreen> {
       context.read<HistoryProvider>().addEntry(
         HistoryEntry(
           id: DateTime.now().microsecondsSinceEpoch.toString(),
-          category: converter.selectedCategory.displayName,
+          category: widget.isCompanion ? 'Unit Companion' : converter.selectedCategory.displayName,
           fromUnit: fromUnit.name,
           fromSymbol: fromUnit.symbol,
           toUnit: toUnit.name,

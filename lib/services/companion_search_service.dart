@@ -203,7 +203,10 @@ class CompanionSearchService {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => ConverterScreen(initialCategory: cat),
+                  builder: (context) => ConverterScreen(
+                    initialCategory: cat,
+                    isCompanion: true,
+                  ),
                 ),
               );
             },
@@ -247,6 +250,7 @@ class CompanionSearchService {
                     builder: (context) => ConverterScreen(
                       initialCategory: cat,
                       presetFromUnitName: unit.name,
+                      isCompanion: true,
                     ),
                   ),
                 );
@@ -304,6 +308,7 @@ class CompanionSearchService {
                     builder: (context) => ConverterScreen(
                       initialCategory: cat,
                       presetFromUnitName: unit.name,
+                      isCompanion: true,
                     ),
                   ),
                 );
@@ -354,7 +359,10 @@ class CompanionSearchService {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => ConverterScreen(initialCategory: cat),
+                builder: (context) => ConverterScreen(
+                initialCategory: cat,
+                isCompanion: true,
+              ),
               ),
             );
           },
@@ -565,7 +573,10 @@ class CompanionSearchService {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => ConverterScreen(initialCategory: cat),
+                  builder: (context) => ConverterScreen(
+                    initialCategory: cat,
+                    isCompanion: true,
+                  ),
                 ),
               );
             },
@@ -592,7 +603,10 @@ class CompanionSearchService {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => ConverterScreen(initialCategory: cat),
+                  builder: (context) => ConverterScreen(
+                    initialCategory: cat,
+                    isCompanion: true,
+                  ),
                 ),
               );
             },
@@ -636,6 +650,7 @@ class CompanionSearchService {
                     presetFromUnitName: entry.fromUnit,
                     presetToUnitName: entry.toUnit,
                     presetValue: entry.inputValue,
+                    isCompanion: true,
                   ),
                 ),
               );
@@ -729,6 +744,7 @@ class CompanionSearchService {
                   presetFromUnitName: parsed.fromUnitName,
                   presetToUnitName: parsed.toUnitName,
                   presetValue: amount,
+                  isCompanion: true,
                 ),
               ),
             );
@@ -851,7 +867,10 @@ class CompanionSearchService {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => ConverterScreen(initialCategory: guide.cat),
+                  builder: (_) => ConverterScreen(
+                    initialCategory: guide.cat,
+                    isCompanion: true,
+                  ),
                 ),
               );
             },

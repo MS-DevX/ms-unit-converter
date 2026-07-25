@@ -10,14 +10,12 @@ import '../data/units_data.dart';
 import '../models/history_entry.dart';
 import '../providers/converter_provider.dart';
 import '../providers/history_provider.dart';
-import '../services/navigation_service.dart';
 import '../services/refresh_service.dart';
 import '../utils/formatters.dart';
 import '../widgets/empty_state_widget.dart';
 import '../widgets/stitch_card.dart';
 import '../widgets/stitch_search_bar.dart';
 import 'converter_screen.dart';
-import 'unit_companion_screen.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -137,9 +135,24 @@ class _HistoryScreenState extends State<HistoryScreen> with AutomaticKeepAliveCl
     }
 
     if (_selectedFilterIndex == 1) {
-      entries = entries.where((e) => e.category != 'Currency').toList();
+      entries = entries
+          .where((e) =>
+              e.category != 'Currency' &&
+              e.category != 'Currency Exchange' &&
+              e.category != 'Companion' &&
+              e.category != 'Unit Companion')
+          .toList();
     } else if (_selectedFilterIndex == 2) {
-      entries = entries.where((e) => e.category == 'Currency').toList();
+      entries = entries
+          .where((e) => e.category == 'Currency' || e.category == 'Currency Exchange')
+          .toList();
+    } else if (_selectedFilterIndex == 3) {
+      entries = entries
+          .where((e) =>
+              e.category == 'Companion' ||
+              e.category == 'Unit Companion' ||
+              e.category.toLowerCase().contains('companion'))
+          .toList();
     }
 
     return Scaffold(
@@ -201,16 +214,6 @@ class _HistoryScreenState extends State<HistoryScreen> with AutomaticKeepAliveCl
                               onTap: () {
                                 HapticFeedback.lightImpact();
                                 setState(() => _selectedFilterIndex = 3);
-                                try {
-                                  AppNavigator.of(context).switchTab(1);
-                                } catch (_) {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => const UnitCompanionScreen(),
-                                    ),
-                                  );
-                                }
                               },
                             ),
                           ],
@@ -224,13 +227,29 @@ class _HistoryScreenState extends State<HistoryScreen> with AutomaticKeepAliveCl
                 SliverFillRemaining(
                   hasScrollBody: false,
                   child: EmptyStateWidget(
-                    icon: Icons.history_rounded,
+                    icon: _selectedFilterIndex == 3
+                        ? Icons.auto_awesome_rounded
+                        : _selectedFilterIndex == 2
+                            ? Icons.currency_exchange_rounded
+                            : Icons.history_rounded,
                     message: historyProv.entries.isEmpty
                         ? 'No Conversion History'
-                        : 'No Matching History',
+                        : _selectedFilterIndex == 3
+                            ? 'No Companion History'
+                            : _selectedFilterIndex == 2
+                                ? 'No Currency History'
+                                : _selectedFilterIndex == 1
+                                    ? 'No Unit History'
+                                    : 'No Matching History',
                     subtitle: historyProv.entries.isEmpty
                         ? 'Conversions you perform will automatically appear here.'
-                        : 'Try searching with a different unit or category name.',
+                        : _selectedFilterIndex == 3
+                            ? 'Conversions and discovery queries performed via Unit Companion will appear here.'
+                            : _selectedFilterIndex == 2
+                                ? 'Currency conversions you perform will appear here.'
+                                : _selectedFilterIndex == 1
+                                    ? 'Unit conversions you perform will appear here.'
+                                    : 'Try searching with a different unit or category name.',
                   ),
                 )
               else
