@@ -10,12 +10,14 @@ import '../data/units_data.dart';
 import '../models/history_entry.dart';
 import '../providers/converter_provider.dart';
 import '../providers/history_provider.dart';
+import '../services/navigation_service.dart';
 import '../services/refresh_service.dart';
 import '../utils/formatters.dart';
 import '../widgets/empty_state_widget.dart';
 import '../widgets/stitch_card.dart';
 import '../widgets/stitch_search_bar.dart';
 import 'converter_screen.dart';
+import 'unit_companion_screen.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -190,6 +192,90 @@ class _HistoryScreenState extends State<HistoryScreen> with AutomaticKeepAliveCl
                             onTap: () => setState(() => _selectedFilterIndex = 2),
                           ),
                         ],
+                      ),
+                      const SizedBox(height: 14),
+                      // UNIT COMPANION BANNER CARD
+                      StitchCard(
+                        padding: const EdgeInsets.all(14),
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          try {
+                            AppNavigator.of(context).switchTab(1);
+                          } catch (_) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const UnitCompanionScreen(),
+                              ),
+                            );
+                          }
+                        },
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 42,
+                              height: 42,
+                              decoration: BoxDecoration(
+                                color: colorScheme.primary.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(
+                                Icons.auto_awesome_rounded,
+                                color: colorScheme.primary,
+                                size: 20,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Text(
+                                        'Unit Companion',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w700,
+                                          color: colorScheme.onSurface,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: colorScheme.primary.withValues(alpha: 0.12),
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        child: Text(
+                                          '100% Offline',
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w700,
+                                            color: colorScheme.primary,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'Smart search across units, formulas, & natural queries.',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Icon(
+                              Icons.arrow_forward_ios_rounded,
+                              size: 14,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
