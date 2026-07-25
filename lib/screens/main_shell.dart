@@ -117,7 +117,7 @@ class _MainShellState extends State<MainShell> {
     return Scaffold(
       body: PageView(
         controller: _pageController,
-        physics: const _ReducedSensitivityPhysics(),
+        physics: const PageScrollPhysics(),
         onPageChanged: (index) {
           if (_currentIndex != index) {
             setState(() {
@@ -176,19 +176,5 @@ class _MainShellState extends State<MainShell> {
         ),
       ],
     );
-  }
-}
-
-class _ReducedSensitivityPhysics extends ScrollPhysics {
-  const _ReducedSensitivityPhysics({super.parent});
-
-  @override
-  _ReducedSensitivityPhysics applyTo(ScrollPhysics? ancestor) {
-    return _ReducedSensitivityPhysics(parent: buildParent(ancestor));
-  }
-
-  @override
-  double applyPhysicsToUserOffset(ScrollMetrics position, double offset) {
-    return offset * 0.45;
   }
 }

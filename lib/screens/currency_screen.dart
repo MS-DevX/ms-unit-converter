@@ -11,6 +11,7 @@ import '../models/currency_model.dart';
 import '../models/history_entry.dart';
 import '../providers/currency_provider.dart';
 import '../providers/history_provider.dart';
+import '../services/refresh_service.dart';
 import '../widgets/stitch_card.dart';
 
 class CurrencyScreen extends StatefulWidget {
@@ -20,11 +21,12 @@ class CurrencyScreen extends StatefulWidget {
   State<CurrencyScreen> createState() => _CurrencyScreenState();
 }
 
-class _CurrencyScreenState extends State<CurrencyScreen> {
+class _CurrencyScreenState extends State<CurrencyScreen> with AutomaticKeepAliveClientMixin {
   final TextEditingController _amountController = TextEditingController(text: '1');
   final FocusNode _amountFocusNode = FocusNode();
   CurrencyModel _targetCurrency = defaultCurrencies.firstWhere((c) => c.code == 'EUR');
   String _lastSavedSignature = '';
+  bool _hasUserInteraction = false;
 
   @override
   void initState() {
@@ -32,6 +34,7 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         context.read<CurrencyProvider>().fetchRates();
+        context.read<CurrencyProvider>().addListener(_onCurrencyChanged);
       }
     });
   }
@@ -40,10 +43,19 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
   void dispose() {
     _amountController.dispose();
     _amountFocusNode.dispose();
+    try {
+      context.read<CurrencyProvider>().removeListener(_onCurrencyChanged);
+    } catch (_) {}
     super.dispose();
   }
 
+  void _onCurrencyChanged() {
+    if (!mounted) return;
+    _autoSaveHistory(context.read<CurrencyProvider>());
+  }
+
   void _autoSaveHistory(CurrencyProvider currencyProv) {
+    if (!_hasUserInteraction) return;
     final fromCurr = currencyProv.fromCurrency ?? defaultCurrencies.first;
     final toCurr = _targetCurrency;
     final inputVal = double.tryParse(currencyProv.inputValue) ?? 1.0;
@@ -89,8 +101,11 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
           builder: (ctx, setModalState) {
             final query = searchController.text.trim().toLowerCase();
             final filtered = defaultCurrencies.where((c) {
+              final entry = currencyEntryByCode[c.code];
+              final country = entry?.country.toLowerCase() ?? '';
               return c.code.toLowerCase().contains(query) ||
-                  c.name.toLowerCase().contains(query);
+                  c.name.toLowerCase().contains(query) ||
+                  country.contains(query);
             }).toList();
 
             return DraggableScrollableSheet(
@@ -111,7 +126,7 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                       ),
                     ),
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                      padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
                       child: Row(
                         children: [
                           Text(
@@ -126,19 +141,60 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                       ),
                     ),
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                      child: TextField(
-                        controller: searchController,
-                        onChanged: (_) => setModalState(() {}),
-                        style: TextStyle(color: colorScheme.onSurface),
-                        decoration: InputDecoration(
-                          hintText: 'Search by currency name or code...',
-                          hintStyle: TextStyle(color: colorScheme.outline),
-                          prefixIcon: Icon(Icons.search_rounded, color: colorScheme.outline),
-                          filled: true,
-                          fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                      padding: const EdgeInsets.fromLTRB(24, 8, 24, 12),
+                      child: Container(
+                        height: 52,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? colorScheme.surfaceContainerHigh
+                              : colorScheme.surfaceContainerLow,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: colorScheme.outlineVariant.withValues(alpha: 0.35),
+                            width: 1,
+                          ),
+                        ),
+                        child: Center(
+                          child: TextField(
+                            controller: searchController,
+                            onChanged: (_) => setModalState(() {}),
+                            textAlignVertical: TextAlignVertical.center,
+                            style: TextStyle(
+                              color: colorScheme.onSurface,
+                              fontSize: 15,
+                            ),
+                            decoration: InputDecoration(
+                              isDense: true,
+                              hintText: 'Search by code, name, or country...',
+                              hintStyle: TextStyle(
+                                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                                fontSize: 15,
+                              ),
+                              prefixIcon: Icon(
+                                Icons.search_rounded,
+                                color: colorScheme.onSurfaceVariant,
+                                size: 20,
+                              ),
+                              suffixIcon: searchController.text.isNotEmpty
+                                  ? IconButton(
+                                      icon: Icon(
+                                        Icons.clear_rounded,
+                                        color: colorScheme.onSurfaceVariant,
+                                        size: 18,
+                                      ),
+                                      tooltip: 'Clear search',
+                                      onPressed: () {
+                                        searchController.clear();
+                                        setModalState(() {});
+                                      },
+                                    )
+                                  : null,
+                              border: InputBorder.none,
+                              enabledBorder: InputBorder.none,
+                              focusedBorder: InputBorder.none,
+                              contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -174,6 +230,7 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                             ),
                             onTap: () {
                               HapticFeedback.selectionClick();
+                              if (!_hasUserInteraction) _hasUserInteraction = true;
                               if (isFromCurrency) {
                                 currencyProv.setFromCurrency(c);
                               } else {
@@ -198,13 +255,15 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
   }
 
   @override
+  bool get wantKeepAlive => true;
+
+  @override
   Widget build(BuildContext context) {
+    super.build(context);
     final currencyProv = context.watch<CurrencyProvider>();
     final colorScheme = Theme.of(context).colorScheme;
     final fromCurr = currencyProv.fromCurrency ?? defaultCurrencies.first;
     final targetRow = currencyProv.getConvertedRow(_targetCurrency);
-
-    _autoSaveHistory(currencyProv);
 
     final screenWidth = MediaQuery.of(context).size.width;
 
@@ -214,6 +273,7 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
         actions: [
           IconButton(
             icon: Icon(Icons.refresh_rounded, color: colorScheme.onSurface),
+            tooltip: 'Refresh rates',
             onPressed: () {
               HapticFeedback.mediumImpact();
               currencyProv.refreshRates();
@@ -222,9 +282,12 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
         ],
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-          child: Column(
+        child: RefreshIndicator(
+          onRefresh: () => RefreshService.refreshApp(context),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // OFFLINE / SYNC STATUS HEADER CARD
@@ -250,7 +313,7 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            currencyProv.isOffline ? 'Offline Mode' : 'Live FX Rates Active',
+                            currencyProv.isOffline ? 'Using bundled exchange rates' : 'Live FX Rates Active',
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
@@ -258,7 +321,7 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                             ),
                           ),
                           Text(
-                            currencyProv.isUsingCached ? 'Using cached rates' : 'Rates refreshed',
+                            'Last updated: ${currencyProv.formattedLastUpdated}',
                             style: TextStyle(
                               fontSize: 13,
                               color: colorScheme.onSurfaceVariant,
@@ -272,6 +335,7 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                         HapticFeedback.lightImpact();
                         currencyProv.refreshRates();
                       },
+                      tooltip: 'Refresh rates',
                       icon: const Icon(Icons.refresh_rounded, size: 18),
                     ),
                   ],
@@ -318,7 +382,6 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                               child: TextField(
                                 controller: _amountController,
                                 focusNode: _amountFocusNode,
-                                autofocus: true,
                                 keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
                                 style: TextStyle(
                                   fontSize: 44,
@@ -341,6 +404,7 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                                   contentPadding: EdgeInsets.zero,
                                 ),
                                 onChanged: (text) {
+                                  if (!_hasUserInteraction) _hasUserInteraction = true;
                                   currencyProv.setInput(text);
                                 },
                               ),
@@ -362,8 +426,9 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                               decoration: BoxDecoration(
                                 color: colorScheme.surfaceContainerHigh,
                                 borderRadius: BorderRadius.circular(16),
-                                border: Border(
-                                  bottom: BorderSide(color: colorScheme.primary, width: 2),
+                                border: Border.all(
+                                  color: colorScheme.outlineVariant.withValues(alpha: 0.4),
+                                  width: 1.2,
                                 ),
                               ),
                               child: Row(
@@ -403,6 +468,7 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                       child: GestureDetector(
                         onTap: () {
                           HapticFeedback.mediumImpact();
+                          if (!_hasUserInteraction) _hasUserInteraction = true;
                           final temp = fromCurr;
                           currencyProv.setFromCurrency(_targetCurrency);
                           setState(() {
@@ -415,17 +481,17 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                           decoration: BoxDecoration(
                             color: colorScheme.primary,
                             shape: BoxShape.circle,
-                            boxShadow: const [
+                            boxShadow: [
                               BoxShadow(
-                                color: Color(0x25000000),
+                                color: colorScheme.primary.withValues(alpha: 0.3),
                                 blurRadius: 8,
-                                offset: Offset(0, 4),
+                                offset: const Offset(0, 4),
                               ),
                             ],
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.swap_vert_rounded,
-                            color: Colors.white,
+                            color: colorScheme.onPrimary,
                             size: 26,
                           ),
                         ),
@@ -499,11 +565,9 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                               decoration: BoxDecoration(
                                 color: colorScheme.surfaceContainerHigh,
                                 borderRadius: BorderRadius.circular(16),
-                                border: Border(
-                                  bottom: BorderSide(
-                                    color: colorScheme.outlineVariant,
-                                    width: 2,
-                                  ),
+                                border: Border.all(
+                                  color: colorScheme.outlineVariant.withValues(alpha: 0.4),
+                                  width: 1.2,
                                 ),
                               ),
                               child: Row(
@@ -563,6 +627,7 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                     margin: const EdgeInsets.only(bottom: 10),
                     child: StitchCard(
                       onTap: () {
+                        if (!_hasUserInteraction) _hasUserInteraction = true;
                         setState(() {
                           _targetCurrency = c;
                         });
@@ -612,6 +677,7 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
           ),
         ),
       ),
+    ),
     );
   }
 }

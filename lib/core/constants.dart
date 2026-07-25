@@ -1,9 +1,9 @@
 class AppConstants {
   AppConstants._();
 
-  static const String appName = 'MS Unit Converter';
+  static const String appName = 'Unit Converter';
 
-  static const String appVersion = '2.1.2';
+  static const String appVersion = '2.2.0';
 
   static const String packageId = 'com.msdevx.unitconverter';
 
@@ -19,7 +19,7 @@ class AppConstants {
       'https://play.google.com/store/apps/details?id=com.msdevx.unitconverter';
 
   static const String shareMessage =
-      'Try MS Unit Converter by MS DevX:\n'
+      'Try Unit Converter by MS DevX:\n'
       'https://play.google.com/store/apps/details?id=com.msdevx.unitconverter';
 
   static const String historyStorageKey = 'history_entries';

@@ -51,42 +51,47 @@ class StitchBottomNav extends StatelessWidget {
           final isSelected = index == currentIndex;
           final item = items[index];
 
-          return GestureDetector(
-            onTap: () {
-              HapticFeedback.selectionClick();
-              onTap(index);
-            },
-            behavior: HitTestBehavior.opaque,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              curve: Curves.easeOutCubic,
-              padding: isSelected
-                  ? const EdgeInsets.symmetric(horizontal: 18, vertical: 8)
-                  : const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: isSelected ? colorScheme.secondaryContainer : Colors.transparent,
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    isSelected ? item.selectedIcon : item.icon,
-                    color: isSelected ? colorScheme.onSecondaryContainer : colorScheme.onSurfaceVariant,
-                    size: 22,
-                  ),
-                  if (isSelected) ...[
-                    const SizedBox(width: 8),
-                    Text(
-                      item.label,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: colorScheme.onSecondaryContainer,
-                      ),
+          return Semantics(
+            label: item.label,
+            selected: isSelected,
+            button: true,
+            child: GestureDetector(
+              onTap: () {
+                HapticFeedback.selectionClick();
+                onTap(index);
+              },
+              behavior: HitTestBehavior.opaque,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeOutCubic,
+                padding: isSelected
+                    ? const EdgeInsets.symmetric(horizontal: 18, vertical: 8)
+                    : const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isSelected ? colorScheme.secondaryContainer : Colors.transparent,
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      isSelected ? item.selectedIcon : item.icon,
+                      color: isSelected ? colorScheme.onSecondaryContainer : colorScheme.onSurfaceVariant,
+                      size: 22,
                     ),
+                    if (isSelected) ...[
+                      const SizedBox(width: 8),
+                      Text(
+                        item.label,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.onSecondaryContainer,
+                        ),
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
           );

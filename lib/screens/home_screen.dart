@@ -1,26 +1,32 @@
-/// Dashboard / Home Screen — Pixel-perfect implementation of Google Stitch Material Design 3 export.
+/// Dashboard / Home Screen — Production Material Design 3 Toolkit Home Screen.
 library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-import '../core/colors.dart';
+import '../data/collections_data.dart';
+import '../data/converter_config.dart';
 import '../data/units_data.dart';
 import '../providers/converter_provider.dart';
 import '../providers/favorites_provider.dart';
 import '../providers/history_provider.dart';
+import '../providers/pinned_provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/usage_provider.dart';
 import '../services/conversion_service.dart';
+import '../services/refresh_service.dart';
 import '../services/smart_parse_service.dart';
 import '../utils/formatters.dart';
 import '../utils/responsive_helper.dart';
 import '../utils/search_helper.dart';
+import '../widgets/did_you_know_card.dart';
 import '../widgets/empty_state_widget.dart';
+import '../widgets/insights_banner.dart';
 import '../widgets/stitch_card.dart';
 import '../widgets/stitch_search_bar.dart';
 import '../widgets/user_avatar.dart';
+import 'collection_screen.dart';
 import 'converter_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -30,181 +36,14 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMixin {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   final ScrollController _scrollController = ScrollController();
-  int _activeFilterIndex = 0; // 0: Favorites, 1: Recent, 2: Popular, 3: Browse All
 
-  static IconData _getCategoryIcon(UnitCategory category) {
-    switch (category) {
-      // ── Existing Core ────────────────────────────────────────────
-      case UnitCategory.length:
-        return Icons.straighten_rounded;
-      case UnitCategory.weight:
-        return Icons.monitor_weight_rounded;
-      case UnitCategory.temperature:
-        return Icons.thermostat_rounded;
-      case UnitCategory.area:
-        return Icons.area_chart_rounded;
-      case UnitCategory.volume:
-        return Icons.opacity_rounded;
-      case UnitCategory.speed:
-        return Icons.speed_rounded;
-      case UnitCategory.data:
-        return Icons.sd_card_rounded;
-      case UnitCategory.time:
-        return Icons.schedule_rounded;
-      case UnitCategory.angle:
-        return Icons.explore_rounded;
-      case UnitCategory.energy:
-        return Icons.bolt_rounded;
-      case UnitCategory.power:
-        return Icons.electric_bolt_rounded;
-      case UnitCategory.pressure:
-        return Icons.compress_rounded;
-      case UnitCategory.force:
-        return Icons.fitness_center_rounded;
-      case UnitCategory.frequency:
-        return Icons.graphic_eq_rounded;
-      case UnitCategory.fuelEconomy:
-        return Icons.local_gas_station_rounded;
-      case UnitCategory.cooking:
-        return Icons.soup_kitchen_rounded;
-      case UnitCategory.shoeSize:
-        return Icons.roller_skating_rounded;
-      case UnitCategory.clothingSize:
-        return Icons.checkroom_rounded;
-      case UnitCategory.numberBase:
-        return Icons.numbers_rounded;
-      case UnitCategory.typography:
-        return Icons.text_fields_rounded;
-      // ── Electrical ──────────────────────────────────────────────
-      case UnitCategory.voltage:
-        return Icons.electrical_services_rounded;
-      case UnitCategory.current:
-        return Icons.power_rounded;
-      case UnitCategory.resistance:
-        return Icons.waves_rounded;
-      case UnitCategory.capacitance:
-        return Icons.battery_charging_full_rounded;
-      case UnitCategory.inductance:
-        return Icons.loop_rounded;
-      case UnitCategory.electricCharge:
-        return Icons.battery_full_rounded;
-      case UnitCategory.conductance:
-        return Icons.link_rounded;
-      // ── Light ────────────────────────────────────────────────────
-      case UnitCategory.illuminance:
-        return Icons.wb_sunny_rounded;
-      case UnitCategory.luminousFlux:
-        return Icons.lightbulb_rounded;
-      case UnitCategory.luminousIntensity:
-        return Icons.flashlight_on_rounded;
-      case UnitCategory.luminance:
-        return Icons.brightness_high_rounded;
-      // ── Heat ─────────────────────────────────────────────────────
-      case UnitCategory.specificHeat:
-        return Icons.whatshot_rounded;
-      case UnitCategory.thermalConductivity:
-        return Icons.device_thermostat_rounded;
-      case UnitCategory.thermalResistance:
-        return Icons.house_rounded;
-      case UnitCategory.heatFluxDensity:
-        return Icons.wb_incandescent_rounded;
-      // ── Physics ──────────────────────────────────────────────────
-      case UnitCategory.torque:
-        return Icons.settings_rounded;
-      case UnitCategory.momentum:
-        return Icons.rocket_launch_rounded;
-      case UnitCategory.angularVelocity:
-        return Icons.rotate_right_rounded;
-      case UnitCategory.density:
-        return Icons.water_drop_rounded;
-      case UnitCategory.surfaceTension:
-        return Icons.bubble_chart_rounded;
-      case UnitCategory.kinematicViscosity:
-        return Icons.oil_barrel_rounded;
-      case UnitCategory.dynamicViscosity:
-        return Icons.invert_colors_rounded;
-      case UnitCategory.acceleration:
-        return Icons.electric_car_rounded;
-      // ── Engineering ──────────────────────────────────────────────
-      case UnitCategory.flowRate:
-        return Icons.water_rounded;
-      case UnitCategory.massFlowRate:
-        return Icons.air_rounded;
-      // ── Radiation ────────────────────────────────────────────────
-      case UnitCategory.radioactivity:
-        return Icons.warning_amber_rounded;
-      case UnitCategory.radiationDose:
-        return Icons.health_and_safety_rounded;
-      case UnitCategory.radiationExposure:
-        return Icons.science_rounded;
-      // ── Astronomy ────────────────────────────────────────────────
-      case UnitCategory.astronomicalLength:
-        return Icons.public_rounded;
-      // ── Lifestyle ────────────────────────────────────────────────
-      case UnitCategory.pace:
-        return Icons.directions_run_rounded;
-      case UnitCategory.heartRate:
-        return Icons.favorite_rounded;
-      case UnitCategory.bloodSugar:
-        return Icons.bloodtype_rounded;
-      case UnitCategory.bloodPressure:
-        return Icons.monitor_heart_rounded;
-      case UnitCategory.bmi:
-        return Icons.person_rounded;
-      // ── Finance ──────────────────────────────────────────────────
-      case UnitCategory.percentageRatio:
-        return Icons.percent_rounded;
-      // ── Sound ────────────────────────────────────────────────────
-      case UnitCategory.soundLevel:
-        return Icons.volume_up_rounded;
-      // ── Concentration ────────────────────────────────────────────
-      case UnitCategory.concentration:
-        return Icons.science_rounded;
-      // ── Magnetic ─────────────────────────────────────────────────
-      case UnitCategory.magneticField:
-        return Icons.radar_rounded;
-      case UnitCategory.magneticFlux:
-        return Icons.blur_circular_rounded;
-      // ── Spectroscopy ─────────────────────────────────────────────
-      case UnitCategory.wavenumber:
-        return Icons.ssid_chart_rounded;
-    }
-  }
-
-  static Color _getCategoryIconColor(UnitCategory category) {
-    switch (category) {
-      case UnitCategory.length:
-        return AppColors.primary;
-      case UnitCategory.weight:
-        return AppColors.tertiary;
-      case UnitCategory.temperature:
-        return AppColors.error;
-      case UnitCategory.area:
-        return AppColors.areaIcon;
-      case UnitCategory.volume:
-        return AppColors.secondary;
-      case UnitCategory.speed:
-        return AppColors.speedIcon;
-      case UnitCategory.data:
-        return AppColors.dataIcon;
-      case UnitCategory.time:
-        return AppColors.timeIcon;
-      case UnitCategory.angle:
-        return AppColors.angleIcon;
-      case UnitCategory.energy:
-        return AppColors.energyIcon;
-      case UnitCategory.power:
-        return AppColors.powerIcon;
-      case UnitCategory.pressure:
-        return AppColors.pressureIcon;
-      default:
-        return AppColors.primary;
-    }
-  }
+  /// Default filter is Browse All (index 0).
+  /// Order: 0: Browse All, 1: Favorites, 2: Recent, 3: Popular
+  int _activeFilterIndex = 0;
 
   @override
   void initState() {
@@ -229,21 +68,25 @@ class _HomeScreenState extends State<HomeScreen> {
     String? presetToUnitName,
     double? presetInputValue,
   }) {
+    HapticFeedback.lightImpact();
     final converterProv = context.read<ConverterProvider>();
 
     context.read<UsageProvider>().trackCategoryUsage(category);
-
     converterProv.setCategory(category);
 
     if (presetFromUnitName != null) {
       final units = unitsData[category] ?? [];
-      final matched = units.where((u) => u.name.toLowerCase() == presetFromUnitName.toLowerCase()).toList();
+      final matched = units
+          .where((u) => u.name.toLowerCase() == presetFromUnitName.toLowerCase())
+          .toList();
       if (matched.isNotEmpty) converterProv.setFromUnit(matched.first);
     }
 
     if (presetToUnitName != null) {
       final units = unitsData[category] ?? [];
-      final matched = units.where((u) => u.name.toLowerCase() == presetToUnitName.toLowerCase()).toList();
+      final matched = units
+          .where((u) => u.name.toLowerCase() == presetToUnitName.toLowerCase())
+          .toList();
       if (matched.isNotEmpty) converterProv.setToUnit(matched.first);
     }
 
@@ -279,36 +122,112 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _showCategoryContextMenu(
+      BuildContext context, UnitCategory category, bool isFav, bool isPinned) {
+    HapticFeedback.mediumImpact();
+    final favProv = context.read<FavoritesProvider>();
+    final pinnedProv = context.read<PinnedProvider>();
+    final config = configFor(category);
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.outlineVariant,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 12),
+            ListTile(
+              leading: Icon(config.icon, color: config.primaryColor),
+              title: Text(
+                config.displayName,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+              subtitle: Text('${(unitsData[category] ?? []).length} units available'),
+            ),
+            const Divider(height: 1),
+            ListTile(
+              leading: Icon(
+                isFav ? Icons.star_rounded : Icons.star_outline_rounded,
+                color: isFav ? Theme.of(context).colorScheme.tertiary : null,
+              ),
+              title: Text(isFav ? 'Remove from Favorites' : 'Add to Favorites'),
+              onTap: () {
+                Navigator.pop(ctx);
+                favProv.toggleFavorite(category);
+              },
+            ),
+            ListTile(
+              leading: Icon(
+                isPinned ? Icons.push_pin_rounded : Icons.push_pin_outlined,
+                color: isPinned ? Theme.of(context).colorScheme.primary : null,
+              ),
+              title: Text(isPinned ? 'Unpin from Top' : 'Pin to Top'),
+              onTap: () {
+                Navigator.pop(ctx);
+                if (isPinned) {
+                  pinnedProv.unpin(category);
+                } else {
+                  pinnedProv.pin(category);
+                }
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.play_arrow_rounded),
+              title: const Text('Open Converter'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _openConverter(context, category);
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  bool get wantKeepAlive => true;
+
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final query = _searchController.text.trim();
     final settings = context.watch<SettingsProvider>();
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       body: SafeArea(
-        child: Consumer2<FavoritesProvider, HistoryProvider>(
-          builder: (context, favProv, historyProv, _) {
+        child: Consumer3<FavoritesProvider, HistoryProvider, PinnedProvider>(
+          builder: (context, favProv, historyProv, pinnedProv, _) {
             final recentEntries = historyProv.entries.take(5).toList();
-            final smartResult = query.isNotEmpty
-                ? SmartParseService.parse(query)
-                : null;
+            final smartResult = query.isNotEmpty ? SmartParseService.parse(query) : null;
             final showSmart = smartResult?.isRecognized == true;
-            final detailedResults = query.isNotEmpty
-                ? SearchHelper.searchDetailed(query)
-                : <CategorySearchResult>[];
+            final detailedResults =
+                query.isNotEmpty ? SearchHelper.searchDetailed(query) : <CategorySearchResult>[];
 
             List<UnitCategory> displayCategories;
             String filterSectionTitle;
 
             switch (_activeFilterIndex) {
-              case 0: // Favorites
+              case 1: // Favorites
                 filterSectionTitle = 'Favorite Categories (${favProv.favorites.length})';
-                displayCategories = UnitCategory.values
-                    .where((cat) => favProv.isFavorite(cat))
-                    .toList();
+                displayCategories =
+                    UnitCategory.values.where((cat) => favProv.isFavorite(cat)).toList();
                 break;
-              case 1: // Recent
+              case 2: // Recent
                 filterSectionTitle = 'Recently Opened';
                 final recentCatEnums = <UnitCategory>[];
                 for (final entry in historyProv.entries) {
@@ -319,7 +238,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 }
                 displayCategories = recentCatEnums;
                 break;
-              case 2: // Popular
+              case 3: // Popular
                 filterSectionTitle = 'Popular Converters';
                 displayCategories = const [
                   UnitCategory.length,
@@ -332,20 +251,23 @@ class _HomeScreenState extends State<HomeScreen> {
                   UnitCategory.time,
                 ];
                 break;
-              case 3: // Browse All
+              case 0: // Browse All (Default)
               default:
                 filterSectionTitle = 'Browse Categories';
                 displayCategories = UnitCategory.values;
                 break;
             }
 
-            return CustomScrollView(
-              controller: _scrollController,
-              slivers: [
-                // 1. TOP APP BAR / HEADER
+            return RefreshIndicator(
+              onRefresh: () => RefreshService.refreshApp(context),
+              child: CustomScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                controller: _scrollController,
+                slivers: [
+                // ── 1. HEADER / GREETING (24dp MARGINS) ─────────────────
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -373,7 +295,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                '250+ Units • Fast • Accurate • Offline',
+                                '300+ Units • 60 Categories • Offline',
                                 style: TextStyle(
                                   fontSize: 13,
                                   color: colorScheme.onSurfaceVariant,
@@ -388,10 +310,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
 
-                // 2. SEARCH BAR
+                // ── 2. SEARCH BAR (24dp MARGINS) ──────────────────────────
+                const SliverToBoxAdapter(child: SizedBox(height: 4)),
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
                     child: StitchSearchBar(
                       controller: _searchController,
                       focusNode: _searchFocusNode,
@@ -400,14 +323,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
 
-                const SliverToBoxAdapter(child: SizedBox(height: 16)),
+                const SliverToBoxAdapter(child: SizedBox(height: 24)),
 
-                // SEARCH MODE ACTIVE
+                // ── SEARCH MODE ACTIVE ────────────────────────────────────
                 if (query.isNotEmpty) ...[
                   if (showSmart)
                     SliverToBoxAdapter(
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
                         child: _SmartConvertCard(
                           result: smartResult!,
                           onTap: () => _onSmartResultTap(smartResult),
@@ -419,33 +342,35 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: EmptyStateWidget(
                         icon: Icons.search_off_rounded,
                         message: 'No matching converters found.',
-                        subtitle: 'Try searching by unit symbol or category',
+                        subtitle: 'Try searching by unit symbol, name, or category',
                       ),
                     ),
                   if (detailedResults.isNotEmpty)
                     SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                      padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
                       sliver: SliverList(
                         delegate: SliverChildBuilderDelegate(
                           (context, index) {
                             final res = detailedResults[index];
+                            final config = configFor(res.category);
                             return Container(
-                              margin: const EdgeInsets.only(bottom: 10),
+                              margin: const EdgeInsets.only(bottom: 12),
                               child: StitchCard(
                                 onTap: () => _openConverter(context, res.category),
                                 padding: const EdgeInsets.all(16),
+                                borderRadius: 16,
                                 child: Row(
                                   children: [
                                     Container(
                                       width: 40,
                                       height: 40,
                                       decoration: BoxDecoration(
-                                        color: _getCategoryIconColor(res.category).withValues(alpha: 0.15),
+                                        color: config.primaryColor.withValues(alpha: 0.15),
                                         shape: BoxShape.circle,
                                       ),
                                       child: Icon(
-                                        _getCategoryIcon(res.category),
-                                        color: _getCategoryIconColor(res.category),
+                                        config.icon,
+                                        color: config.primaryColor,
                                         size: 20,
                                       ),
                                     ),
@@ -486,67 +411,179 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                 ] else ...[
-                  // 3. QUICK ACTION HORIZONTAL CHIPS
+                  // ── 3. DID YOU KNOW? EDUCATIONAL CARD ────────────────────
+                  const SliverToBoxAdapter(
+                    child: DidYouKnowCard(),
+                  ),
+
+                  const SliverToBoxAdapter(child: SizedBox(height: 24)),
+
+                  // ── 4. INSIGHTS BANNER (24dp MARGINS) ────────────────────
+                  const SliverToBoxAdapter(
+                    child: InsightsBanner(),
+                  ),
+
+                  // ── 4. CURATED COLLECTIONS (SNAP SCROLLING) ──────────────
+                  const SliverToBoxAdapter(child: SizedBox(height: 24)),
                   SliverToBoxAdapter(
-                    child: SizedBox(
-                      height: 44,
-                      child: ListView(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        children: [
-                          _QuickFilterChip(
-                            label: 'Favorites',
-                            icon: Icons.star_rounded,
-                            isSelected: _activeFilterIndex == 0,
-                            onTap: () => setState(() => _activeFilterIndex = 0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          child: Text(
+                            'Curated Collections',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: colorScheme.onSurface,
+                              letterSpacing: -0.3,
+                            ),
                           ),
-                          const SizedBox(width: 10),
-                          _QuickFilterChip(
-                            label: 'Recent',
-                            icon: Icons.history_rounded,
-                            isSelected: _activeFilterIndex == 1,
-                            onTap: () => setState(() => _activeFilterIndex = 1),
+                        ),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          height: 90,
+                          child: ListView.separated(
+                            physics: const BouncingScrollPhysics(),
+                            scrollDirection: Axis.horizontal,
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
+                            itemCount: predefinedCollections.length,
+                            separatorBuilder: (context, index) => const SizedBox(width: 12),
+                            itemBuilder: (context, index) {
+                              final col = predefinedCollections[index];
+                              return _CollectionChipCard(collection: col);
+                            },
                           ),
-                          const SizedBox(width: 10),
-                          _QuickFilterChip(
-                            label: 'Popular',
-                            icon: Icons.bolt_rounded,
-                            isSelected: _activeFilterIndex == 2,
-                            onTap: () => setState(() => _activeFilterIndex = 2),
-                          ),
-                          const SizedBox(width: 10),
-                          _QuickFilterChip(
-                            label: 'Browse All',
-                            icon: Icons.grid_view_rounded,
-                            isSelected: _activeFilterIndex == 3,
-                            onTap: () => setState(() => _activeFilterIndex = 3),
-                          ),
-                        ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // ── 5. PINNED CONVERTERS (IF ANY) ───────────────────────
+                  if (pinnedProv.pinned.isNotEmpty) ...[
+                    const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.push_pin_rounded,
+                              size: 18,
+                              color: colorScheme.primary,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Pinned Converters',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                                color: colorScheme.onSurface,
+                                letterSpacing: -0.3,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SliverToBoxAdapter(child: SizedBox(height: 12)),
+                    SliverPadding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      sliver: SliverGrid(
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: ResponsiveHelper.isExpanded(context) ? 4 : 2,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                          childAspectRatio: ResponsiveHelper.isExpanded(context) ? 2.2 : 1.9,
+                        ),
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                            final cat = pinnedProv.pinned[index];
+                            final config = configFor(cat);
+                            return _CategoryTile(
+                              category: cat,
+                              config: config,
+                              isFav: favProv.isFavorite(cat),
+                              isPinned: true,
+                              onTap: () => _openConverter(context, cat),
+                              onLongPress: () =>
+                                  _showCategoryContextMenu(context, cat, favProv.isFavorite(cat), true),
+                            );
+                          },
+                          childCount: pinnedProv.pinned.length,
+                        ),
+                      ),
+                    ),
+                  ],
+
+                  const SliverToBoxAdapter(child: SizedBox(height: 24)),
+
+                  // ── 6. STICKY SEGMENTED FILTER BAR ──────────────────────
+                  SliverPersistentHeader(
+                    pinned: true,
+                    delegate: _StickyFilterHeaderDelegate(
+                      child: SizedBox(
+                        height: 48,
+                        child: ListView(
+                          scrollDirection: Axis.horizontal,
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          children: [
+                            _QuickFilterChip(
+                              label: 'Browse All',
+                              icon: Icons.grid_view_rounded,
+                              isSelected: _activeFilterIndex == 0,
+                              onTap: () => setState(() => _activeFilterIndex = 0),
+                            ),
+                            const SizedBox(width: 10),
+                            _QuickFilterChip(
+                              label: 'Favorites',
+                              icon: Icons.star_rounded,
+                              isSelected: _activeFilterIndex == 1,
+                              onTap: () => setState(() => _activeFilterIndex = 1),
+                            ),
+                            const SizedBox(width: 10),
+                            _QuickFilterChip(
+                              label: 'Recent',
+                              icon: Icons.history_rounded,
+                              isSelected: _activeFilterIndex == 2,
+                              onTap: () => setState(() => _activeFilterIndex = 2),
+                            ),
+                            const SizedBox(width: 10),
+                            _QuickFilterChip(
+                              label: 'Popular',
+                              icon: Icons.bolt_rounded,
+                              isSelected: _activeFilterIndex == 3,
+                              onTap: () => setState(() => _activeFilterIndex = 3),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
 
                   const SliverToBoxAdapter(child: SizedBox(height: 24)),
 
-                  // 4. FREQUENTLY USED CAROUSEL
+                  // ── 7. FREQUENTLY USED CAROUSEL ──────────────────────────
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
                       child: Row(
                         children: [
                           Text(
                             'Frequently Used',
                             style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w600,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
                               color: colorScheme.onSurface,
+                              letterSpacing: -0.3,
                             ),
                           ),
                           const Spacer(),
                           TextButton(
                             onPressed: () {
                               _scrollController.animateTo(
-                                320,
+                                360,
                                 duration: const Duration(milliseconds: 300),
                                 curve: Curves.easeOutCubic,
                               );
@@ -554,7 +591,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             child: Text(
                               'See More',
                               style: TextStyle(
-                                fontSize: 15,
+                                fontSize: 14,
                                 fontWeight: FontWeight.w500,
                                 color: colorScheme.primary,
                               ),
@@ -567,24 +604,32 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   const SliverToBoxAdapter(child: SizedBox(height: 12)),
 
+                  // FREQUENTLY USED EMPTY STATE / LIST
                   SliverToBoxAdapter(
                     child: Builder(
                       builder: (context) {
                         final usageProv = context.watch<UsageProvider>();
-                        final topCategories = usageProv.getTopCategories(limit: 4);
+                        final topCategories = usageProv.getTopCategories(limit: 6);
 
                         if (topCategories.isEmpty) {
                           return Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
-                            child: StitchCard(
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
+                            child: Container(
                               padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: colorScheme.surfaceContainerLow,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: colorScheme.outlineVariant.withValues(alpha: 0.3),
+                                ),
+                              ),
                               child: Row(
                                 children: [
                                   Container(
                                     width: 44,
                                     height: 44,
                                     decoration: BoxDecoration(
-                                      color: colorScheme.primary.withValues(alpha: 0.15),
+                                      color: colorScheme.primary.withValues(alpha: 0.12),
                                       shape: BoxShape.circle,
                                     ),
                                     child: Icon(
@@ -595,12 +640,26 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                   const SizedBox(width: 14),
                                   Expanded(
-                                    child: Text(
-                                      'Start converting units and your most-used categories will appear here.',
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        color: colorScheme.onSurfaceVariant,
-                                      ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'No frequently used converters yet.',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600,
+                                            color: colorScheme.onSurface,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          'When you start converting, your favorite categories will appear here.',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: colorScheme.onSurfaceVariant,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ],
@@ -612,22 +671,24 @@ class _HomeScreenState extends State<HomeScreen> {
                         return SizedBox(
                           height: 120,
                           child: ListView.separated(
+                            physics: const BouncingScrollPhysics(),
                             scrollDirection: Axis.horizontal,
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
                             itemCount: topCategories.length,
                             separatorBuilder: (context, index) => const SizedBox(width: 14),
                             itemBuilder: (context, index) {
                               final entry = topCategories[index];
                               final category = entry.key;
                               final count = entry.value;
+                              final config = configFor(category);
 
                               return _FrequentlyUsedCard(
                                 key: ValueKey(category.name),
                                 category: category,
-                                title: category.displayName,
+                                title: config.displayName,
                                 unitCount: count == 1 ? 'Used 1 time' : 'Used $count times',
-                                borderColor: _getCategoryIconColor(category),
-                                icon: _getCategoryIcon(category),
+                                borderColor: config.primaryColor,
+                                icon: config.icon,
                                 onTap: () => _openConverter(context, category),
                               );
                             },
@@ -639,16 +700,17 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   const SliverToBoxAdapter(child: SizedBox(height: 24)),
 
-                  // 5. FILTERED CATEGORIES (BENTO GRID STYLE)
+                  // ── 8. BENTO GRID OF CATEGORIES ──────────────────────────
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
                       child: Text(
                         filterSectionTitle,
                         style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w600,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
                           color: colorScheme.onSurface,
+                          letterSpacing: -0.3,
                         ),
                       ),
                     ),
@@ -659,23 +721,23 @@ class _HomeScreenState extends State<HomeScreen> {
                   if (displayCategories.isEmpty)
                     SliverToBoxAdapter(
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                         child: EmptyStateWidget(
-                          icon: _activeFilterIndex == 0
+                          icon: _activeFilterIndex == 1
                               ? Icons.star_border_rounded
                               : Icons.history_rounded,
-                          message: _activeFilterIndex == 0
+                          message: _activeFilterIndex == 1
                               ? 'No Favorites Saved Yet'
                               : 'No Recent Conversions',
-                          subtitle: _activeFilterIndex == 0
-                              ? 'Tap the star icon on any category to add it to your favorites.'
+                          subtitle: _activeFilterIndex == 1
+                              ? 'Tap the star icon or long-press any category to add it to your favorites.'
                               : 'Conversions you perform will automatically appear here.',
                         ),
                       ),
                     )
                   else
                     SliverPadding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
                       sliver: SliverGrid(
                         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: ResponsiveHelper.isExpanded(context) ? 4 : 2,
@@ -686,60 +748,17 @@ class _HomeScreenState extends State<HomeScreen> {
                         delegate: SliverChildBuilderDelegate((context, index) {
                           final category = displayCategories[index];
                           final isFav = favProv.isFavorite(category);
+                          final isPinned = pinnedProv.isPinned(category);
+                          final config = configFor(category);
 
-                          return StitchCard(
+                          return _CategoryTile(
+                            category: category,
+                            config: config,
+                            isFav: isFav,
+                            isPinned: isPinned,
                             onTap: () => _openConverter(context, category),
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                            borderRadius: 12,
-                            child: Row(
-                              children: [
-                                Icon(
-                                  _getCategoryIcon(category),
-                                  color: isFav ? Colors.amber : colorScheme.onSurfaceVariant,
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        category.displayName,
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w500,
-                                          color: colorScheme.onSurface,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      Text(
-                                        '${category.unitSymbols.length} Units',
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: colorScheme.onSurfaceVariant,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                GestureDetector(
-                                  onTap: () {
-                                    HapticFeedback.selectionClick();
-                                    favProv.toggleFavorite(category);
-                                  },
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(4),
-                                    child: Icon(
-                                      isFav ? Icons.star_rounded : Icons.star_outline_rounded,
-                                      color: isFav ? Colors.amber : colorScheme.outline,
-                                      size: 18,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
+                            onLongPress: () =>
+                                _showCategoryContextMenu(context, category, isFav, isPinned),
                           );
                         }, childCount: displayCategories.length),
                       ),
@@ -747,28 +766,30 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   const SliverToBoxAdapter(child: SizedBox(height: 24)),
 
-                  // 6. RECENT CONVERSIONS
+                  // ── 9. RECENT CONVERSIONS ──────────────────────────────
                   if (recentEntries.isNotEmpty) ...[
                     SliverToBoxAdapter(
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
                         child: Text(
                           'Recent Conversions',
                           style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w600,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
                             color: colorScheme.onSurface,
+                            letterSpacing: -0.3,
                           ),
                         ),
                       ),
                     ),
                     const SliverToBoxAdapter(child: SizedBox(height: 12)),
                     SliverPadding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
                       sliver: SliverList(
                         delegate: SliverChildBuilderDelegate((context, index) {
                           final entry = recentEntries[index];
                           final cat = entry.categoryEnum;
+                          final config = configFor(cat);
                           return Container(
                             margin: const EdgeInsets.only(bottom: 10),
                             child: StitchCard(
@@ -779,12 +800,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                     width: 44,
                                     height: 44,
                                     decoration: BoxDecoration(
-                                      color: colorScheme.surfaceContainerHighest,
+                                      color: config.primaryColor.withValues(alpha: 0.12),
                                       shape: BoxShape.circle,
                                     ),
                                     child: Icon(
-                                      _getCategoryIcon(cat),
-                                      color: _getCategoryIconColor(cat),
+                                      config.icon,
+                                      color: config.primaryColor,
                                       size: 20,
                                     ),
                                   ),
@@ -840,6 +861,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       color: colorScheme.onSurfaceVariant,
                                       size: 20,
                                     ),
+                                    tooltip: 'Refresh conversion',
                                     onPressed: () {
                                       HapticFeedback.lightImpact();
                                       _openConverter(
@@ -861,10 +883,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SliverToBoxAdapter(child: SizedBox(height: 20)),
                   ],
 
-                  // 7. PRIVACY & OFFLINE CARD
+                  // ── 11. PRIVACY & OFFLINE CARD ────────────────────────────
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
+                      padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
@@ -898,8 +920,195 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ],
               ],
-            );
-          },
+            ),
+          );
+        },
+      ),
+    ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// COMPONENT WIDGETS
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _StickyFilterHeaderDelegate extends SliverPersistentHeaderDelegate {
+  final Widget child;
+
+  _StickyFilterHeaderDelegate({required this.child});
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return Container(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      alignment: Alignment.center,
+      child: child,
+    );
+  }
+
+  @override
+  double get maxExtent => 48;
+
+  @override
+  double get minExtent => 48;
+
+  @override
+  bool shouldRebuild(covariant _StickyFilterHeaderDelegate oldDelegate) {
+    return oldDelegate.child != child;
+  }
+}
+
+class _CategoryTile extends StatelessWidget {
+  final UnitCategory category;
+  final ConverterConfig config;
+  final bool isFav;
+  final bool isPinned;
+  final VoidCallback onTap;
+  final VoidCallback onLongPress;
+
+  const _CategoryTile({
+    required this.category,
+    required this.config,
+    required this.isFav,
+    required this.isPinned,
+    required this.onTap,
+    required this.onLongPress,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return GestureDetector(
+      onLongPress: onLongPress,
+      child: StitchCard(
+        onTap: onTap,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        borderRadius: 12,
+        child: Row(
+          children: [
+            Icon(
+              config.icon,
+              color: isFav ? Theme.of(context).colorScheme.tertiary : config.primaryColor,
+              size: 20,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    config.displayName,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: colorScheme.onSurface,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    '${(unitsData[category] ?? []).length} Units',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            GestureDetector(
+              onTap: () {
+                HapticFeedback.selectionClick();
+                context.read<FavoritesProvider>().toggleFavorite(category);
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(4),
+                child: Icon(
+                  isFav ? Icons.star_rounded : Icons.star_outline_rounded,
+                  color: isFav ? colorScheme.tertiary : colorScheme.outline,
+                  size: 18,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CollectionChipCard extends StatelessWidget {
+  final Collection collection;
+
+  const _CollectionChipCard({required this.collection});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => CollectionScreen(collection: collection),
+          ),
+        );
+      },
+      child: Container(
+        width: 148,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: colorScheme.surfaceContainerHigh,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: colorScheme.outlineVariant.withValues(alpha: 0.4),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Text(
+                  collection.emoji,
+                  style: const TextStyle(fontSize: 20),
+                ),
+                const Spacer(),
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 12,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ],
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  collection.name,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: colorScheme.onSurface,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  '${collection.categories.length} converters',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
@@ -922,6 +1131,7 @@ class _QuickFilterChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return GestureDetector(
       onTap: () {
@@ -930,26 +1140,36 @@ class _QuickFilterChip extends StatelessWidget {
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? colorScheme.primary : colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
-          borderRadius: BorderRadius.circular(24),
+          color: isSelected
+              ? colorScheme.primary
+              : (isDark
+                  ? colorScheme.surfaceContainerHigh
+                  : colorScheme.surfaceContainerLow),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected
+                ? colorScheme.primary
+                : colorScheme.outlineVariant.withValues(alpha: 0.35),
+            width: 1,
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               icon,
-              color: isSelected ? Colors.white : colorScheme.onSurfaceVariant,
-              size: 18,
+              color: isSelected ? colorScheme.onPrimary : colorScheme.onSurfaceVariant,
+              size: 16,
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 6),
             Text(
               label,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 13,
                 fontWeight: FontWeight.w500,
-                color: isSelected ? Colors.white : colorScheme.onSurfaceVariant,
+                color: isSelected ? colorScheme.onPrimary : colorScheme.onSurfaceVariant,
               ),
             ),
           ],
@@ -1010,6 +1230,8 @@ class _FrequentlyUsedCard extends StatelessWidget {
                     fontWeight: FontWeight.w700,
                     color: colorScheme.onSurface,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 Text(
                   unitCount,
@@ -1045,10 +1267,15 @@ class _SmartConvertCard extends StatelessWidget {
     final units = unitsData[category] ?? [];
     final fromName = result.fromUnitName ?? '';
     final toName = result.toUnitName ?? '';
-    final fromUnit = units.firstWhere((u) => u.name.toLowerCase() == fromName.toLowerCase(), orElse: () => units.first);
-    final toUnit = units.firstWhere((u) => u.name.toLowerCase() == toName.toLowerCase(), orElse: () => units.length > 1 ? units[1] : units.first);
+    final fromUnit = units.firstWhere(
+        (u) => u.name.toLowerCase() == fromName.toLowerCase(),
+        orElse: () => units.first);
+    final toUnit = units.firstWhere(
+        (u) => u.name.toLowerCase() == toName.toLowerCase(),
+        orElse: () => units.length > 1 ? units[1] : units.first);
     final inputVal = result.amount ?? 0.0;
-    final convertedResult = ConversionService.convert(inputVal, fromUnit, toUnit, category);
+    final convertedResult =
+        ConversionService.convert(inputVal, fromUnit, toUnit, category);
     final outputStr = Formatters.formatResult(convertedResult.result);
 
     return GestureDetector(

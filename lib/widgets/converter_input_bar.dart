@@ -100,18 +100,22 @@ class ConverterInputBar extends StatelessWidget {
                 ),
                 isDense: true,
                 suffixIcon: hasInput
-                    ? GestureDetector(
-                        onTap: () {
-                          controller.clear();
-                          onInputChanged('');
-                          focusNode.requestFocus();
-                        },
-                        child: Icon(
-                          Icons.close_rounded,
-                          size: 20,
-                          color: isDark
-                              ? AppColors.darkTextSecondary
-                              : AppColors.lightTextSecondary,
+                    ? Semantics(
+                        label: 'Clear input',
+                        button: true,
+                        child: GestureDetector(
+                          onTap: () {
+                            controller.clear();
+                            onInputChanged('');
+                            focusNode.requestFocus();
+                          },
+                          child: Icon(
+                            Icons.close_rounded,
+                            size: 20,
+                            color: isDark
+                                ? AppColors.darkTextSecondary
+                                : AppColors.lightTextSecondary,
+                          ),
                         ),
                       )
                     : null,

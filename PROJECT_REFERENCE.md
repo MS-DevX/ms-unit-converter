@@ -8,8 +8,8 @@ Complete file-by-file reference. Each entry lists the file path, its purpose, ke
 
 ### `pubspec.yaml`
 - **Purpose:** Project metadata, version, dependencies, launcher icons config
-- **Version field:** `line 19` — `version: 2.0.0+2` (versionName + versionCode)
-- **Key dependencies:** provider, shared_preferences, google_mobile_ads, in_app_purchase, sensors_plus, share_plus, package_info_plus, url_launcher, flutter_launcher_icons
+- **Version field:** `line 19` — `version: 2.2.0+6` (versionName + versionCode)
+- **Key dependencies:** provider, shared_preferences, google_mobile_ads, share_plus, package_info_plus, url_launcher, sensors_plus, flutter_compass, geolocator, geomag, in_app_update, quick_actions
 - **Launcher icons config:** lines 58-70 — source image `assets/icon.png`
 - **To bump version:** Edit line 19
 

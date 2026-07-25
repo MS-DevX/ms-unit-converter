@@ -317,7 +317,7 @@ class CompassService {
             _sensorTimeout?.cancel();
             _mx = _lowPassFilter(_mx, event.x, _filterConstant);
             _my = _lowPassFilter(_my, event.y, _filterConstant);
-            _mz = _lowPassFilter(_mz, _mz * 0 + event.z, _filterConstant);
+            _mz = _lowPassFilter(_mz, event.z, _filterConstant);
             _computeHeading();
           },
           onError: (_) {

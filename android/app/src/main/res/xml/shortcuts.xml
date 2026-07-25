@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Static app icon shortcuts for MS Unit Converter.
+  These appear when the user long-presses the app icon on Android 7.1+.
+  Dynamic shortcuts (based on recent usage) are added at runtime via
+  ShortcutsService.updateDynamicShortcuts().
+-->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+
+  <!-- Length Converter -->
+  <shortcut
+    android:shortcutId="shortcut_length"
+    android:enabled="true"
+    android:icon="@mipmap/ic_launcher"
+    android:shortcutShortLabel="@string/shortcut_length_short"
+    android:shortcutLongLabel="@string/shortcut_length_long"
+    android:shortcutDisabledMessage="@string/shortcut_disabled">
+    <intent
+      android:action="android.intent.action.VIEW"
+      android:targetPackage="com.msdevx.unitconverter"
+      android:targetClass="com.msdevx.unitconverter.MainActivity"
+      android:data="msunitconverter://shortcut/length" />
+    <categories android:name="android.shortcut.conversation" />
+  </shortcut>
+
+  <!-- Weight Converter -->
+  <shortcut
+    android:shortcutId="shortcut_weight"
+    android:enabled="true"
+    android:icon="@mipmap/ic_launcher"
+    android:shortcutShortLabel="@string/shortcut_weight_short"
+    android:shortcutLongLabel="@string/shortcut_weight_long"
+    android:shortcutDisabledMessage="@string/shortcut_disabled">
+    <intent
+      android:action="android.intent.action.VIEW"
+      android:targetPackage="com.msdevx.unitconverter"
+      android:targetClass="com.msdevx.unitconverter.MainActivity"
+      android:data="msunitconverter://shortcut/weight" />
+    <categories android:name="android.shortcut.conversation" />
+  </shortcut>
+
+  <!-- Currency Screen -->
+  <shortcut
+    android:shortcutId="shortcut_currency"
+    android:enabled="true"
+    android:icon="@mipmap/ic_launcher"
+    android:shortcutShortLabel="@string/shortcut_currency_short"
+    android:shortcutLongLabel="@string/shortcut_currency_long"
+    android:shortcutDisabledMessage="@string/shortcut_disabled">
+    <intent
+      android:action="android.intent.action.VIEW"
+      android:targetPackage="com.msdevx.unitconverter"
+      android:targetClass="com.msdevx.unitconverter.MainActivity"
+      android:data="msunitconverter://shortcut/currency" />
+    <categories android:name="android.shortcut.conversation" />
+  </shortcut>
+
+  <!-- Compass Screen -->
+  <shortcut
+    android:shortcutId="shortcut_compass"
+    android:enabled="true"
+    android:icon="@mipmap/ic_launcher"
+    android:shortcutShortLabel="@string/shortcut_compass_short"
+    android:shortcutLongLabel="@string/shortcut_compass_long"
+    android:shortcutDisabledMessage="@string/shortcut_disabled">
+    <intent
+      android:action="android.intent.action.VIEW"
+      android:targetPackage="com.msdevx.unitconverter"
+      android:targetClass="com.msdevx.unitconverter.MainActivity"
+      android:data="msunitconverter://shortcut/compass" />
+    <categories android:name="android.shortcut.conversation" />
+  </shortcut>
+
+</shortcuts>

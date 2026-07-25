@@ -200,10 +200,10 @@ class _QuickConversionCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.swap_horiz_rounded,
                     size: 16,
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.onPrimary,
                   ),
                 ),
 

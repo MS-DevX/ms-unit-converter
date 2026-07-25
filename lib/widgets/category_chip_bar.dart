@@ -12,15 +12,6 @@ import '../core/colors.dart';
 import '../data/units_data.dart';
 
 /// A horizontally scrollable row of animated category chips.
-///
-/// Example usage:
-/// ```dart
-/// CategoryChipBar(
-///   categories: UnitCategory.values,
-///   selected: provider.selectedCategory,
-///   onSelected: provider.setCategory,
-/// )
-/// ```
 class CategoryChipBar extends StatelessWidget {
   /// All categories to render as chips.
   final List<UnitCategory> categories;
@@ -47,7 +38,7 @@ class CategoryChipBar extends StatelessWidget {
       height: 48,
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 24),
         child: Row(
           children: categories.map((category) {
             return _CategoryChip(
@@ -82,20 +73,20 @@ class _CategoryChip extends StatelessWidget {
     final Color bgColor = isSelected
         ? AppColors.primary
         : isDark
-        ? AppColors.darkSurface
-        : AppColors.lightBackground;
+            ? AppColors.surfaceContainerHigh
+            : AppColors.surfaceContainerLow;
 
     final Color borderColor = isSelected
         ? AppColors.primary
         : isDark
-        ? AppColors.borderDark
-        : AppColors.borderLight;
+            ? AppColors.outlineVariant.withValues(alpha: 0.3)
+            : AppColors.outlineVariant.withValues(alpha: 0.4);
 
     final Color textColor = isSelected
-        ? Colors.white
+        ? Theme.of(context).colorScheme.onPrimary
         : isDark
-        ? AppColors.darkTextSecondary
-        : AppColors.lightTextSecondary;
+            ? AppColors.textSecondary
+            : AppColors.lightTextSecondary;
 
     void handleTap() {
       HapticFeedback.selectionClick();
@@ -111,21 +102,12 @@ class _CategoryChip extends StatelessWidget {
         child: GestureDetector(
           onTap: handleTap,
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
+            duration: const Duration(milliseconds: 150),
             curve: Curves.easeInOut,
             decoration: BoxDecoration(
               color: bgColor,
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: borderColor, width: 1.5),
-              boxShadow: isSelected
-                  ? [
-                      BoxShadow(
-                        color: AppColors.primary.withValues(alpha: 0.30),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ]
-                  : const [],
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: borderColor, width: 1),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             child: Row(
@@ -134,10 +116,10 @@ class _CategoryChip extends StatelessWidget {
                 Text(category.icon, style: const TextStyle(fontSize: 14)),
                 const SizedBox(width: 6),
                 AnimatedDefaultTextStyle(
-                  duration: const Duration(milliseconds: 200),
+                  duration: const Duration(milliseconds: 150),
                   style: TextStyle(
                     fontSize: 13,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                     color: textColor,
                     letterSpacing: 0.1,
                   ),

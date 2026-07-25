@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Unit Converter</string>
+
+    <!-- App shortcut labels -->
+    <string name="shortcut_length_short">Length</string>
+    <string name="shortcut_length_long">Length Converter</string>
+    <string name="shortcut_weight_short">Weight</string>
+    <string name="shortcut_weight_long">Weight Converter</string>
+    <string name="shortcut_currency_short">Currency</string>
+    <string name="shortcut_currency_long">Currency Exchange</string>
+    <string name="shortcut_compass_short">Compass</string>
+    <string name="shortcut_compass_long">Compass &amp; Direction</string>
+    <string name="shortcut_disabled">This shortcut is currently unavailable</string>
+</resources>

@@ -47,9 +47,14 @@ class _ConverterScreenState extends State<ConverterScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        _inputFocusNode.requestFocus();
+        context.read<ConverterProvider>().addListener(_onConverterChanged);
       }
     });
+  }
+
+  void _onConverterChanged() {
+    if (!mounted) return;
+    _autoSaveHistory(context.read<ConverterProvider>());
   }
 
   @override
@@ -57,6 +62,9 @@ class _ConverterScreenState extends State<ConverterScreen> {
     _historyDebounce?.cancel();
     _inputController.dispose();
     _inputFocusNode.dispose();
+    try {
+      context.read<ConverterProvider>().removeListener(_onConverterChanged);
+    } catch (_) {}
     super.dispose();
   }
 
@@ -248,7 +256,7 @@ class _ConverterScreenState extends State<ConverterScreen> {
     final fromSymbol = converter.fromUnit?.symbol ?? '';
     final toSymbol = converter.toUnit?.symbol ?? '';
     final text =
-        '${converter.inputValue} $fromSymbol = ${Formatters.formatResult(res.result)} $toSymbol (${converter.selectedCategory.displayName}) via MS Unit Converter';
+        '${converter.inputValue} $fromSymbol = ${Formatters.formatResult(res.result)} $toSymbol (${converter.selectedCategory.displayName}) via Unit Converter';
 
     SharePlus.instance.share(ShareParams(text: text));
   }
@@ -257,8 +265,6 @@ class _ConverterScreenState extends State<ConverterScreen> {
   Widget build(BuildContext context) {
     final converter = context.watch<ConverterProvider>();
     final colorScheme = Theme.of(context).colorScheme;
-
-    _autoSaveHistory(converter);
 
     final fromUnit = converter.fromUnit;
     final toUnit = converter.toUnit;
@@ -276,6 +282,7 @@ class _ConverterScreenState extends State<ConverterScreen> {
         leading: Navigator.canPop(context)
             ? IconButton(
                 icon: Icon(Icons.arrow_back_rounded, color: colorScheme.primary),
+                tooltip: 'Back',
                 onPressed: () => Navigator.pop(context),
               )
             : null,
@@ -339,7 +346,6 @@ class _ConverterScreenState extends State<ConverterScreen> {
                           child: TextField(
                             controller: _inputController,
                             focusNode: _inputFocusNode,
-                            autofocus: true,
                             keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
                             style: TextStyle(
                               fontSize: 36,
@@ -424,17 +430,17 @@ class _ConverterScreenState extends State<ConverterScreen> {
                           decoration: BoxDecoration(
                             color: colorScheme.primary,
                             shape: BoxShape.circle,
-                            boxShadow: const [
+                            boxShadow: [
                               BoxShadow(
-                                color: Color(0x25000000),
+                                color: colorScheme.primary.withValues(alpha: 0.3),
                                 blurRadius: 8,
-                                offset: Offset(0, 4),
+                                offset: const Offset(0, 4),
                               ),
                             ],
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.swap_vert_rounded,
-                            color: Colors.white,
+                            color: colorScheme.onPrimary,
                             size: 26,
                           ),
                         ),
@@ -625,7 +631,7 @@ class _ConverterScreenState extends State<ConverterScreen> {
                             children: [
                               Icon(
                                 isFav ? Icons.star_rounded : Icons.star_outline_rounded,
-                                color: isFav ? Colors.amber : colorScheme.onSurfaceVariant,
+                                color: isFav ? colorScheme.tertiary : colorScheme.onSurfaceVariant,
                                 size: 18,
                               ),
                               const SizedBox(height: 3),
@@ -634,7 +640,7 @@ class _ConverterScreenState extends State<ConverterScreen> {
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
-                                  color: isFav ? Colors.amber : colorScheme.onSurfaceVariant,
+                                  color: isFav ? colorScheme.tertiary : colorScheme.onSurfaceVariant,
                                 ),
                               ),
                             ],

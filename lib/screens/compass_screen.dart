@@ -18,7 +18,7 @@ class CompassScreen extends StatefulWidget {
   State<CompassScreen> createState() => _CompassScreenState();
 }
 
-class _CompassScreenState extends State<CompassScreen> {
+class _CompassScreenState extends State<CompassScreen> with AutomaticKeepAliveClientMixin {
   double _heading = 0.0;
   String _cardinal = 'N';
   double _accuracy = 15.0;
@@ -116,7 +116,11 @@ class _CompassScreenState extends State<CompassScreen> {
   }
 
   @override
+  bool get wantKeepAlive => true;
+
+  @override
   Widget build(BuildContext context) {
+    super.build(context);
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(

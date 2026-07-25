@@ -16,6 +16,9 @@ import '../services/in_app_update_service.dart';
 import '../utils/formatters.dart';
 import '../widgets/stitch_card.dart';
 import '../widgets/user_avatar.dart';
+import 'custom_converter_screen.dart';
+import 'home_customization_screen.dart';
+import 'notes_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -41,7 +44,7 @@ class SettingsScreen extends StatelessWidget {
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.error,
-              foregroundColor: Colors.white,
+              foregroundColor: Theme.of(context).colorScheme.onError,
             ),
             onPressed: () {
               HapticFeedback.mediumImpact();
@@ -385,14 +388,6 @@ class SettingsScreen extends StatelessWidget {
                             color: colorScheme.onSurface,
                           ),
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'Local Profile • No Cloud Sync',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                        ),
                       ],
                     ),
                   ),
@@ -470,6 +465,57 @@ class SettingsScreen extends StatelessWidget {
                   ],
                 ),
                 onTap: () => _showPrecisionSelector(context, settings),
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // TOOLKIT & CUSTOMIZATION SECTION
+            const _SectionHeader(title: 'TOOLKIT & CUSTOMIZATION'),
+            const SizedBox(height: 8),
+            StitchCard(
+              padding: EdgeInsets.zero,
+              child: Column(
+                children: [
+                  _SettingsListTile(
+                    icon: Icons.dashboard_customize_rounded,
+                    title: 'Customize Home Screen',
+                    subtitle: 'Reorder sections & toggle visibility',
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const HomeCustomizationScreen()),
+                      );
+                    },
+                  ),
+                  Divider(height: 1, indent: 56, color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                  _SettingsListTile(
+                    icon: Icons.note_alt_rounded,
+                    title: 'Conversion Notes',
+                    subtitle: 'Manage saved calculation notes',
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const NotesScreen()),
+                      );
+                    },
+                  ),
+                  Divider(height: 1, indent: 56, color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                  _SettingsListTile(
+                    icon: Icons.exposure_rounded,
+                    title: 'Custom Converters',
+                    subtitle: 'Create linear ratio converters',
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const CustomConverterScreen()),
+                      );
+                    },
+                  ),
+                ],
               ),
             ),
 

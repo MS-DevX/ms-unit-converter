@@ -81,7 +81,9 @@ class SettingsProvider extends ChangeNotifier {
 
       final precisionIndex =
           prefs.getInt(AppConstants.decimalPrecisionKey) ?? 0;
-      decimalPrecision = DecimalPrecision.values[precisionIndex];
+      if (precisionIndex >= 0 && precisionIndex < DecimalPrecision.values.length) {
+        decimalPrecision = DecimalPrecision.values[precisionIndex];
+      }
       Formatters.setPrecision(decimalPrecision);
 
       isCosmicTheme =

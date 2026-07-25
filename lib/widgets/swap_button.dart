@@ -66,7 +66,7 @@ class _SwapButtonState extends State<SwapButton>
               color: AppColors.primary,
               shape: BoxShape.circle,
               border: Border.all(
-                color: Colors.white.withValues(alpha: 0.2),
+                color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.2),
                 width: 2,
               ),
               boxShadow: [
@@ -82,9 +82,9 @@ class _SwapButtonState extends State<SwapButton>
                 ),
               ],
             ),
-            child: const Icon(
+            child: Icon(
               Icons.swap_vert_rounded,
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.onPrimary,
               size: 24,
             ),
           ),

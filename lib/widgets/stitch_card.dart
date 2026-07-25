@@ -38,11 +38,11 @@ class _StitchCardState extends State<StitchCard> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor = widget.backgroundColor ??
-        (isDark ? AppColors.customCard : Colors.white);
+        (isDark ? AppColors.customCard : Theme.of(context).colorScheme.surface);
 
     final defaultBorderColor = isDark
-        ? AppColors.outlineVariant.withValues(alpha: 0.2)
-        : const Color(0xFFE2E8F0);
+        ? AppColors.outlineVariant.withValues(alpha: 0.4)
+        : AppColors.borderLight;
 
     Widget cardContent = Container(
       padding: widget.padding,
@@ -80,6 +80,11 @@ class _StitchCardState extends State<StitchCard> {
         ),
       );
     }
+
+    cardContent = ClipRRect(
+      borderRadius: BorderRadius.circular(widget.borderRadius),
+      child: cardContent,
+    );
 
     if (widget.onTap == null) return cardContent;
 

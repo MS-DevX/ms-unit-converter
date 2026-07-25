@@ -61,26 +61,42 @@ class _UnitSearchDialogState extends State<UnitSearchDialog> {
           icon: Icon(Icons.close_rounded, color: textColor),
           onPressed: () => Navigator.pop(context),
         ),
-        title: SizedBox(
-          height: 40,
-          child: TextField(
-            controller: _searchController,
-            autofocus: true,
-            decoration: InputDecoration(
-              hintText: 'Search units\u2026',
-              hintStyle: TextStyle(
-                fontSize: 17,
-                color: isDark
-                    ? AppColors.darkTextSecondary.withValues(alpha: 0.5)
-                    : AppColors.lightTextSecondary.withValues(alpha: 0.5),
-              ),
-              border: InputBorder.none,
-              filled: false,
-              contentPadding: EdgeInsets.zero,
-              isDense: true,
+        title: Container(
+          height: 44,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            color: isDark
+                ? Theme.of(context).colorScheme.surfaceContainerHigh
+                : Theme.of(context).colorScheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.35),
+              width: 1,
             ),
-            style: TextStyle(fontSize: 17, color: textColor),
-            onChanged: (v) => setState(() => _query = v),
+          ),
+          child: Center(
+            child: TextField(
+              controller: _searchController,
+              autofocus: true,
+              textAlignVertical: TextAlignVertical.center,
+              decoration: InputDecoration(
+                hintText: 'Search units\u2026',
+                hintStyle: TextStyle(
+                  fontSize: 15,
+                  color: isDark
+                      ? AppColors.darkTextSecondary.withValues(alpha: 0.5)
+                      : AppColors.lightTextSecondary.withValues(alpha: 0.5),
+                ),
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                filled: false,
+                contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                isDense: true,
+              ),
+              style: TextStyle(fontSize: 15, color: textColor),
+              onChanged: (v) => setState(() => _query = v),
+            ),
           ),
         ),
       ),

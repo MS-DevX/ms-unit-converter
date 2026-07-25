@@ -1,0 +1,192 @@
+{
+  "meter": {
+    "symbol": "m",
+    "definition": "The base unit of length in the International System of Units (SI). Defined as the length of the path traveled by light in a vacuum in 1/299,792,458 of a second.",
+    "history": "Originally defined in 1793 as one ten-millionth of the distance from the equator to the North Pole.",
+    "used_for": "Measuring distances, room dimensions, height, and scientific lengths.",
+    "examples": [
+      "Height of a standard doorway (~2 meters)",
+      "Length of an Olympic swimming pool (50 meters)"
+    ]
+  },
+  "kilometer": {
+    "symbol": "km",
+    "definition": "A unit of length equal to 1,000 meters.",
+    "history": "Introduced during the French Revolution as part of the metric system adoption.",
+    "used_for": "Road distances, geographical measurements, and athletic races.",
+    "examples": [
+      "A typical 5K running race (5 km)",
+      "Distance between city centers"
+    ]
+  },
+  "centimeter": {
+    "symbol": "cm",
+    "definition": "A unit of length equal to 1/100th of a meter.",
+    "history": "Part of the centimetre-gram-second (CGS) system of units.",
+    "used_for": "Body measurements, clothing dimensions, and small objects.",
+    "examples": [
+      "Width of a standard credit card (~8.5 cm)",
+      "Diameter of a US penny (~1.9 cm)"
+    ]
+  },
+  "inch": {
+    "symbol": "in",
+    "definition": "A unit of length equal to 2.54 centimeters in the imperial and US customary systems.",
+    "history": "Historically defined as the width of a human thumb, later standardized to 3 barleycorns.",
+    "used_for": "Screen sizes, display dimensions, rain measurement, and carpentry.",
+    "examples": [
+      "Smartphone screen size (e.g. 6.1 inches)",
+      "Standard paper width (8.5 inches)"
+    ]
+  },
+  "foot": {
+    "symbol": "ft",
+    "definition": "A unit of length equal to 12 inches or 0.3048 meters.",
+    "history": "Based on the average human foot length; standardized internationally in 1959.",
+    "used_for": "Aviation altitudes, human height in US/UK, and building construction.",
+    "examples": [
+      "Cruising altitude of a commercial airliner (~35,000 feet)",
+      "Average height of an adult male (~5 feet 9 inches)"
+    ]
+  },
+  "mile": {
+    "symbol": "mi",
+    "definition": "A unit of distance equal to 5,280 feet or 1,609.344 meters.",
+    "history": "Derived from the Roman 'mille passus', meaning one thousand double-steps.",
+    "used_for": "Highway speed limits and long-distance travel in US and UK.",
+    "examples": [
+      "Full marathon distance (26.2 miles)",
+      "Distance traveled at 60 mph in one hour"
+    ]
+  },
+  "kilogram": {
+    "symbol": "kg",
+    "definition": "The SI base unit of mass. Defined by fixing the numerical value of Planck's constant (h) to 6.62607015×10⁻³⁴ J·s.",
+    "history": "Redefined in 2019 away from the physical International Prototype Kilogram (IPK) cylinder.",
+    "used_for": "Body weight, grocery items, cargo, and scientific mass measurements.",
+    "examples": [
+      "A standard bag of flour or sugar (1 kg)",
+      "Average weight of a newborn human (~3.5 kg)"
+    ]
+  },
+  "gram": {
+    "symbol": "g",
+    "definition": "A unit of mass equal to 1/1,000th of a kilogram.",
+    "history": "Originally defined in 1795 as the absolute weight of a volume of pure water equal to the cube of the hundredth part of a meter at freezing.",
+    "used_for": "Nutritional labels, cooking recipes, precious metals, and medication.",
+    "examples": [
+      "Mass of a standard paperclip (~1 gram)",
+      "Recommended daily salt intake (~5 grams)"
+    ]
+  },
+  "pound": {
+    "symbol": "lb",
+    "definition": "A unit of mass equal to 16 ounces or exactly 0.45359237 kilograms.",
+    "history": "From the Latin 'libra pondo', meaning weight measured in pounds.",
+    "used_for": "Body weight in US/UK, produce weight, and shipping packages.",
+    "examples": [
+      "Weight of a loaf of bread (~1 pound)",
+      "Standard bowling ball weight (10 to 16 lbs)"
+    ]
+  },
+  "ounce": {
+    "symbol": "oz",
+    "definition": "A unit of mass equal to 1/16th of a pound or ~28.3495 grams.",
+    "history": "Derived from the Latin 'uncia', meaning a twelfth part.",
+    "used_for": "Food portioning, mail weights, and small package shipping.",
+    "examples": [
+      "A single slice of cheese (~1 ounce)",
+      "Standard letter weight limit for basic postage (1 oz)"
+    ]
+  },
+  "celsius": {
+    "symbol": "°C",
+    "definition": "A temperature scale where 0 °C is the freezing point of water and 100 °C is the boiling point at standard sea level pressure.",
+    "history": "Invented by Swedish astronomer Anders Celsius in 1742.",
+    "used_for": "Everyday weather, medical body temperature, and scientific applications outside the US.",
+    "examples": [
+      "Normal human body temperature (37 °C)",
+      "Comfortable indoor room temperature (20–22 °C)"
+    ]
+  },
+  "fahrenheit": {
+    "symbol": "°F",
+    "definition": "A temperature scale where water freezes at 32 °F and boils at 212 °F under standard atmospheric pressure.",
+    "history": "Proposed in 1724 by physicist Daniel Gabriel Fahrenheit based on an ice-salt mixture.",
+    "used_for": "Weather forecasts, cooking ovens, and thermostat settings in the United States.",
+    "examples": [
+      "Baking temperature for cakes (~350 °F)",
+      "Hot summer weather day (90–100 °F)"
+    ]
+  },
+  "kelvin": {
+    "symbol": "K",
+    "definition": "The SI base unit of thermodynamic temperature. Absolute zero is 0 K.",
+    "history": "Named after William Thomson, 1st Baron Kelvin, who wrote of the need for an absolute thermometric scale in 1848.",
+    "used_for": "Physics, astronomy, thermodynamics, and light color temperature.",
+    "examples": [
+      "Freezing point of water (273.15 K)",
+      "Warm white LED light bulb color (2700–3000 K)"
+    ]
+  },
+  "byte": {
+    "symbol": "B",
+    "definition": "A unit of digital information consisting of 8 bits.",
+    "history": "Coined by Werner Buchholz in 1956 during the design of the IBM Stretch computer.",
+    "used_for": "Character encoding (ASCII/UTF-8), memory addressing, and file size measurements.",
+    "examples": [
+      "A single ASCII text character (1 byte)",
+      "Short text message (~100–200 bytes)"
+    ]
+  },
+  "gigabyte": {
+    "symbol": "GB",
+    "definition": "A unit of digital data storage equal to 1,000,000,000 bytes (decimal) or 1,073,741,824 bytes (binary/GiB).",
+    "history": "Became common in personal computing during the late 1990s as hard drives expanded.",
+    "used_for": "RAM capacity, smartphone storage, video files, and internet data plans.",
+    "examples": [
+      "High-definition movie download (~2–4 GB)",
+      "Standard smartphone RAM (6 GB to 12 GB)"
+    ]
+  },
+  "liter": {
+    "symbol": "L",
+    "definition": "A metric unit of volume equal to 1 cubic decimeter (1,000 cubic centimeters).",
+    "history": "Introduced in France in 1795 as one of the original metric units.",
+    "used_for": "Beverages, engine displacement, fuel tank capacity, and liquid measurements.",
+    "examples": [
+      "Standard bottled soda size (2 liters)",
+      "Automobile fuel tank capacity (45–65 liters)"
+    ]
+  },
+  "gallon_us": {
+    "symbol": "gal",
+    "definition": "A US unit of liquid volume equal to 128 US fluid ounces or ~3.7854 liters.",
+    "history": "Derived from the English wine gallon standard used before 1824.",
+    "used_for": "Gasoline sales, milk jugs, and paint containers in the United States.",
+    "examples": [
+      "Standard jug of milk in US supermarkets (1 gallon)",
+      "Standard paint bucket (1 gallon or 5 gallons)"
+    ]
+  },
+  "watt": {
+    "symbol": "W",
+    "definition": "The SI unit of power, equal to 1 joule per second.",
+    "history": "Named after James Watt, inventor of the steam engine condenser.",
+    "used_for": "Light bulb ratings, electrical appliance power consumption, and audio speaker power.",
+    "examples": [
+      "LED light bulb power consumption (9–12 W)",
+      "Microwave oven heating power (800–1200 W)"
+    ]
+  },
+  "volt": {
+    "symbol": "V",
+    "definition": "The SI unit of electric potential difference and electromotive force.",
+    "history": "Named in honor of Alessandro Volta, inventor of the voltaic pile (first chemical battery).",
+    "used_for": "Battery voltage ratings, household electrical outlets, and electronic circuits.",
+    "examples": [
+      "Standard AA battery voltage (1.5 V)",
+      "USB charging port voltage (5 V DC)"
+    ]
+  }
+}

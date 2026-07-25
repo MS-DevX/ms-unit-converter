@@ -54,7 +54,7 @@ class DecimalPrecisionBar extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                      color: isSelected ? Colors.white : AppColors.onSurfaceVariant,
+                      color: isSelected ? Theme.of(context).colorScheme.onPrimary : AppColors.onSurfaceVariant,
                     ),
                   ),
                   selectedColor: AppColors.primary,

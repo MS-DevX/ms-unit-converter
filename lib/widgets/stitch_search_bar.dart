@@ -1,14 +1,36 @@
-/// Google Stitch Material 3 Search Bar component.
+/// Premium pill-shaped search bar with consistent styling across all screens.
 library;
 
 import 'package:flutter/material.dart';
 
-class StitchSearchBar extends StatelessWidget {
+/// Reusable search bar matching the Google Stitch Material 3 design language.
+///
+/// Fully rounded pill shape, zero shadows, theme-aware backgrounds,
+/// and generous internal padding for a premium feel.
+class StitchSearchBar extends StatefulWidget {
+  /// Text editing controller for the input field.
   final TextEditingController controller;
+
+  /// Optional focus node for programmatic focus control.
   final FocusNode? focusNode;
+
+  /// Called when the text changes on every keystroke.
   final ValueChanged<String>? onChanged;
+
+  /// Called when the clear button is tapped.
   final VoidCallback? onClear;
+
+  /// Hint text displayed when the field is empty.
   final String hintText;
+
+  /// Horizontal margin outside the search bar container.
+  final double horizontalMargin;
+
+  /// Whether to autofocus the field when it appears.
+  final bool autofocus;
+
+  /// Optional prefix icon override.
+  final IconData? prefixIcon;
 
   const StitchSearchBar({
     super.key,
@@ -17,58 +39,123 @@ class StitchSearchBar extends StatelessWidget {
     this.onChanged,
     this.onClear,
     this.hintText = 'Search units or categories...',
+    this.horizontalMargin = 0,
+    this.autofocus = false,
+    this.prefixIcon,
   });
 
   @override
+  State<StitchSearchBar> createState() => _StitchSearchBarState();
+}
+
+class _StitchSearchBarState extends State<StitchSearchBar> {
+  bool _hasText = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _hasText = widget.controller.text.isNotEmpty;
+    widget.controller.addListener(_onTextChanged);
+  }
+
+  @override
+  void didUpdateWidget(covariant StitchSearchBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller.removeListener(_onTextChanged);
+      widget.controller.addListener(_onTextChanged);
+      _hasText = widget.controller.text.isNotEmpty;
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_onTextChanged);
+    super.dispose();
+  }
+
+  void _onTextChanged() {
+    final nowHasText = widget.controller.text.isNotEmpty;
+    if (nowHasText != _hasText) {
+      setState(() => _hasText = nowHasText);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final bgColor = isDark ? const Color(0xFF1B2336) : const Color(0xFFF3F5F9);
+    final iconColor = isDark ? Colors.white54 : Colors.black45;
+    final hintColor = isDark ? Colors.white38 : Colors.black38;
+    final textColor = isDark ? Colors.white : Colors.black87;
 
     return Container(
-      height: 56,
+      margin: EdgeInsets.symmetric(horizontal: widget.horizontalMargin),
+      height: 62,
       decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: colorScheme.outlineVariant.withValues(alpha: 0.3),
-          width: 1,
-        ),
+        color: bgColor,
+        borderRadius: BorderRadius.circular(30),
       ),
       child: TextField(
-        controller: controller,
-        focusNode: focusNode,
-        onChanged: onChanged,
+        controller: widget.controller,
+        focusNode: widget.focusNode,
+        autofocus: widget.autofocus,
+        onChanged: widget.onChanged,
+        textAlignVertical: TextAlignVertical.center,
         style: TextStyle(
-          color: colorScheme.onSurface,
-          fontSize: 16,
+          color: textColor,
+          fontSize: 17,
+          fontWeight: FontWeight.w400,
         ),
         decoration: InputDecoration(
-          hintText: hintText,
+          filled: true,
+          fillColor: Colors.transparent,
+          isDense: true,
+          hintText: widget.hintText,
           hintStyle: TextStyle(
-            color: colorScheme.outline.withValues(alpha: 0.6),
-            fontSize: 16,
+            color: hintColor,
+            fontSize: 17,
+            fontWeight: FontWeight.w400,
+            letterSpacing: 0.2,
           ),
-          prefixIcon: Icon(
-            Icons.search_rounded,
-            color: colorScheme.outline,
-            size: 22,
+          prefixIcon: Padding(
+            padding: const EdgeInsets.only(left: 18, right: 4),
+            child: Icon(
+              widget.prefixIcon ?? Icons.search_rounded,
+              color: iconColor,
+              size: 26,
+            ),
           ),
-          suffixIcon: controller.text.isNotEmpty
-              ? IconButton(
-                  icon: Icon(
-                    Icons.clear_rounded,
-                    color: colorScheme.onSurfaceVariant,
-                    size: 18,
+          prefixIconConstraints: const BoxConstraints(
+            minWidth: 48,
+            minHeight: 48,
+          ),
+          suffixIcon: _hasText
+              ? Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: IconButton(
+                    icon: Icon(
+                      Icons.clear_rounded,
+                      color: iconColor,
+                      size: 20,
+                    ),
+                    tooltip: 'Clear search',
+                    onPressed: () {
+                      widget.controller.clear();
+                      widget.onClear?.call();
+                    },
                   ),
-                  onPressed: () {
-                    controller.clear();
-                    if (onClear != null) onClear!();
-                  },
                 )
               : null,
+          suffixIconConstraints: const BoxConstraints(
+            minWidth: 40,
+            minHeight: 40,
+          ),
           border: InputBorder.none,
           enabledBorder: InputBorder.none,
           focusedBorder: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
         ),
       ),
     );

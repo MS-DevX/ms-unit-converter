@@ -9,7 +9,7 @@ import '../core/colors.dart';
 import '../providers/settings_provider.dart';
 
 /// Renders local user avatar photo or fallback initials circle.
-class UserAvatar extends StatelessWidget {
+class UserAvatar extends StatefulWidget {
   final double size;
   final VoidCallback? onTap;
   final bool showEditBadge;
@@ -22,19 +22,35 @@ class UserAvatar extends StatelessWidget {
   });
 
   @override
+  State<UserAvatar> createState() => _UserAvatarState();
+}
+
+class _UserAvatarState extends State<UserAvatar> {
+  bool? _cachedExists;
+  String _cachedPath = '';
+
+  bool _checkFileExists(String path) {
+    if (path != _cachedPath) {
+      _cachedPath = path;
+      _cachedExists = path.isNotEmpty && File(path).existsSync();
+    }
+    return _cachedExists ?? false;
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Consumer<SettingsProvider>(
       builder: (context, settings, _) {
         final avatarPath = settings.userAvatarPath;
-        final hasImage = avatarPath.isNotEmpty && File(avatarPath).existsSync();
+        final hasImage = _checkFileExists(avatarPath);
         final initials = settings.getInitials();
 
         Widget avatarCore;
 
         if (hasImage) {
           avatarCore = Container(
-            width: size,
-            height: size,
+            width: widget.size,
+            height: widget.size,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               image: DecorationImage(
@@ -45,26 +61,31 @@ class UserAvatar extends StatelessWidget {
             ),
           );
         } else {
+          final colorScheme = Theme.of(context).colorScheme;
           avatarCore = Container(
-            width: size,
-            height: size,
-            decoration: const BoxDecoration(
-              color: AppColors.primaryContainer,
+            width: widget.size,
+            height: widget.size,
+            decoration: BoxDecoration(
+              color: colorScheme.primary.withValues(alpha: 0.15),
               shape: BoxShape.circle,
+              border: Border.all(
+                color: colorScheme.primary.withValues(alpha: 0.4),
+                width: 1.5,
+              ),
             ),
             alignment: Alignment.center,
             child: Text(
               initials,
               style: TextStyle(
-                fontSize: size * 0.42,
+                fontSize: widget.size * 0.42,
                 fontWeight: FontWeight.w700,
-                color: AppColors.primary,
+                color: colorScheme.primary,
               ),
             ),
           );
         }
 
-        if (showEditBadge) {
+        if (widget.showEditBadge) {
           avatarCore = Stack(
             children: [
               avatarCore,
@@ -77,9 +98,9 @@ class UserAvatar extends StatelessWidget {
                     color: AppColors.primary,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.camera_alt_rounded,
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.onPrimary,
                     size: 14,
                   ),
                 ),
@@ -88,9 +109,9 @@ class UserAvatar extends StatelessWidget {
           );
         }
 
-        if (onTap != null) {
+        if (widget.onTap != null) {
           return GestureDetector(
-            onTap: onTap,
+            onTap: widget.onTap,
             child: avatarCore,
           );
         }

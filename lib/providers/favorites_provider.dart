@@ -22,8 +22,12 @@ class FavoritesProvider extends ChangeNotifier {
 
   /// Loads persisted favourites from [FavoritesService].
   Future<void> loadFavorites() async {
-    final indices = await FavoritesService.getFavorites();
-    _favorites = indices.map((i) => UnitCategory.values[i]).toSet();
+    try {
+      final indices = await FavoritesService.getFavorites();
+      _favorites = indices.map((i) => UnitCategory.values[i]).toSet();
+    } catch (_) {
+      _favorites = {};
+    }
     notifyListeners();
   }
 

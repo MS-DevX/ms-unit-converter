@@ -10,6 +10,7 @@ import '../data/units_data.dart';
 import '../models/history_entry.dart';
 import '../providers/converter_provider.dart';
 import '../providers/history_provider.dart';
+import '../services/refresh_service.dart';
 import '../utils/formatters.dart';
 import '../widgets/empty_state_widget.dart';
 import '../widgets/stitch_card.dart';
@@ -23,7 +24,7 @@ class HistoryScreen extends StatefulWidget {
   State<HistoryScreen> createState() => _HistoryScreenState();
 }
 
-class _HistoryScreenState extends State<HistoryScreen> {
+class _HistoryScreenState extends State<HistoryScreen> with AutomaticKeepAliveClientMixin {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   int _selectedFilterIndex = 0; // 0: All, 1: Units, 2: Currency
@@ -97,7 +98,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.error,
-              foregroundColor: Colors.white,
+              foregroundColor: Theme.of(context).colorScheme.onError,
             ),
             onPressed: () {
               HapticFeedback.mediumImpact();
@@ -112,7 +113,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   @override
+  bool get wantKeepAlive => true;
+
+  @override
   Widget build(BuildContext context) {
+    super.build(context);
     final historyProv = context.watch<HistoryProvider>();
     final colorScheme = Theme.of(context).colorScheme;
     final searchQuery = _searchController.text.trim().toLowerCase();
@@ -142,66 +147,73 @@ class _HistoryScreenState extends State<HistoryScreen> {
           if (historyProv.entries.isNotEmpty)
             IconButton(
               icon: const Icon(Icons.delete_sweep_rounded),
+              tooltip: 'Clear all history',
               onPressed: () => _confirmClearHistory(context, historyProv),
             ),
         ],
       ),
       body: SafeArea(
-        child: Column(
-          children: [
-            // SEARCH & FILTER BAR
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
-              child: Column(
-                children: [
-                  StitchSearchBar(
-                    controller: _searchController,
-                    focusNode: _searchFocusNode,
-                    onClear: () => setState(() {}),
-                    hintText: 'Search conversion history...',
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
+        child: RefreshIndicator(
+          onRefresh: () => RefreshService.refreshApp(context),
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+                  child: Column(
                     children: [
-                      _FilterChip(
-                        label: 'All (${historyProv.entries.length})',
-                        isSelected: _selectedFilterIndex == 0,
-                        onTap: () => setState(() => _selectedFilterIndex = 0),
+                      StitchSearchBar(
+                        controller: _searchController,
+                        focusNode: _searchFocusNode,
+                        onClear: () => setState(() {}),
+                        hintText: 'Search conversion history...',
                       ),
-                      const SizedBox(width: 8),
-                      _FilterChip(
-                        label: 'Units',
-                        isSelected: _selectedFilterIndex == 1,
-                        onTap: () => setState(() => _selectedFilterIndex = 1),
-                      ),
-                      const SizedBox(width: 8),
-                      _FilterChip(
-                        label: 'Currency',
-                        isSelected: _selectedFilterIndex == 2,
-                        onTap: () => setState(() => _selectedFilterIndex = 2),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          _FilterChip(
+                            label: 'All (${historyProv.entries.length})',
+                            isSelected: _selectedFilterIndex == 0,
+                            onTap: () => setState(() => _selectedFilterIndex = 0),
+                          ),
+                          const SizedBox(width: 8),
+                          _FilterChip(
+                            label: 'Units',
+                            isSelected: _selectedFilterIndex == 1,
+                            onTap: () => setState(() => _selectedFilterIndex = 1),
+                          ),
+                          const SizedBox(width: 8),
+                          _FilterChip(
+                            label: 'Currency',
+                            isSelected: _selectedFilterIndex == 2,
+                            onTap: () => setState(() => _selectedFilterIndex = 2),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ],
+                ),
               ),
-            ),
-
-            // HISTORY LIST OR EMPTY STATE
-            Expanded(
-              child: entries.isEmpty
-                  ? EmptyStateWidget(
-                      icon: Icons.history_rounded,
-                      message: historyProv.entries.isEmpty
-                          ? 'No Conversion History'
-                          : 'No Matching History',
-                      subtitle: historyProv.entries.isEmpty
-                          ? 'Conversions you perform will automatically appear here.'
-                          : 'Try searching with a different unit or category name.',
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-                      itemCount: entries.length,
-                      itemBuilder: (context, index) {
+              if (entries.isEmpty)
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: EmptyStateWidget(
+                    icon: Icons.history_rounded,
+                    message: historyProv.entries.isEmpty
+                        ? 'No Conversion History'
+                        : 'No Matching History',
+                    subtitle: historyProv.entries.isEmpty
+                        ? 'Conversions you perform will automatically appear here.'
+                        : 'Try searching with a different unit or category name.',
+                  ),
+                )
+              else
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
                         final entry = entries[index];
 
                         return Dismissible(
@@ -214,7 +226,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                               color: AppColors.error,
                               borderRadius: BorderRadius.circular(16),
                             ),
-                            child: const Icon(Icons.delete_rounded, color: Colors.white, size: 24),
+                            child: Icon(Icons.delete_rounded, color: Theme.of(context).colorScheme.onError, size: 24),
                           ),
                           onDismissed: (_) {
                             HapticFeedback.lightImpact();
@@ -292,6 +304,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                       color: colorScheme.outlineVariant,
                                       size: 20,
                                     ),
+                                    tooltip: 'Delete entry',
                                     onPressed: () {
                                       HapticFeedback.lightImpact();
                                       historyProv.removeEntry(entry.id);
@@ -303,12 +316,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           ),
                         );
                       },
+                        childCount: entries.length,
+                      ),
                     ),
+                  ),
+              ],
             ),
-          ],
+          ),
         ),
-      ),
-    );
+      );
   }
 }
 
@@ -326,6 +342,7 @@ class _FilterChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return GestureDetector(
       onTap: () {
@@ -336,15 +353,25 @@ class _FilterChip extends StatelessWidget {
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? colorScheme.primary : colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+          color: isSelected
+              ? colorScheme.primary
+              : (isDark
+                  ? colorScheme.surfaceContainerHigh
+                  : colorScheme.surfaceContainerLow),
           borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected
+                ? colorScheme.primary
+                : colorScheme.outlineVariant.withValues(alpha: 0.35),
+            width: 1,
+          ),
         ),
         child: Text(
           label,
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w500,
-            color: isSelected ? Colors.white : colorScheme.onSurfaceVariant,
+            color: isSelected ? colorScheme.onPrimary : colorScheme.onSurfaceVariant,
           ),
         ),
       ),

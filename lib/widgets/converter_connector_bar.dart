@@ -93,19 +93,19 @@ class _ConverterConnectorBarState extends State<ConverterConnectorBar>
               builder: (context, child) {
                 return Opacity(
                   opacity: _pulseAnimation.value,
-                  child: const Icon(
+                  child: Icon(
                     Icons.arrow_forward_rounded,
-                    color: Colors.white70,
+                    color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.7),
                     size: 20,
                   ),
                 );
               },
             ),
             const SizedBox(width: 8),
-            const Text(
+            Text(
               'All conversions',
               style: TextStyle(
-                color: Colors.white70,
+                color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.7),
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
                 letterSpacing: 0.3,
@@ -130,12 +130,12 @@ class _ConverterConnectorBarState extends State<ConverterConnectorBar>
                     height: 28,
                     margin: const EdgeInsets.only(right: 10),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
+                      color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.2),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.swap_vert_rounded,
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onPrimary,
                       size: 16,
                     ),
                   ),

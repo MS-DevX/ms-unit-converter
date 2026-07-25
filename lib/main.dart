@@ -1,20 +1,25 @@
 library;
 
+import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'core/theme.dart';
+import 'providers/collections_provider.dart';
 import 'providers/converter_provider.dart';
 import 'providers/currency_provider.dart';
+import 'providers/custom_converter_provider.dart';
 import 'providers/favorites_provider.dart';
 import 'providers/history_provider.dart';
+import 'providers/home_layout_provider.dart';
+import 'providers/notes_provider.dart';
+import 'providers/pinned_provider.dart';
 import 'providers/settings_provider.dart';
 import 'providers/usage_provider.dart';
 import 'screens/splash_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
   runApp(const MyApp());
 }
 
@@ -32,6 +37,11 @@ class _MyAppState extends State<MyApp> {
   final HistoryProvider _history = HistoryProvider();
   final FavoritesProvider _favorites = FavoritesProvider();
   final UsageProvider _usage = UsageProvider();
+  final CollectionsProvider _collections = CollectionsProvider();
+  final PinnedProvider _pinned = PinnedProvider();
+  final NotesProvider _notes = NotesProvider();
+  final CustomConverterProvider _customConverters = CustomConverterProvider();
+  final HomeLayoutProvider _homeLayout = HomeLayoutProvider();
 
   @override
   void initState() {
@@ -40,6 +50,11 @@ class _MyAppState extends State<MyApp> {
     _history.loadHistory();
     _favorites.loadFavorites();
     _usage.loadUsage();
+    _collections.loadCollections();
+    _pinned.loadPinned();
+    _notes.loadNotes();
+    _customConverters.load();
+    _homeLayout.load();
   }
 
   @override
@@ -52,16 +67,30 @@ class _MyAppState extends State<MyApp> {
         ChangeNotifierProvider<HistoryProvider>.value(value: _history),
         ChangeNotifierProvider<FavoritesProvider>.value(value: _favorites),
         ChangeNotifierProvider<UsageProvider>.value(value: _usage),
+        ChangeNotifierProvider<CollectionsProvider>.value(value: _collections),
+        ChangeNotifierProvider<PinnedProvider>.value(value: _pinned),
+        ChangeNotifierProvider<NotesProvider>.value(value: _notes),
+        ChangeNotifierProvider<CustomConverterProvider>.value(
+            value: _customConverters),
+        ChangeNotifierProvider<HomeLayoutProvider>.value(
+            value: _homeLayout),
       ],
       child: Consumer<SettingsProvider>(
         builder: (context, settings, _) {
-          return MaterialApp(
-            debugShowCheckedModeBanner: false,
-            title: 'MS Unit Converter',
-            theme: AppTheme.lightTheme,
-            darkTheme: AppTheme.darkTheme,
-            themeMode: settings.themeMode,
-            home: const SplashScreen(),
+          return DynamicColorBuilder(
+            builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
+              final lightTheme = AppTheme.buildLight(lightDynamic);
+              final darkTheme = AppTheme.buildDark(darkDynamic);
+
+              return MaterialApp(
+                debugShowCheckedModeBanner: false,
+                title: 'Unit Converter',
+                theme: lightTheme,
+                darkTheme: darkTheme,
+                themeMode: settings.themeMode,
+                home: const SplashScreen(),
+              );
+            },
           );
         },
       ),

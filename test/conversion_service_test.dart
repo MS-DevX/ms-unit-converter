@@ -26,78 +26,82 @@ void main() {
   late UnitModel px, pt, em;
 
   setUp(() {
-    km = getUnits(UnitCategory.length)[1];
-    m = getUnits(UnitCategory.length)[0];
-    cm = getUnits(UnitCategory.length)[2];
-    kg = getUnits(UnitCategory.weight)[0];
-    lb = getUnits(UnitCategory.weight)[4];
-    c = getUnits(UnitCategory.temperature)[0];
-    f = getUnits(UnitCategory.temperature)[1];
-    k = getUnits(UnitCategory.temperature)[2];
-    byte = getUnits(UnitCategory.data)[1];
-    kb = getUnits(UnitCategory.data)[2];
-    kmPerL = getUnits(UnitCategory.fuelEconomy)[0];
-    lPer100km = getUnits(UnitCategory.fuelEconomy)[1];
-    mpgUs = getUnits(UnitCategory.fuelEconomy)[2];
-    mpgUk = getUnits(UnitCategory.fuelEconomy)[3];
+    UnitModel findUnit(UnitCategory cat, String name) =>
+        getUnits(cat).firstWhere((u) => u.name.toLowerCase() == name.toLowerCase(),
+            orElse: () => getUnits(cat).first);
 
-    sqm = getUnits(UnitCategory.area)[0];
-    sqft = getUnits(UnitCategory.area)[4];
-    acre = getUnits(UnitCategory.area)[7];
-    hectare = getUnits(UnitCategory.area)[8];
+    km = findUnit(UnitCategory.length, 'Kilometer');
+    m = findUnit(UnitCategory.length, 'Meter');
+    cm = findUnit(UnitCategory.length, 'Centimeter');
+    kg = findUnit(UnitCategory.weight, 'Kilogram');
+    lb = findUnit(UnitCategory.weight, 'Pound');
+    c = findUnit(UnitCategory.temperature, 'Celsius');
+    f = findUnit(UnitCategory.temperature, 'Fahrenheit');
+    k = findUnit(UnitCategory.temperature, 'Kelvin');
+    byte = findUnit(UnitCategory.data, 'Byte');
+    kb = findUnit(UnitCategory.data, 'Kilobyte');
+    kmPerL = findUnit(UnitCategory.fuelEconomy, 'Kilometers per Liter');
+    lPer100km = findUnit(UnitCategory.fuelEconomy, 'Liters per 100km');
+    mpgUs = findUnit(UnitCategory.fuelEconomy, 'MPG (US)');
+    mpgUk = findUnit(UnitCategory.fuelEconomy, 'MPG (UK)');
 
-    liter = getUnits(UnitCategory.volume)[0];
-    galUs = getUnits(UnitCategory.volume)[3];
-    cup = getUnits(UnitCategory.volume)[5];
+    sqm = findUnit(UnitCategory.area, 'Square Meter');
+    sqft = findUnit(UnitCategory.area, 'Square Foot');
+    acre = findUnit(UnitCategory.area, 'Acre');
+    hectare = findUnit(UnitCategory.area, 'Hectare');
 
-    kmh = getUnits(UnitCategory.speed)[1];
-    mph = getUnits(UnitCategory.speed)[2];
+    liter = findUnit(UnitCategory.volume, 'Liter');
+    galUs = findUnit(UnitCategory.volume, 'Gallon (US)');
+    cup = findUnit(UnitCategory.volume, 'Cup');
 
-    hour = getUnits(UnitCategory.time)[3];
-    minute = getUnits(UnitCategory.time)[2];
-    day = getUnits(UnitCategory.time)[4];
+    kmh = findUnit(UnitCategory.speed, 'Kilometers per Hour');
+    mph = findUnit(UnitCategory.speed, 'Miles per Hour');
 
-    degree = getUnits(UnitCategory.angle)[1];
-    radian = getUnits(UnitCategory.angle)[0];
+    hour = findUnit(UnitCategory.time, 'Hour');
+    minute = findUnit(UnitCategory.time, 'Minute');
+    day = findUnit(UnitCategory.time, 'Day');
 
-    joule = getUnits(UnitCategory.energy)[0];
-    calorie = getUnits(UnitCategory.energy)[2];
-    kwh = getUnits(UnitCategory.energy)[3];
+    degree = findUnit(UnitCategory.angle, 'Degree');
+    radian = findUnit(UnitCategory.angle, 'Radian');
 
-    watt = getUnits(UnitCategory.power)[0];
-    hp = getUnits(UnitCategory.power)[3];
+    joule = findUnit(UnitCategory.energy, 'Joule');
+    calorie = findUnit(UnitCategory.energy, 'Calorie');
+    kwh = findUnit(UnitCategory.energy, 'Kilowatt-hour');
 
-    bar = getUnits(UnitCategory.pressure)[2];
-    psi = getUnits(UnitCategory.pressure)[3];
-    atm = getUnits(UnitCategory.pressure)[4];
-    kpa = getUnits(UnitCategory.pressure)[1];
+    watt = findUnit(UnitCategory.power, 'Watt');
+    hp = findUnit(UnitCategory.power, 'Horsepower');
 
-    newton = getUnits(UnitCategory.force)[0];
-    lbf = getUnits(UnitCategory.force)[2];
+    bar = findUnit(UnitCategory.pressure, 'Bar');
+    psi = findUnit(UnitCategory.pressure, 'PSI');
+    atm = findUnit(UnitCategory.pressure, 'Atmosphere');
+    kpa = findUnit(UnitCategory.pressure, 'Kilopascal');
 
-    hz = getUnits(UnitCategory.frequency)[0];
-    khz = getUnits(UnitCategory.frequency)[1];
+    newton = findUnit(UnitCategory.force, 'Newton');
+    lbf = findUnit(UnitCategory.force, 'Pound-force');
 
-    cupUs = getUnits(UnitCategory.cooking)[0];
-    tbsp = getUnits(UnitCategory.cooking)[1];
-    gram = getUnits(UnitCategory.cooking)[6];
-    ozVolume = getUnits(UnitCategory.cooking)[3];
-    mlVolume = getUnits(UnitCategory.cooking)[4];
+    hz = findUnit(UnitCategory.frequency, 'Hertz');
+    khz = findUnit(UnitCategory.frequency, 'Kilohertz');
 
-    euShoe = getUnits(UnitCategory.shoeSize)[0];
-    usMenShoe = getUnits(UnitCategory.shoeSize)[2];
-    cmShoe = getUnits(UnitCategory.shoeSize)[4];
+    cupUs = findUnit(UnitCategory.cooking, 'Cup (US)');
+    tbsp = findUnit(UnitCategory.cooking, 'Tablespoon');
+    gram = findUnit(UnitCategory.cooking, 'Gram');
+    ozVolume = findUnit(UnitCategory.cooking, 'Fluid Ounce');
+    mlVolume = findUnit(UnitCategory.cooking, 'Milliliter');
 
-    usCloth = getUnits(UnitCategory.clothingSize)[0];
-    euCloth = getUnits(UnitCategory.clothingSize)[1];
+    euShoe = findUnit(UnitCategory.shoeSize, 'EU');
+    usMenShoe = findUnit(UnitCategory.shoeSize, 'US Men');
+    cmShoe = findUnit(UnitCategory.shoeSize, 'CM');
 
-    dec = getUnits(UnitCategory.numberBase)[2];
-    bin = getUnits(UnitCategory.numberBase)[0];
-    hex = getUnits(UnitCategory.numberBase)[3];
+    usCloth = findUnit(UnitCategory.clothingSize, 'US');
+    euCloth = findUnit(UnitCategory.clothingSize, 'EU');
 
-    px = getUnits(UnitCategory.typography)[0];
-    pt = getUnits(UnitCategory.typography)[2];
-    em = getUnits(UnitCategory.typography)[3];
+    dec = findUnit(UnitCategory.numberBase, 'Decimal');
+    bin = findUnit(UnitCategory.numberBase, 'Binary');
+    hex = findUnit(UnitCategory.numberBase, 'Hexadecimal');
+
+    px = findUnit(UnitCategory.typography, 'Pixels');
+    pt = findUnit(UnitCategory.typography, 'Points');
+    em = findUnit(UnitCategory.typography, 'EM');
   });
 
   group('length conversions', () {

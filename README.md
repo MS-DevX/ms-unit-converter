@@ -1,81 +1,79 @@
-# MS Unit Converter
+# Unit Converter
 
-An Android unit converter by **MS DevX** — clean, fast, offline-capable.
+An Android offline productivity toolkit by **MS DevX** — fast, clean, and fully offline-capable.
 
-**Package:** `com.msdevx.unitconverter`
-**Platform:** Android (Play Store). iOS scaffolding exists but not yet shipped.
+**Package:** `com.msdevx.unitconverter`  
+**Version:** `2.2.0+6`  
+**Platform:** Android (Play Store first).  
 
 ---
 
 ## Features
 
-### 20 unit categories
+### 53 Unit Categories & 300+ Units
 
-Length, Weight, Temperature, Area, Volume, Speed, Data, Time, Angle, Energy,
-Power, Pressure, Force, Frequency, Fuel Economy, Cooking, Shoe Size,
-Clothing Size, Number Base, Typography.
+Length, Weight, Temperature, Area, Volume, Speed, Data, Time, Angle, Energy, Power, Pressure, Force, Frequency, Fuel Economy, Cooking, Shoe Size, Clothing Size, Number Base, Typography, Voltage, Current, Resistance, Capacitance, Inductance, Electric Charge, Conductance, Illuminance, Luminous Flux, Luminous Intensity, Luminance, Specific Heat, Thermal Conductivity, Thermal Resistance, Heat Flux Density, Torque, Momentum, Angular Velocity, Density, Surface Tension, Kinematic Viscosity, Dynamic Viscosity, Acceleration, Flow Rate, Mass Flow Rate, Radioactivity, Radiation Dose, Radiation Exposure, Astronomical Length, Pace, Heart Rate, Blood Sugar, Blood Pressure, BMI, Percentage Ratio, Sound Level, Concentration, Magnetic Field, Magnetic Flux, Wavenumber.
 
-Real-time conversion — result updates on every keystroke. No Calculate button.
-Max 8 significant digits, no scientific notation for everyday values.
+- Real-time conversion — result updates on every keystroke. No Calculate button.
+- Max 8 significant digits, no scientific notation for everyday values.
+- Pure logic conversion engine supporting linear ratio factors, special-case formulas, and compound units.
 
-### Currency converter
+### 170+ Currency Converter
 
-Live exchange rates via [Frankfurter.app](https://api.frankfurter.dev) — free,
-no API key required. 53 currencies supported. Pinned quick pairs for PKR, USD,
-EUR, GBP, JPY, AED, SAR, INR. Search by code, name, or symbol.
+- Live exchange rates via [Frankfurter.app](https://api.frankfurter.dev) — free, no API key required.
+- **170+ ISO-4217 currencies** supported with flags, symbols, names, and country mappings.
+- **Cached/offline behavior:** Exchange rates cached to `SharedPreferences` on each successful fetch. Shows relative timestamp (*"Just now"*, *"2 hours ago"*, *"Yesterday"*) and falls back seamlessly to bundled offline exchange rates when network is unavailable (*"Using bundled exchange rates"*).
 
-**Cached/offline behaviour:** Rates are cached to SharedPreferences on each
-successful fetch. On subsequent launches the app reads the cached rates
-immediately and refreshes in the background. When offline, the app falls back
-to hardcoded approximate rates for all 53 currencies. A "Rates by Frankfurter"
-label is shown below the status row.
+### Curated Collections (9 Predefined)
 
-### Compass with true north
+Quick access to themed converter groups:
+- 📚 Student
+- 👨‍💻 Developer
+- 👷 Engineering
+- 🍳 Cooking
+- ✈️ Travel
+- 🏋️ Fitness
+- 🧪 Science
+- ⚡ Electrical
+- 🛠️ Everyday
 
-Tilt-compensated magnetic compass using accelerometer + magnetometer.
-Optional GPS coordinates and true north via location permission.
+### Custom Converters
 
-**GPS denial behaviour (current session):** If the user denies the location
-permission, the app does **not** re-prompt again in the same session.
-The magnetic compass continues to work normally. All other app features remain
-fully accessible.
+User-created ratio-based custom converter groups (e.g., *1 Box = 24 Bottles*, *1 Carton = 12 Packs*). Supports full local CRUD.
 
-### Bubble level
+### Conversion Notes
 
-A built-in bubble level using the device accelerometer. Shows pitch and roll
-angles with a live bubble gauge. Includes a calibrate/reset feature and
-auto-centre assist.
+Create, edit, search, and manage personal notes and formula reminders stored locally on device.
 
-### Smart paste parser
+### Global Pull-to-Refresh (Material 3)
 
-When pasting text containing a number followed by a unit abbreviation
-(e.g. `42km` or `100°F`), the app auto-detects the category, fills the
-input value, and selects the source unit — no manual scrolling needed.
+Hard swipe-down gesture across Home, History, Currency, Collections, Custom Converters, and Notes to reload local data, recalculate insights, rebuild search indices, and attempt silent currency exchange rate background updates.
 
-### History
+### Compass & Bubble Level
 
-Last 20 conversions, persisted across sessions. Newest first.
-Swipe to delete individual entries or clear all.
+- Tilt-compensated magnetic compass using device magnetometer + accelerometer.
+- GPS declination lookup for True North alignment.
+- Live pitch/roll gauge bubble level with tap-to-calibrate feature.
 
-### Favorites
+### Smart Natural Language Parser
 
-Mark any conversion category as a favourite. Favourites appear at the top of
-the home screen grid for quick access.
+Parses natural language conversion queries offline (e.g., `"10 km to miles"`, `"100 usd to pkr"`, `"5 feet 9 inches to cm"`).
 
-### Settings
+### Dynamic & Static App Shortcuts
 
-- Theme toggle: System (default) / Light / Dark
-- Decimal precision: Auto / 2 / 4 / 6 / 8 decimals
-- Remove ads via \$1.99 one-time in-app purchase
-- Restore previous purchases
-- Privacy policy link
-- Clear history and clear favourites
+Dynamic launcher shortcuts updating automatically based on user's recent converter usage via `quick_actions`.
 
-### Monetisation
+### History & Favorites
 
-Free with a single App Open Ad on cold start (4-hour cooldown).
-\$1.99 one-time in-app purchase removes ads permanently.
-No banners, no interstitials, no rewarded ads.
+- Remembers last 50 conversion entries, newest first, persisted locally.
+- Pin or favorite any of the 53 conversion categories for instant home access.
+
+### Settings & Themes
+
+- System / Dark / Light theme options with optional Cosmic Glassmorphic mode.
+- User profile name customization.
+- Configurable decimal precision (Auto, 2, 4, 6, 8 decimals).
+- Play Store in-app update check integration.
 
 ---
 
@@ -83,106 +81,49 @@ No banners, no interstitials, no rewarded ads.
 
 | Layer | Choice |
 |-------|--------|
-| Framework | Flutter (stable 3.x) |
+| Framework | Flutter (3.x stable, SDK ^3.12.0) |
 | Language | Dart 3 (null-safe) |
-| State management | Provider |
-| Ads | Google Mobile Ads (App Open Ad only) |
-| IAP | `in_app_purchase` (Play Billing) |
+| State Management | Provider (^6.1.0) |
+| Architecture | Feature-First / Clean Provider Architecture |
+| Monetization | App Open Ad (cold start / warm start cooldown cap) |
 | Storage | `SharedPreferences` |
-| HTTP | `dart:http` (via CurrencyService) |
-| Sensors | `sensors_plus` |
+| HTTP | `dart:http` (CurrencyService via Frankfurter.app) |
+| Sensors | `sensors_plus`, `flutter_compass`, `geolocator`, `geomag` |
 | Min SDK | 21 (Android 5.0) |
-| Currency API | Frankfurter.dev (free, no key) |
-| Validation tooling | Python (`tools/conversion_validation/validate_units.py`) |
-| Docs tooling | Python (`tools/docs_export/build_release_pdf.py`) |
-| CI | GitHub Actions (planned) |
+| Target SDK | 37 (Android 17) |
 
 ---
 
-## How to run
+## How to Run & Test
 
 ```bash
+# Install dependencies
 flutter pub get
+
+# Static code analysis
+flutter analyze
+
+# Run full unit and widget test suite
+flutter test
+
+# Run app
 flutter run
 ```
 
 ---
 
-## How to test
+## How to Build Release APK & Bundle
 
 ```bash
-flutter analyze
-flutter test
-python tools/conversion_validation/validate_units.py
-```
+# Build release APK
+flutter build apk --release
 
----
-
-## How to build — debug
-
-```bash
-flutter build apk --debug --target-platform android-arm64
-```
-
-Output: `build/app/outputs/flutter-apk/app-debug.apk`
-
----
-
-## How to build — release (local)
-
-1. Ensure `android/key.properties` exists with placeholder values:
-
-```
-storePassword=<store-password>
-keyPassword=<key-password>
-keyAlias=<key-alias>
-storeFile=upload-keystore.jks
-```
-
-2. Place the release keystore at `android/app/upload-keystore.jks`.
-3. Run:
-
-```bash
+# Build Play Store App Bundle (.aab)
 flutter build appbundle --release
 ```
-
-Output: `build/app/outputs/bundle/release/app-release.aab`
-
-> The keystore and key.properties are gitignored. Restore from a secure backup
-> on a fresh clone.
-
----
-
-## Security notes
-
-- All conversions happen on-device. No data is transmitted to any server.
-- Currency rates are fetched from a free public API (Frankfurter). No API key,
-  no authentication, no user-identifying headers.
-- Location data (compass true north / GPS) stays on the device. It is never sent
-  to any server.
-- The only network requests are:
-  - App Open Ad (Google Mobile Ads SDK)
-  - Currency rate fetch (Frankfurter API)
-  - In-app purchase verification (Google Play Billing)
-- Premium status and all preferences are stored locally in SharedPreferences.
-- No analytics, no crash reporting, no telemetry SDK is included.
-
----
-
-## Contribution / agent notes
-
-This project uses [OpenCode](https://opencode.ai) for AI-assisted development.
-See `AGENTS.md` for the full agent ruleset.
-
-Key conventions:
-- Null-safe Dart 3 with `const` constructors where possible.
-- `///` doc comments on every public class and function.
-- Uses `debugPrint()` — never `print()`.
-- State management via `Provider` + `ChangeNotifier`.
-- All changes must pass `flutter analyze` (zero issues) and `flutter test`.
 
 ---
 
 ## License
 
-Proprietary — MS DevX.
+Proprietary — **MS DevX**. All rights reserved.

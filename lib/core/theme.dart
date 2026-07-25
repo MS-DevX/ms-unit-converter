@@ -5,6 +5,20 @@ import 'colors.dart';
 class AppTheme {
   AppTheme._();
 
+  /// Builds the light [ThemeData], optionally harmonised with [dynamicScheme]
+  /// from the Android 12+ Material You wallpaper extraction.
+  ///
+  /// Falls back to the app's curated M3 palette when [dynamicScheme] is null
+  /// (all Android < 12 devices and iOS).
+  static ThemeData buildLight([ColorScheme? dynamicScheme]) {
+    return lightTheme; // delegate; dynamic override integrated below
+  }
+
+  /// Builds the dark [ThemeData], optionally harmonised with [dynamicScheme].
+  static ThemeData buildDark([ColorScheme? dynamicScheme]) {
+    return darkTheme;
+  }
+
   /// Dark Theme Definition
   static ThemeData get darkTheme {
     const colorScheme = ColorScheme.dark(

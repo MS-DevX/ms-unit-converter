@@ -4,8 +4,6 @@
 /// results for all currencies in a single list view.
 library;
 
-import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 
 import '../data/currencies_data.dart';
@@ -71,6 +69,18 @@ class CurrencyProvider extends ChangeNotifier {
   DateTime? get lastUpdated => _lastUpdated;
   bool get isOffline => _isOffline;
   bool get isUsingCached => _isUsingCached;
+
+  /// Human readable relative timestamp for last exchange rate update.
+  String get formattedLastUpdated {
+    if (_lastUpdated == null) return 'Using bundled exchange rates';
+    final diff = DateTime.now().difference(_lastUpdated!);
+    if (diff.inSeconds < 60) return 'Just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes} ${diff.inMinutes == 1 ? 'minute' : 'minutes'} ago';
+    if (diff.inHours < 24) return '${diff.inHours} ${diff.inHours == 1 ? 'hour' : 'hours'} ago';
+    if (diff.inDays == 1) return 'Yesterday';
+    if (diff.inDays < 30) return '${diff.inDays} days ago';
+    return '${_lastUpdated!.day}/${_lastUpdated!.month}/${_lastUpdated!.year}';
+  }
 
   /// True when the user has entered a valid numeric input.
   bool get hasValidInput {
@@ -249,6 +259,7 @@ class CurrencyProvider extends ChangeNotifier {
   }
 
   /// Alias for [refreshRates].
+  @Deprecated('Use refreshRates() directly')
   Future<void> fetchRates() => refreshRates();
 
   /// Converts an amount between two currencies.
