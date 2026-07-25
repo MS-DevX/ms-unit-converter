@@ -84,18 +84,25 @@ class _StitchSearchBarState extends State<StitchSearchBar> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
 
-    final bgColor = isDark ? const Color(0xFF1B2336) : const Color(0xFFF3F5F9);
+    final bgColor = isDark
+        ? colorScheme.surfaceContainerHigh
+        : colorScheme.surfaceContainerLow;
     final iconColor = isDark ? Colors.white54 : Colors.black45;
     final hintColor = isDark ? Colors.white38 : Colors.black38;
     final textColor = isDark ? Colors.white : Colors.black87;
 
     return Container(
       margin: EdgeInsets.symmetric(horizontal: widget.horizontalMargin),
-      height: 62,
+      height: 54,
       decoration: BoxDecoration(
         color: bgColor,
-        borderRadius: BorderRadius.circular(30),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.25),
+          width: 1,
+        ),
       ),
       child: TextField(
         controller: widget.controller,
@@ -105,7 +112,7 @@ class _StitchSearchBarState extends State<StitchSearchBar> {
         textAlignVertical: TextAlignVertical.center,
         style: TextStyle(
           color: textColor,
-          fontSize: 17,
+          fontSize: 16,
           fontWeight: FontWeight.w400,
         ),
         decoration: InputDecoration(
@@ -115,25 +122,25 @@ class _StitchSearchBarState extends State<StitchSearchBar> {
           hintText: widget.hintText,
           hintStyle: TextStyle(
             color: hintColor,
-            fontSize: 17,
+            fontSize: 15,
             fontWeight: FontWeight.w400,
             letterSpacing: 0.2,
           ),
           prefixIcon: Padding(
-            padding: const EdgeInsets.only(left: 18, right: 4),
+            padding: const EdgeInsets.only(left: 14, right: 4),
             child: Icon(
               widget.prefixIcon ?? Icons.search_rounded,
               color: iconColor,
-              size: 26,
+              size: 22,
             ),
           ),
           prefixIconConstraints: const BoxConstraints(
-            minWidth: 48,
-            minHeight: 48,
+            minWidth: 44,
+            minHeight: 44,
           ),
           suffixIcon: _hasText
               ? Padding(
-                  padding: const EdgeInsets.only(right: 8),
+                  padding: const EdgeInsets.only(right: 6),
                   child: IconButton(
                     icon: Icon(
                       Icons.clear_rounded,
@@ -144,6 +151,7 @@ class _StitchSearchBarState extends State<StitchSearchBar> {
                     onPressed: () {
                       widget.controller.clear();
                       widget.onClear?.call();
+                      widget.onChanged?.call('');
                     },
                   ),
                 )
@@ -155,7 +163,7 @@ class _StitchSearchBarState extends State<StitchSearchBar> {
           border: InputBorder.none,
           enabledBorder: InputBorder.none,
           focusedBorder: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         ),
       ),
     );

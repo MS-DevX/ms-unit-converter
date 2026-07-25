@@ -30,25 +30,37 @@ class HomeCustomizationScreen extends StatelessWidget {
           ),
           Expanded(
             child: ReorderableListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               itemCount: layoutProv.sections.length,
               onReorderItem: (oldIndex, newIndex) {
-                HapticFeedback.lightImpact();
+                HapticFeedback.mediumImpact();
                 layoutProv.reorder(oldIndex, newIndex);
               },
               itemBuilder: (context, index) {
                 final sec = layoutProv.sections[index];
                 return Card(
                   key: ValueKey(sec.id),
-                  margin: const EdgeInsets.only(bottom: 8),
+                  margin: const EdgeInsets.only(bottom: 10),
                   child: SwitchListTile(
-                    title: Text(sec.title, style: const TextStyle(fontWeight: FontWeight.w500)),
+                    title: Text(
+                      sec.title,
+                      style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 15),
+                    ),
                     value: sec.isVisible,
-                    onChanged: (_) {
+                    onChanged: (bool value) {
                       HapticFeedback.selectionClick();
                       layoutProv.toggleSection(sec.id);
                     },
-                    secondary: const Icon(Icons.drag_handle_rounded),
+                    secondary: ReorderableDragStartListener(
+                      index: index,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Icon(
+                          Icons.drag_handle_rounded,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
                   ),
                 );
               },

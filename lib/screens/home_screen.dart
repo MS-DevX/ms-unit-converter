@@ -8,9 +8,11 @@ import 'package:provider/provider.dart';
 import '../data/collections_data.dart';
 import '../data/converter_config.dart';
 import '../data/units_data.dart';
+import '../models/history_entry.dart';
 import '../providers/converter_provider.dart';
 import '../providers/favorites_provider.dart';
 import '../providers/history_provider.dart';
+import '../providers/home_layout_provider.dart';
 import '../providers/pinned_provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/usage_provider.dart';
@@ -206,6 +208,7 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
     super.build(context);
     final query = _searchController.text.trim();
     final settings = context.watch<SettingsProvider>();
+    final layoutProv = context.watch<HomeLayoutProvider>();
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
@@ -411,477 +414,17 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
                       ),
                     ),
                 ] else ...[
-                  // ── 3. DID YOU KNOW? EDUCATIONAL CARD ────────────────────
-                  const SliverToBoxAdapter(
-                    child: DidYouKnowCard(),
+                  ..._buildDynamicSections(
+                    context,
+                    layoutProv: layoutProv,
+                    favProv: favProv,
+                    historyProv: historyProv,
+                    pinnedProv: pinnedProv,
+                    recentEntries: recentEntries,
+                    displayCategories: displayCategories,
+                    filterSectionTitle: filterSectionTitle,
+                    colorScheme: colorScheme,
                   ),
-
-                  const SliverToBoxAdapter(child: SizedBox(height: 24)),
-
-                  // ── 4. INSIGHTS BANNER (24dp MARGINS) ────────────────────
-                  const SliverToBoxAdapter(
-                    child: InsightsBanner(),
-                  ),
-
-                  // ── 4. CURATED COLLECTIONS (SNAP SCROLLING) ──────────────
-                  const SliverToBoxAdapter(child: SizedBox(height: 24)),
-                  SliverToBoxAdapter(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 24),
-                          child: Text(
-                            'Curated Collections',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                              color: colorScheme.onSurface,
-                              letterSpacing: -0.3,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          height: 90,
-                          child: ListView.separated(
-                            physics: const BouncingScrollPhysics(),
-                            scrollDirection: Axis.horizontal,
-                            padding: const EdgeInsets.symmetric(horizontal: 24),
-                            itemCount: predefinedCollections.length,
-                            separatorBuilder: (context, index) => const SizedBox(width: 12),
-                            itemBuilder: (context, index) {
-                              final col = predefinedCollections[index];
-                              return _CollectionChipCard(collection: col);
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // ── 5. PINNED CONVERTERS (IF ANY) ───────────────────────
-                  if (pinnedProv.pinned.isNotEmpty) ...[
-                    const SliverToBoxAdapter(child: SizedBox(height: 24)),
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.push_pin_rounded,
-                              size: 18,
-                              color: colorScheme.primary,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              'Pinned Converters',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w700,
-                                color: colorScheme.onSurface,
-                                letterSpacing: -0.3,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SliverToBoxAdapter(child: SizedBox(height: 12)),
-                    SliverPadding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      sliver: SliverGrid(
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: ResponsiveHelper.isExpanded(context) ? 4 : 2,
-                          crossAxisSpacing: 12,
-                          mainAxisSpacing: 12,
-                          childAspectRatio: ResponsiveHelper.isExpanded(context) ? 2.2 : 1.9,
-                        ),
-                        delegate: SliverChildBuilderDelegate(
-                          (context, index) {
-                            final cat = pinnedProv.pinned[index];
-                            final config = configFor(cat);
-                            return _CategoryTile(
-                              category: cat,
-                              config: config,
-                              isFav: favProv.isFavorite(cat),
-                              isPinned: true,
-                              onTap: () => _openConverter(context, cat),
-                              onLongPress: () =>
-                                  _showCategoryContextMenu(context, cat, favProv.isFavorite(cat), true),
-                            );
-                          },
-                          childCount: pinnedProv.pinned.length,
-                        ),
-                      ),
-                    ),
-                  ],
-
-                  const SliverToBoxAdapter(child: SizedBox(height: 24)),
-
-                  // ── 6. STICKY SEGMENTED FILTER BAR ──────────────────────
-                  SliverPersistentHeader(
-                    pinned: true,
-                    delegate: _StickyFilterHeaderDelegate(
-                      child: SizedBox(
-                        height: 48,
-                        child: ListView(
-                          scrollDirection: Axis.horizontal,
-                          padding: const EdgeInsets.symmetric(horizontal: 24),
-                          children: [
-                            _QuickFilterChip(
-                              label: 'Browse All',
-                              icon: Icons.grid_view_rounded,
-                              isSelected: _activeFilterIndex == 0,
-                              onTap: () => setState(() => _activeFilterIndex = 0),
-                            ),
-                            const SizedBox(width: 10),
-                            _QuickFilterChip(
-                              label: 'Favorites',
-                              icon: Icons.star_rounded,
-                              isSelected: _activeFilterIndex == 1,
-                              onTap: () => setState(() => _activeFilterIndex = 1),
-                            ),
-                            const SizedBox(width: 10),
-                            _QuickFilterChip(
-                              label: 'Recent',
-                              icon: Icons.history_rounded,
-                              isSelected: _activeFilterIndex == 2,
-                              onTap: () => setState(() => _activeFilterIndex = 2),
-                            ),
-                            const SizedBox(width: 10),
-                            _QuickFilterChip(
-                              label: 'Popular',
-                              icon: Icons.bolt_rounded,
-                              isSelected: _activeFilterIndex == 3,
-                              onTap: () => setState(() => _activeFilterIndex = 3),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  const SliverToBoxAdapter(child: SizedBox(height: 24)),
-
-                  // ── 7. FREQUENTLY USED CAROUSEL ──────────────────────────
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: Row(
-                        children: [
-                          Text(
-                            'Frequently Used',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                              color: colorScheme.onSurface,
-                              letterSpacing: -0.3,
-                            ),
-                          ),
-                          const Spacer(),
-                          TextButton(
-                            onPressed: () {
-                              _scrollController.animateTo(
-                                360,
-                                duration: const Duration(milliseconds: 300),
-                                curve: Curves.easeOutCubic,
-                              );
-                            },
-                            child: Text(
-                              'See More',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                color: colorScheme.primary,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SliverToBoxAdapter(child: SizedBox(height: 12)),
-
-                  // FREQUENTLY USED EMPTY STATE / LIST
-                  SliverToBoxAdapter(
-                    child: Builder(
-                      builder: (context) {
-                        final usageProv = context.watch<UsageProvider>();
-                        final topCategories = usageProv.getTopCategories(limit: 6);
-
-                        if (topCategories.isEmpty) {
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 24),
-                            child: Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: colorScheme.surfaceContainerLow,
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: colorScheme.outlineVariant.withValues(alpha: 0.3),
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 44,
-                                    height: 44,
-                                    decoration: BoxDecoration(
-                                      color: colorScheme.primary.withValues(alpha: 0.12),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Icon(
-                                      Icons.auto_graph_rounded,
-                                      color: colorScheme.primary,
-                                      size: 22,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 14),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'No frequently used converters yet.',
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w600,
-                                            color: colorScheme.onSurface,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          'When you start converting, your favorite categories will appear here.',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: colorScheme.onSurfaceVariant,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        }
-
-                        return SizedBox(
-                          height: 120,
-                          child: ListView.separated(
-                            physics: const BouncingScrollPhysics(),
-                            scrollDirection: Axis.horizontal,
-                            padding: const EdgeInsets.symmetric(horizontal: 24),
-                            itemCount: topCategories.length,
-                            separatorBuilder: (context, index) => const SizedBox(width: 14),
-                            itemBuilder: (context, index) {
-                              final entry = topCategories[index];
-                              final category = entry.key;
-                              final count = entry.value;
-                              final config = configFor(category);
-
-                              return _FrequentlyUsedCard(
-                                key: ValueKey(category.name),
-                                category: category,
-                                title: config.displayName,
-                                unitCount: count == 1 ? 'Used 1 time' : 'Used $count times',
-                                borderColor: config.primaryColor,
-                                icon: config.icon,
-                                onTap: () => _openConverter(context, category),
-                              );
-                            },
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-
-                  const SliverToBoxAdapter(child: SizedBox(height: 24)),
-
-                  // ── 8. BENTO GRID OF CATEGORIES ──────────────────────────
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: Text(
-                        filterSectionTitle,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: colorScheme.onSurface,
-                          letterSpacing: -0.3,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  const SliverToBoxAdapter(child: SizedBox(height: 12)),
-
-                  if (displayCategories.isEmpty)
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                        child: EmptyStateWidget(
-                          icon: _activeFilterIndex == 1
-                              ? Icons.star_border_rounded
-                              : Icons.history_rounded,
-                          message: _activeFilterIndex == 1
-                              ? 'No Favorites Saved Yet'
-                              : 'No Recent Conversions',
-                          subtitle: _activeFilterIndex == 1
-                              ? 'Tap the star icon or long-press any category to add it to your favorites.'
-                              : 'Conversions you perform will automatically appear here.',
-                        ),
-                      ),
-                    )
-                  else
-                    SliverPadding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      sliver: SliverGrid(
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: ResponsiveHelper.isExpanded(context) ? 4 : 2,
-                          crossAxisSpacing: 12,
-                          mainAxisSpacing: 12,
-                          childAspectRatio: ResponsiveHelper.isExpanded(context) ? 2.2 : 1.9,
-                        ),
-                        delegate: SliverChildBuilderDelegate((context, index) {
-                          final category = displayCategories[index];
-                          final isFav = favProv.isFavorite(category);
-                          final isPinned = pinnedProv.isPinned(category);
-                          final config = configFor(category);
-
-                          return _CategoryTile(
-                            category: category,
-                            config: config,
-                            isFav: isFav,
-                            isPinned: isPinned,
-                            onTap: () => _openConverter(context, category),
-                            onLongPress: () =>
-                                _showCategoryContextMenu(context, category, isFav, isPinned),
-                          );
-                        }, childCount: displayCategories.length),
-                      ),
-                    ),
-
-                  const SliverToBoxAdapter(child: SizedBox(height: 24)),
-
-                  // ── 9. RECENT CONVERSIONS ──────────────────────────────
-                  if (recentEntries.isNotEmpty) ...[
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        child: Text(
-                          'Recent Conversions',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: colorScheme.onSurface,
-                            letterSpacing: -0.3,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SliverToBoxAdapter(child: SizedBox(height: 12)),
-                    SliverPadding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      sliver: SliverList(
-                        delegate: SliverChildBuilderDelegate((context, index) {
-                          final entry = recentEntries[index];
-                          final cat = entry.categoryEnum;
-                          final config = configFor(cat);
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 10),
-                            child: StitchCard(
-                              padding: const EdgeInsets.all(16),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 44,
-                                    height: 44,
-                                    decoration: BoxDecoration(
-                                      color: config.primaryColor.withValues(alpha: 0.12),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Icon(
-                                      config.icon,
-                                      color: config.primaryColor,
-                                      size: 20,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 14),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            Text(
-                                              '${Formatters.cleanFloatingPoint(entry.inputValue)} ${entry.fromSymbol}',
-                                              style: TextStyle(
-                                                fontSize: 15,
-                                                fontWeight: FontWeight.w500,
-                                                color: colorScheme.onSurface,
-                                              ),
-                                            ),
-                                            const SizedBox(width: 4),
-                                            Icon(
-                                              Icons.arrow_forward_rounded,
-                                              size: 14,
-                                              color: colorScheme.outline,
-                                            ),
-                                            const SizedBox(width: 4),
-                                            Expanded(
-                                              child: Text(
-                                                '${Formatters.cleanFloatingPoint(entry.result)} ${entry.toSymbol}',
-                                                style: TextStyle(
-                                                  fontSize: 15,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: colorScheme.primary,
-                                                ),
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          '${entry.category} • Saved',
-                                          style: TextStyle(
-                                            fontSize: 13,
-                                            color: colorScheme.onSurfaceVariant,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  IconButton(
-                                    icon: Icon(
-                                      Icons.refresh_rounded,
-                                      color: colorScheme.onSurfaceVariant,
-                                      size: 20,
-                                    ),
-                                    tooltip: 'Refresh conversion',
-                                    onPressed: () {
-                                      HapticFeedback.lightImpact();
-                                      _openConverter(
-                                        context,
-                                        cat,
-                                        presetFromUnitName: entry.fromUnit,
-                                        presetToUnitName: entry.toUnit,
-                                        presetInputValue: entry.inputValue,
-                                      );
-                                    },
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        }, childCount: recentEntries.length),
-                      ),
-                    ),
-                    const SliverToBoxAdapter(child: SizedBox(height: 20)),
-                  ],
 
                   // ── 11. PRIVACY & OFFLINE CARD ────────────────────────────
                   SliverToBoxAdapter(
@@ -925,7 +468,516 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
         },
       ),
     ),
-    );
+  );
+}
+
+  /// Builds home screen slivers dynamically based on [HomeLayoutProvider] section configuration.
+  List<Widget> _buildDynamicSections(
+    BuildContext context, {
+    required HomeLayoutProvider layoutProv,
+    required FavoritesProvider favProv,
+    required HistoryProvider historyProv,
+    required PinnedProvider pinnedProv,
+    required List<HistoryEntry> recentEntries,
+    required List<UnitCategory> displayCategories,
+    required String filterSectionTitle,
+    required ColorScheme colorScheme,
+  }) {
+    final slivers = <Widget>[];
+
+    for (final sec in layoutProv.sections) {
+      if (!sec.isVisible) continue;
+
+      switch (sec.id) {
+        case 'did_you_know':
+          slivers.add(const SliverToBoxAdapter(child: DidYouKnowCard()));
+          slivers.add(const SliverToBoxAdapter(child: SizedBox(height: 24)));
+          break;
+
+        case 'insights':
+          slivers.add(const SliverToBoxAdapter(child: InsightsBanner()));
+          slivers.add(const SliverToBoxAdapter(child: SizedBox(height: 24)));
+          break;
+
+        case 'collections':
+          slivers.add(
+            SliverToBoxAdapter(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Text(
+                      'Curated Collections',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: colorScheme.onSurface,
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    height: 90,
+                    child: ListView.separated(
+                      physics: const BouncingScrollPhysics(),
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      itemCount: predefinedCollections.length,
+                      separatorBuilder: (context, index) => const SizedBox(width: 12),
+                      itemBuilder: (context, index) {
+                        final col = predefinedCollections[index];
+                        return _CollectionChipCard(collection: col);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+          slivers.add(const SliverToBoxAdapter(child: SizedBox(height: 24)));
+          break;
+
+        case 'pinned':
+          if (pinnedProv.pinned.isNotEmpty) {
+            slivers.add(
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.push_pin_rounded,
+                        size: 18,
+                        color: colorScheme.primary,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Pinned Converters',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: colorScheme.onSurface,
+                          letterSpacing: -0.3,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+            slivers.add(const SliverToBoxAdapter(child: SizedBox(height: 12)));
+            slivers.add(
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                sliver: SliverGrid(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: ResponsiveHelper.isExpanded(context) ? 4 : 2,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    childAspectRatio: ResponsiveHelper.isExpanded(context) ? 2.2 : 1.9,
+                  ),
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final cat = pinnedProv.pinned[index];
+                      final config = configFor(cat);
+                      return _CategoryTile(
+                        category: cat,
+                        config: config,
+                        isFav: favProv.isFavorite(cat),
+                        isPinned: true,
+                        onTap: () => _openConverter(context, cat),
+                        onLongPress: () =>
+                            _showCategoryContextMenu(context, cat, favProv.isFavorite(cat), true),
+                      );
+                    },
+                    childCount: pinnedProv.pinned.length,
+                  ),
+                ),
+              ),
+            );
+            slivers.add(const SliverToBoxAdapter(child: SizedBox(height: 24)));
+          }
+          break;
+
+        case 'frequently_used':
+          slivers.add(
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Row(
+                  children: [
+                    Text(
+                      'Frequently Used',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: colorScheme.onSurface,
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+                    const Spacer(),
+                    TextButton(
+                      onPressed: () {
+                        _scrollController.animateTo(
+                          360,
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeOutCubic,
+                        );
+                      },
+                      child: Text(
+                        'See More',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: colorScheme.primary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+          slivers.add(const SliverToBoxAdapter(child: SizedBox(height: 12)));
+          slivers.add(
+            SliverToBoxAdapter(
+              child: Builder(
+                builder: (context) {
+                  final usageProv = context.watch<UsageProvider>();
+                  final topCategories = usageProv.getTopCategories(limit: 6);
+
+                  if (topCategories.isEmpty) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: colorScheme.surfaceContainerLow,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: colorScheme.outlineVariant.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                color: colorScheme.primary.withValues(alpha: 0.12),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.auto_graph_rounded,
+                                color: colorScheme.primary,
+                                size: 22,
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'No frequently used converters yet.',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: colorScheme.onSurface,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'When you start converting, your favorite categories will appear here.',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
+
+                  return SizedBox(
+                    height: 120,
+                    child: ListView.separated(
+                      physics: const BouncingScrollPhysics(),
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      itemCount: topCategories.length,
+                      separatorBuilder: (context, index) => const SizedBox(width: 14),
+                      itemBuilder: (context, index) {
+                        final entry = topCategories[index];
+                        final category = entry.key;
+                        final count = entry.value;
+                        final config = configFor(category);
+
+                        return _FrequentlyUsedCard(
+                          key: ValueKey(category.name),
+                          category: category,
+                          title: config.displayName,
+                          unitCount: count == 1 ? 'Used 1 time' : 'Used $count times',
+                          borderColor: config.primaryColor,
+                          icon: config.icon,
+                          onTap: () => _openConverter(context, category),
+                        );
+                      },
+                    ),
+                  );
+                },
+              ),
+            ),
+          );
+          slivers.add(const SliverToBoxAdapter(child: SizedBox(height: 24)));
+          break;
+
+        case 'categories':
+          slivers.add(
+            SliverPersistentHeader(
+              pinned: true,
+              delegate: _StickyFilterHeaderDelegate(
+                child: SizedBox(
+                  height: 48,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    children: [
+                      _QuickFilterChip(
+                        label: 'Browse All',
+                        icon: Icons.grid_view_rounded,
+                        isSelected: _activeFilterIndex == 0,
+                        onTap: () => setState(() => _activeFilterIndex = 0),
+                      ),
+                      const SizedBox(width: 10),
+                      _QuickFilterChip(
+                        label: 'Favorites',
+                        icon: Icons.star_rounded,
+                        isSelected: _activeFilterIndex == 1,
+                        onTap: () => setState(() => _activeFilterIndex = 1),
+                      ),
+                      const SizedBox(width: 10),
+                      _QuickFilterChip(
+                        label: 'Recent',
+                        icon: Icons.history_rounded,
+                        isSelected: _activeFilterIndex == 2,
+                        onTap: () => setState(() => _activeFilterIndex = 2),
+                      ),
+                      const SizedBox(width: 10),
+                      _QuickFilterChip(
+                        label: 'Popular',
+                        icon: Icons.bolt_rounded,
+                        isSelected: _activeFilterIndex == 3,
+                        onTap: () => setState(() => _activeFilterIndex = 3),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+          slivers.add(const SliverToBoxAdapter(child: SizedBox(height: 24)));
+          slivers.add(
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Text(
+                  filterSectionTitle,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: colorScheme.onSurface,
+                    letterSpacing: -0.3,
+                  ),
+                ),
+              ),
+            ),
+          );
+          slivers.add(const SliverToBoxAdapter(child: SizedBox(height: 12)));
+          if (displayCategories.isEmpty) {
+            slivers.add(
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  child: EmptyStateWidget(
+                    icon: _activeFilterIndex == 1
+                        ? Icons.star_border_rounded
+                        : Icons.history_rounded,
+                    message: _activeFilterIndex == 1
+                        ? 'No Favorites Saved Yet'
+                        : 'No Recent Conversions',
+                    subtitle: _activeFilterIndex == 1
+                        ? 'Tap the star icon or long-press any category to add it to your favorites.'
+                        : 'Conversions you perform will automatically appear here.',
+                  ),
+                ),
+              ),
+            );
+          } else {
+            slivers.add(
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                sliver: SliverGrid(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: ResponsiveHelper.isExpanded(context) ? 4 : 2,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    childAspectRatio: ResponsiveHelper.isExpanded(context) ? 2.2 : 1.9,
+                  ),
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    final category = displayCategories[index];
+                    final isFav = favProv.isFavorite(category);
+                    final isPinned = pinnedProv.isPinned(category);
+                    final config = configFor(category);
+
+                    return _CategoryTile(
+                      category: category,
+                      config: config,
+                      isFav: isFav,
+                      isPinned: isPinned,
+                      onTap: () => _openConverter(context, category),
+                      onLongPress: () =>
+                          _showCategoryContextMenu(context, category, isFav, isPinned),
+                    );
+                  }, childCount: displayCategories.length),
+                ),
+              ),
+            );
+          }
+          slivers.add(const SliverToBoxAdapter(child: SizedBox(height: 24)));
+          break;
+
+        case 'recent':
+          if (recentEntries.isNotEmpty) {
+            slivers.add(
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Text(
+                    'Recent Conversions',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: colorScheme.onSurface,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                ),
+              ),
+            );
+            slivers.add(const SliverToBoxAdapter(child: SizedBox(height: 12)));
+            slivers.add(
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    final entry = recentEntries[index];
+                    final cat = entry.categoryEnum;
+                    final config = configFor(cat);
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 10),
+                      child: StitchCard(
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                color: config.primaryColor.withValues(alpha: 0.12),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                config.icon,
+                                color: config.primaryColor,
+                                size: 20,
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Text(
+                                        '${Formatters.cleanFloatingPoint(entry.inputValue)} ${entry.fromSymbol}',
+                                        style: TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w500,
+                                          color: colorScheme.onSurface,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Icon(
+                                        Icons.arrow_forward_rounded,
+                                        size: 14,
+                                        color: colorScheme.outline,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Expanded(
+                                        child: Text(
+                                          '${Formatters.cleanFloatingPoint(entry.result)} ${entry.toSymbol}',
+                                          style: TextStyle(
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w600,
+                                            color: colorScheme.primary,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '${entry.category} • Saved',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              icon: Icon(
+                                Icons.refresh_rounded,
+                                color: colorScheme.onSurfaceVariant,
+                                size: 20,
+                              ),
+                              tooltip: 'Refresh conversion',
+                              onPressed: () {
+                                HapticFeedback.lightImpact();
+                                _openConverter(
+                                  context,
+                                  cat,
+                                  presetFromUnitName: entry.fromUnit,
+                                  presetToUnitName: entry.toUnit,
+                                  presetInputValue: entry.inputValue,
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }, childCount: recentEntries.length),
+                ),
+              ),
+            );
+            slivers.add(const SliverToBoxAdapter(child: SizedBox(height: 24)));
+          }
+          break;
+      }
+    }
+
+    return slivers;
   }
 }
 

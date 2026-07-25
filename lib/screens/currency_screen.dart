@@ -13,6 +13,7 @@ import '../providers/currency_provider.dart';
 import '../providers/history_provider.dart';
 import '../services/refresh_service.dart';
 import '../widgets/stitch_card.dart';
+import '../widgets/stitch_search_bar.dart';
 
 class CurrencyScreen extends StatefulWidget {
   const CurrencyScreen({super.key});
@@ -141,61 +142,14 @@ class _CurrencyScreenState extends State<CurrencyScreen> with AutomaticKeepAlive
                       ),
                     ),
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 8, 24, 12),
-                      child: Container(
-                        height: 52,
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? colorScheme.surfaceContainerHigh
-                              : colorScheme.surfaceContainerLow,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: colorScheme.outlineVariant.withValues(alpha: 0.35),
-                            width: 1,
-                          ),
-                        ),
-                        child: Center(
-                          child: TextField(
-                            controller: searchController,
-                            onChanged: (_) => setModalState(() {}),
-                            textAlignVertical: TextAlignVertical.center,
-                            style: TextStyle(
-                              color: colorScheme.onSurface,
-                              fontSize: 15,
-                            ),
-                            decoration: InputDecoration(
-                              isDense: true,
-                              hintText: 'Search by code, name, or country...',
-                              hintStyle: TextStyle(
-                                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
-                                fontSize: 15,
-                              ),
-                              prefixIcon: Icon(
-                                Icons.search_rounded,
-                                color: colorScheme.onSurfaceVariant,
-                                size: 20,
-                              ),
-                              suffixIcon: searchController.text.isNotEmpty
-                                  ? IconButton(
-                                      icon: Icon(
-                                        Icons.clear_rounded,
-                                        color: colorScheme.onSurfaceVariant,
-                                        size: 18,
-                                      ),
-                                      tooltip: 'Clear search',
-                                      onPressed: () {
-                                        searchController.clear();
-                                        setModalState(() {});
-                                      },
-                                    )
-                                  : null,
-                              border: InputBorder.none,
-                              enabledBorder: InputBorder.none,
-                              focusedBorder: InputBorder.none,
-                              contentPadding: const EdgeInsets.symmetric(vertical: 14),
-                            ),
-                          ),
-                        ),
+                      padding: const EdgeInsets.only(top: 4, bottom: 8),
+                      child: StitchSearchBar(
+                        controller: searchController,
+                        hintText: 'Search by code, name, or country...',
+                        horizontalMargin: 24,
+                        autofocus: true,
+                        onChanged: (_) => setModalState(() {}),
+                        onClear: () => setModalState(() {}),
                       ),
                     ),
                     Expanded(
