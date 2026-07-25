@@ -5,11 +5,11 @@ import 'package:flutter/material.dart';
 
 import '../utils/responsive_helper.dart';
 import '../widgets/stitch_bottom_nav.dart';
-import 'compass_screen.dart';
 import 'currency_screen.dart';
 import 'history_screen.dart';
 import 'home_screen.dart';
 import 'settings_screen.dart';
+import 'unit_companion_screen.dart';
 
 class MainShell extends StatefulWidget {
   final int initialIndex;
@@ -29,8 +29,8 @@ class _MainShellState extends State<MainShell> {
 
   static const List<Widget> _screens = [
     HomeScreen(),
+    UnitCompanionScreen(),
     CurrencyScreen(),
-    CompassScreen(),
     HistoryScreen(),
     SettingsScreen(),
   ];
@@ -42,14 +42,14 @@ class _MainShellState extends State<MainShell> {
       label: 'Home',
     ),
     StitchNavItem(
+      icon: Icons.auto_awesome_outlined,
+      selectedIcon: Icons.auto_awesome_rounded,
+      label: 'Companion',
+    ),
+    StitchNavItem(
       icon: Icons.currency_exchange_outlined,
       selectedIcon: Icons.currency_exchange_rounded,
       label: 'Currency',
-    ),
-    StitchNavItem(
-      icon: Icons.explore_outlined,
-      selectedIcon: Icons.explore_rounded,
-      label: 'Compass',
     ),
     StitchNavItem(
       icon: Icons.history_outlined,
