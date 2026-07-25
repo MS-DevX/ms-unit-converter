@@ -1,7 +1,6 @@
 /// In-App Update Service for Google Play Store updates.
 library;
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:in_app_update/in_app_update.dart';
@@ -48,7 +47,7 @@ class InAppUpdateService {
 
       if (!isPlayStore) {
         _isChecking = false;
-        if (!kIsWeb && context != null && context.mounted) {
+        if (context != null && context.mounted) {
           _showPlayStoreDialog(context);
         }
         return;
