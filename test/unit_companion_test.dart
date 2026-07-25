@@ -52,6 +52,20 @@ void main() {
                     );
                     expect(results, isNotEmpty);
                     expect(results.any((r) => r.title.toLowerCase().contains('meter')), isTrue);
+
+                    final intentResults = await CompanionSearchService.search(
+                      context: context,
+                      query: '10 ft to m',
+                    );
+                    expect(intentResults, isNotEmpty);
+                    expect(intentResults.any((r) => r.type == CompanionResultType.intent), isTrue);
+
+                    final guideResults = await CompanionSearchService.search(
+                      context: context,
+                      query: 'tv size',
+                    );
+                    expect(guideResults, isNotEmpty);
+                    expect(guideResults.any((r) => r.type == CompanionResultType.guide), isTrue);
                   },
                   child: const Text('Search'),
                 );

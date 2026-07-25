@@ -283,6 +283,20 @@ class _UnitCompanionScreenState extends State<UnitCompanionScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
+                        'I Want To...',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: colorScheme.onSurface,
+                          letterSpacing: -0.3,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      _QuickStartActionsBar(
+                        onSelect: (query) => _selectSuggestion(query),
+                      ),
+                      const SizedBox(height: 20),
+                      Text(
                         'Popular Topics to Explore',
                         style: TextStyle(
                           fontSize: 18,
@@ -324,7 +338,7 @@ class _UnitCompanionScreenState extends State<UnitCompanionScreen> {
                             icon: Icons.currency_exchange_rounded,
                             label: 'Currency',
                             color: const Color(0xFF22C55E),
-                            onTap: () => _openCategory(UnitCategory.length),
+                            onTap: () => _selectSuggestion('Currency'),
                           ),
                           _QuickCategoryCard(
                             icon: Icons.soup_kitchen_rounded,
@@ -642,6 +656,62 @@ class _CompanionResultTile extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _QuickStartActionsBar extends StatelessWidget {
+  final ValueChanged<String> onSelect;
+
+  const _QuickStartActionsBar({required this.onSelect});
+
+  static const List<({String emoji, String title, String query})> _quickActions = [
+    (emoji: '🍳', title: 'Cook', query: 'Cooking'),
+    (emoji: '✈️', title: 'Travel', query: 'Travel'),
+    (emoji: '📚', title: 'Study', query: 'Length'),
+    (emoji: '🏗️', title: 'Engineering', query: 'Pressure'),
+    (emoji: '🏃', title: 'Fitness', query: 'BMI'),
+    (emoji: '💰', title: 'Finance', query: 'Currency'),
+    (emoji: '💻', title: 'Developer', query: 'Data Storage'),
+    (emoji: '🔬', title: 'Science', query: 'Radioactivity'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return SizedBox(
+      height: 40,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        itemCount: _quickActions.length,
+        separatorBuilder: (context, index) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final action = _quickActions[index];
+          return ActionChip(
+            avatar: Text(action.emoji, style: const TextStyle(fontSize: 13)),
+            label: Text(action.title),
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              onSelect(action.query);
+            },
+            backgroundColor: colorScheme.surfaceContainerHigh,
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            labelStyle: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: colorScheme.onSurface,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(
+                color: colorScheme.outlineVariant.withValues(alpha: 0.3),
+              ),
+            ),
+          );
+        },
       ),
     );
   }

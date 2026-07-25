@@ -21,6 +21,8 @@ import '../screens/collection_screen.dart';
 import '../screens/converter_screen.dart';
 import '../screens/custom_converter_screen.dart';
 import '../screens/notes_screen.dart';
+import '../core/colors.dart';
+import '../services/smart_parse_service.dart';
 import '../services/unit_info_service.dart';
 import '../utils/formatters.dart';
 
@@ -94,6 +96,12 @@ class CompanionSearchService {
 
     // Ensure UnitInfo JSON cache is loaded
     await UnitInfoService.load();
+
+    // 0. Parse Natural Language Intent (e.g., "10 ft to m", "100 USD to PKR", "180 C to F")
+    _parseNaturalLanguageIntent(context, q, results);
+
+    // 0b. Search Everyday Measurement Guides (e.g., "TV size", "road distance", "baking", "tire pressure")
+    _searchMeasurementGuides(context, q, terms, results);
 
     // 1. Search Units & Categories
     _searchUnitsAndCategories(context, q, terms, results);
@@ -659,6 +667,194 @@ class CompanionSearchService {
             accentColor: const Color(0xFF4F8CFF),
             score: 50,
             onTap: () {},
+          ),
+        );
+      }
+    }
+  }
+
+  static void _parseNaturalLanguageIntent(
+    BuildContext context,
+    String rawQuery,
+    List<CompanionSearchResult> results,
+  ) {
+    final parsed = SmartParseService.parse(rawQuery);
+    if (!parsed.isRecognized) return;
+
+    if (parsed.isCurrency) {
+      final fromCode = parsed.fromCurrencyCode ?? 'USD';
+      final toCode = parsed.toCurrencyCode ?? 'EUR';
+      final amount = parsed.amount ?? 1.0;
+
+      results.add(
+        CompanionSearchResult(
+          id: 'intent_currency_$rawQuery',
+          type: CompanionResultType.intent,
+          title: 'Direct FX: $amount $fromCode → $toCode',
+          categoryName: 'Currency Exchange',
+          description: 'Convert $amount $fromCode to $toCode using live offline currency rates.',
+          icon: Icons.currency_exchange_rounded,
+          accentColor: AppColors.primary,
+          score: 250.0,
+          onTap: () {
+            Navigator.popUntil(context, (route) => route.isFirst);
+          },
+        ),
+      );
+    } else if (parsed.category != null &&
+        parsed.fromUnitName != null &&
+        parsed.toUnitName != null) {
+      final cat = parsed.category!;
+      final config = configFor(cat);
+      final amount = parsed.amount ?? 1.0;
+
+      results.add(
+        CompanionSearchResult(
+          id: 'intent_unit_$rawQuery',
+          type: CompanionResultType.intent,
+          title: 'Direct Conversion: $amount ${parsed.fromUnitName} → ${parsed.toUnitName}',
+          categoryName: cat.displayName,
+          description: 'Open ${cat.displayName} converter with $amount ${parsed.fromUnitName} pre-filled.',
+          icon: config.icon,
+          accentColor: config.primaryColor,
+          formula: '${parsed.fromUnitName} → ${parsed.toUnitName}',
+          relatedUnits: [parsed.fromUnitName!, parsed.toUnitName!],
+          score: 250.0,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ConverterScreen(
+                  initialCategory: cat,
+                  presetFromUnitName: parsed.fromUnitName,
+                  presetToUnitName: parsed.toUnitName,
+                  presetValue: amount,
+                ),
+              ),
+            );
+          },
+        ),
+      );
+    }
+  }
+
+  static void _searchMeasurementGuides(
+    BuildContext context,
+    String rawQuery,
+    Set<String> terms,
+    List<CompanionSearchResult> results,
+  ) {
+    const guides = [
+      (
+        key: 'tv size',
+        title: 'TV & Display Screen Size',
+        cat: UnitCategory.length,
+        desc: 'Convert TV & display screen diagonals between Inches and Centimeters.',
+        units: ['Inch', 'Centimeter']
+      ),
+      (
+        key: 'monitor',
+        title: 'TV & Display Screen Size',
+        cat: UnitCategory.length,
+        desc: 'Convert display screen diagonals between Inches and Centimeters.',
+        units: ['Inch', 'Centimeter']
+      ),
+      (
+        key: 'road distance',
+        title: 'Driving & Road Travel',
+        cat: UnitCategory.length,
+        desc: 'Convert highway travel distances between Miles and Kilometers.',
+        units: ['Mile', 'Kilometer']
+      ),
+      (
+        key: 'driving',
+        title: 'Driving & Road Travel',
+        cat: UnitCategory.length,
+        desc: 'Convert highway travel distances between Miles and Kilometers.',
+        units: ['Mile', 'Kilometer']
+      ),
+      (
+        key: 'cooking',
+        title: 'Kitchen & Recipe Measurement',
+        cat: UnitCategory.cooking,
+        desc: 'Convert recipe ingredients between Cups, Milliliters, Tablespoons, and Grams.',
+        units: ['Cup', 'Milliliter', 'Tablespoon', 'Gram']
+      ),
+      (
+        key: 'baking',
+        title: 'Kitchen & Recipe Measurement',
+        cat: UnitCategory.cooking,
+        desc: 'Convert recipe ingredients between Cups, Milliliters, Tablespoons, and Grams.',
+        units: ['Cup', 'Milliliter', 'Tablespoon', 'Gram']
+      ),
+      (
+        key: 'screen resolution',
+        title: 'Display Density & Resolution',
+        cat: UnitCategory.typography,
+        desc: 'Convert display density between Pixels, Points, and Inches.',
+        units: ['Pixel', 'Point', 'Inch']
+      ),
+      (
+        key: 'tire pressure',
+        title: 'Vehicle Tire Pressure',
+        cat: UnitCategory.pressure,
+        desc: 'Compare vehicle tire inflation ratings between PSI, Bar, and Kilopascals.',
+        units: ['PSI', 'Bar', 'Kilopascal']
+      ),
+      (
+        key: 'car tires',
+        title: 'Vehicle Tire Pressure',
+        cat: UnitCategory.pressure,
+        desc: 'Compare vehicle tire inflation ratings between PSI, Bar, and Kilopascals.',
+        units: ['PSI', 'Bar', 'Kilopascal']
+      ),
+      (
+        key: 'fever',
+        title: 'Body Temperature & Fever',
+        cat: UnitCategory.temperature,
+        desc: 'Measure body fever readings between Celsius and Fahrenheit.',
+        units: ['Celsius', 'Fahrenheit']
+      ),
+      (
+        key: 'fuel economy',
+        title: 'Vehicle Fuel Economy',
+        cat: UnitCategory.fuelEconomy,
+        desc: 'Compare gas mileage efficiency between MPG and Liters per 100km.',
+        units: ['Miles per Gallon (US)', 'Liters per 100km']
+      ),
+      (
+        key: 'mileage',
+        title: 'Vehicle Fuel Economy',
+        cat: UnitCategory.fuelEconomy,
+        desc: 'Compare gas mileage efficiency between MPG and Liters per 100km.',
+        units: ['Miles per Gallon (US)', 'Liters per 100km']
+      ),
+    ];
+
+    for (final guide in guides) {
+      if (guide.key.contains(rawQuery) ||
+          rawQuery.contains(guide.key) ||
+          terms.any((t) => guide.key.contains(t))) {
+        final config = configFor(guide.cat);
+        results.add(
+          CompanionSearchResult(
+            id: 'guide_${guide.key}',
+            type: CompanionResultType.guide,
+            title: guide.title,
+            categoryName: guide.cat.displayName,
+            description: guide.desc,
+            icon: config.icon,
+            accentColor: config.primaryColor,
+            relatedUnits: guide.units,
+            score: 180.0,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ConverterScreen(initialCategory: guide.cat),
+                ),
+              );
+            },
           ),
         );
       }

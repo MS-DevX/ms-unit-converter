@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 
 /// Categories of offline search results.
 enum CompanionResultType {
+  intent,
+  guide,
   unit,
   category,
   definition,
@@ -52,6 +54,10 @@ class CompanionSearchResult {
   /// Group display label and icon for section headers.
   static String groupTitle(CompanionResultType type) {
     switch (type) {
+      case CompanionResultType.intent:
+        return '🎯 Direct Smart Conversion';
+      case CompanionResultType.guide:
+        return '🧭 Measurement & Everyday Guide';
       case CompanionResultType.unit:
         return '📏 Units';
       case CompanionResultType.category:
