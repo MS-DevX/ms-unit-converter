@@ -10,7 +10,7 @@ import '../data/did_you_know.dart';
 
 /// Displays a randomly rotating [DidYouKnowFact] with a fade animation.
 ///
-/// The fact changes every 30 seconds automatically. The user can tap
+/// The fact changes every 180 seconds (3 minutes) automatically. The user can tap
 /// the forward arrow to skip to the next fact. All facts are bundled
 /// offline — no internet required.
 class DidYouKnowCard extends StatefulWidget {
@@ -40,7 +40,7 @@ class _DidYouKnowCardState extends State<DidYouKnowCard>
     _fade = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeIn);
     _fadeCtrl.forward();
 
-    _timer = Timer.periodic(const Duration(seconds: 30), (_) => _nextFact());
+    _timer = Timer.periodic(const Duration(seconds: 180), (_) => _nextFact());
   }
 
   @override

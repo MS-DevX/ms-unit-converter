@@ -15,7 +15,7 @@ class DidYouKnowFact {
   const DidYouKnowFact({required this.fact, required this.emoji});
 }
 
-/// All 60 bundled educational conversion facts.
+/// All bundled educational conversion facts (85+ facts).
 const List<DidYouKnowFact> didYouKnowFacts = [
   // ── Length ───────────────────────────────────────────────────────────────
   DidYouKnowFact(emoji: '📏', fact: '1 inch is exactly 2.54 centimeters — defined since 1959.'),
@@ -92,4 +92,30 @@ const List<DidYouKnowFact> didYouKnowFacts = [
   DidYouKnowFact(emoji: '🌡️', fact: 'Room temperature is conventionally 20–25 °C (68–77 °F).'),
   DidYouKnowFact(emoji: '🧪', fact: 'pH is a logarithmic scale. Each unit represents a 10× change in acidity.'),
   DidYouKnowFact(emoji: '📡', fact: 'Wi-Fi 6 (802.11ax) operates at 2.4 GHz and 5 GHz. 5G NR can reach 52.6 GHz.'),
+  // ── Extra Science, Tech & Everyday Facts ─────────────────────────────────
+  DidYouKnowFact(emoji: '🛰️', fact: 'Voyager 1 is over 24 billion kilometers (160 AU) away — the farthest human artifact.'),
+  DidYouKnowFact(emoji: '⚛️', fact: '1 electronvolt (eV) = 1.602 × 10⁻¹⁹ joules — the energy of an electron accelerating across 1 volt.'),
+  DidYouKnowFact(emoji: '🛸', fact: 'The International Space Station orbits Earth at 27,600 km/h (7.66 km/s) — orbiting every 90 minutes.'),
+  DidYouKnowFact(emoji: '🧲', fact: 'A medical MRI scanner uses magnetic fields of 1.5 to 3 Tesla (15,000–30,000 Gauss).'),
+  DidYouKnowFact(emoji: '☀️', fact: 'The core of the Sun reaches an incredible 15 million °C (27 million °F).'),
+  DidYouKnowFact(emoji: '⚓', fact: '1 fathom = 6 feet (1.8288 m) — historically measured by a sailor\'s outstretched arms.'),
+  DidYouKnowFact(emoji: '👑', fact: 'Gold purity is measured in karats: 24k is 100% pure gold; 18k is 75% pure gold.'),
+  DidYouKnowFact(emoji: '👟', fact: 'EU shoe sizes use "Paris Points" — each point equals exactly 2/3 of a centimeter (6.67 mm).'),
+  DidYouKnowFact(emoji: '👗', fact: 'US and UK women\'s clothing sizes differ by 4 numbers — a US size 8 is a UK size 12.'),
+  DidYouKnowFact(emoji: '☕', fact: 'An 8 oz (240 ml) cup of brewed coffee contains approximately 95 mg of caffeine.'),
+  DidYouKnowFact(emoji: '📱', fact: 'Phone battery capacities are measured in milliamp-hours (mAh). A 5,000 mAh battery delivers 5A for 1 hour.'),
+  DidYouKnowFact(emoji: '🐎', fact: '1 Horsepower = 745.7 Watts — coined by James Watt to compare steam engines to draft horses.'),
+  DidYouKnowFact(emoji: '🌊', fact: 'The Mariana Trench is 10,994 meters (36,070 ft) deep — where pressure exceeds 1,000 atmospheres.'),
+  DidYouKnowFact(emoji: '🛢️', fact: '1 barrel of crude oil equals 42 US gallons or 158.987 liters.'),
+  DidYouKnowFact(emoji: '🏡', fact: '1 marla (South Asian land area) equals 272.25 sq ft or 25.29 m².'),
+  DidYouKnowFact(emoji: '🌀', fact: 'A Category 5 hurricane has sustained wind speeds exceeding 252 km/h (157 mph).'),
+  DidYouKnowFact(emoji: '⚡', fact: 'High-voltage grid transmission lines carry up to 765,000 V to minimize power loss over long distances.'),
+  DidYouKnowFact(emoji: '🥑', fact: '1 gram of fat supplies 9 Calories, while 1 gram of protein or carbohydrate supplies 4 Calories.'),
+  DidYouKnowFact(emoji: '⏱️', fact: 'The cesium-133 atom vibrates 9,192,631,770 times per second — defining the official SI second since 1967.'),
+  DidYouKnowFact(emoji: '📐', fact: '1 radian equals approximately 57.2958 degrees — the angle subtended when arc length equals radius.'),
+  DidYouKnowFact(emoji: '🏎️', fact: 'Engine torque (N·m) measures rotational force; engine power (kW/HP) measures how quickly work is performed.'),
+  DidYouKnowFact(emoji: '📦', fact: '1 petabyte (PB) = 1,000 terabytes (TB) — enough storage to hold 13 years of HD video.'),
+  DidYouKnowFact(emoji: '📡', fact: 'GPS satellites orbit Earth at an altitude of 20,200 km (12,550 miles).'),
+  DidYouKnowFact(emoji: '🩸', fact: 'Fasting blood sugar of 126 mg/dL (7.0 mmol/L) or higher is used to diagnose diabetes.'),
+  DidYouKnowFact(emoji: '🔊', fact: 'Decibels are logarithmic: a +10 dB increase represents a 10× increase in acoustic energy.'),
 ];
