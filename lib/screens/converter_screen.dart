@@ -388,6 +388,13 @@ class _ConverterScreenState extends State<ConverterScreen> {
                                 border: Border(
                                   bottom: BorderSide(color: colorScheme.primary, width: 2),
                                 ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: colorScheme.shadow.withValues(alpha: 0.08),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ],
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -520,6 +527,13 @@ class _ConverterScreenState extends State<ConverterScreen> {
                                     width: 2,
                                   ),
                                 ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: colorScheme.shadow.withValues(alpha: 0.08),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ],
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,

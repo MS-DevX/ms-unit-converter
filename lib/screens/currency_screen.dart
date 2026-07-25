@@ -380,10 +380,19 @@ class _CurrencyScreenState extends State<CurrencyScreen> with AutomaticKeepAlive
                               decoration: BoxDecoration(
                                 color: colorScheme.surfaceContainerHigh,
                                 borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: colorScheme.outlineVariant.withValues(alpha: 0.4),
-                                  width: 1.2,
+                                border: Border(
+                                  bottom: BorderSide(
+                                    color: colorScheme.primary,
+                                    width: 2,
+                                  ),
                                 ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: colorScheme.shadow.withValues(alpha: 0.08),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ],
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -519,10 +528,19 @@ class _CurrencyScreenState extends State<CurrencyScreen> with AutomaticKeepAlive
                               decoration: BoxDecoration(
                                 color: colorScheme.surfaceContainerHigh,
                                 borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: colorScheme.outlineVariant.withValues(alpha: 0.4),
-                                  width: 1.2,
+                                border: Border(
+                                  bottom: BorderSide(
+                                    color: colorScheme.outlineVariant,
+                                    width: 2,
+                                  ),
                                 ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: colorScheme.shadow.withValues(alpha: 0.08),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ],
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
