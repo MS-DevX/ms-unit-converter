@@ -1,5 +1,6 @@
 library;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
@@ -24,6 +25,16 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
+
+    if (kIsWeb) {
+      Future.delayed(
+        const Duration(milliseconds: 800),
+        () {
+          if (mounted && !_navigating) _navigateToApp();
+        },
+      );
+      return;
+    }
 
     _initAds();
     _checkUpdate();
