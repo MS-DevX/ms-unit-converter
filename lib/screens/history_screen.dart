@@ -172,107 +172,46 @@ class _HistoryScreenState extends State<HistoryScreen> with AutomaticKeepAliveCl
                         hintText: 'Search conversion history...',
                       ),
                       const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          _FilterChip(
-                            label: 'All (${historyProv.entries.length})',
-                            isSelected: _selectedFilterIndex == 0,
-                            onTap: () => setState(() => _selectedFilterIndex = 0),
-                          ),
-                          const SizedBox(width: 8),
-                          _FilterChip(
-                            label: 'Units',
-                            isSelected: _selectedFilterIndex == 1,
-                            onTap: () => setState(() => _selectedFilterIndex = 1),
-                          ),
-                          const SizedBox(width: 8),
-                          _FilterChip(
-                            label: 'Currency',
-                            isSelected: _selectedFilterIndex == 2,
-                            onTap: () => setState(() => _selectedFilterIndex = 2),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 14),
-                      // UNIT COMPANION BANNER CARD
-                      StitchCard(
-                        padding: const EdgeInsets.all(14),
-                        onTap: () {
-                          HapticFeedback.lightImpact();
-                          try {
-                            AppNavigator.of(context).switchTab(1);
-                          } catch (_) {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const UnitCompanionScreen(),
-                              ),
-                            );
-                          }
-                        },
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        physics: const BouncingScrollPhysics(),
                         child: Row(
                           children: [
-                            Container(
-                              width: 42,
-                              height: 42,
-                              decoration: BoxDecoration(
-                                color: colorScheme.primary.withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Icon(
-                                Icons.auto_awesome_rounded,
-                                color: colorScheme.primary,
-                                size: 20,
-                              ),
+                            _FilterChip(
+                              label: 'All (${historyProv.entries.length})',
+                              isSelected: _selectedFilterIndex == 0,
+                              onTap: () => setState(() => _selectedFilterIndex = 0),
                             ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Text(
-                                        'Unit Companion',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w700,
-                                          color: colorScheme.onSurface,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                        decoration: BoxDecoration(
-                                          color: colorScheme.primary.withValues(alpha: 0.12),
-                                          borderRadius: BorderRadius.circular(6),
-                                        ),
-                                        child: Text(
-                                          '100% Offline',
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.w700,
-                                            color: colorScheme.primary,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    'Smart search across units, formulas, & natural queries.',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: colorScheme.onSurfaceVariant,
+                            const SizedBox(width: 8),
+                            _FilterChip(
+                              label: 'Units',
+                              isSelected: _selectedFilterIndex == 1,
+                              onTap: () => setState(() => _selectedFilterIndex = 1),
+                            ),
+                            const SizedBox(width: 8),
+                            _FilterChip(
+                              label: 'Currency',
+                              isSelected: _selectedFilterIndex == 2,
+                              onTap: () => setState(() => _selectedFilterIndex = 2),
+                            ),
+                            const SizedBox(width: 8),
+                            _FilterChip(
+                              label: 'Companion',
+                              isSelected: _selectedFilterIndex == 3,
+                              onTap: () {
+                                HapticFeedback.lightImpact();
+                                setState(() => _selectedFilterIndex = 3);
+                                try {
+                                  AppNavigator.of(context).switchTab(1);
+                                } catch (_) {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const UnitCompanionScreen(),
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Icon(
-                              Icons.arrow_forward_ios_rounded,
-                              size: 14,
-                              color: colorScheme.onSurfaceVariant,
+                                  );
+                                }
+                              },
                             ),
                           ],
                         ),
