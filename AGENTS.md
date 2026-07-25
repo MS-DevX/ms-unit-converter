@@ -13,7 +13,7 @@ Dart ver     : 3.x stable (null-safe)
 State mgmt   : Provider (^6.1.0) — ChangeNotifier per feature
 Min SDK      : 21 (Android 5.0)
 Target SDK   : 37 (Android 17)
-App version  : 2.2.0+6
+App version  : 2.3.0+7
 Priority     : Quality over speed — clean code, great UX
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

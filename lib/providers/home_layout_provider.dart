@@ -27,11 +27,22 @@ class HomeLayoutProvider extends ChangeNotifier {
   }
 
   Future<void> reorder(int oldIndex, int newIndex) async {
-    if (oldIndex < newIndex) newIndex -= 1;
+    if (oldIndex == newIndex) return;
+    if (oldIndex < newIndex) {
+      newIndex -= 1;
+    }
+    if (oldIndex < 0 || oldIndex >= _sections.length) return;
+    if (newIndex < 0 || newIndex >= _sections.length) return;
     final item = _sections.removeAt(oldIndex);
     _sections.insert(newIndex, item);
     notifyListeners();
     await _persist();
+  }
+
+  Future<void> resetToDefault() async {
+    _sections = List.from(HomeLayoutService.defaultSections);
+    notifyListeners();
+    await HomeLayoutService.clearSections();
   }
 
   Future<void> _persist() async {

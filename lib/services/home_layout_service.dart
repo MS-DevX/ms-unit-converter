@@ -48,12 +48,19 @@ class HomeLayoutService {
   static Future<List<HomeSectionConfig>> getSections() async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(_key);
-    if (raw == null || raw.isEmpty) return defaultSections;
+    if (raw == null || raw.isEmpty) return List.from(defaultSections);
     try {
       final List<dynamic> list = jsonDecode(raw) as List<dynamic>;
-      return list.map((e) => HomeSectionConfig.fromJson(e as Map<String, dynamic>)).toList();
+      final saved = list.map((e) => HomeSectionConfig.fromJson(e as Map<String, dynamic>)).toList();
+      final savedIds = saved.map((s) => s.id).toSet();
+      for (final def in defaultSections) {
+        if (!savedIds.contains(def.id)) {
+          saved.add(def);
+        }
+      }
+      return saved;
     } catch (_) {
-      return defaultSections;
+      return List.from(defaultSections);
     }
   }
 
@@ -61,5 +68,10 @@ class HomeLayoutService {
     final prefs = await SharedPreferences.getInstance();
     final encoded = jsonEncode(sections.map((s) => s.toJson()).toList());
     await prefs.setString(_key, encoded);
+  }
+
+  static Future<void> clearSections() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_key);
   }
 }
