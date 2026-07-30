@@ -36,6 +36,9 @@ dependencies:
   cupertino_icons: ^1.0.8
   provider: ^6.1.0
   shared_preferences: ^2.2.0
+  sqflite: ^2.3.0
+  path_provider: ^2.1.0
+  path: ^1.9.0
   google_mobile_ads: ^9.0.0
   share_plus: ^13.2.1
   package_info_plus: ^10.2.1
@@ -60,6 +63,10 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
   flutter_launcher_icons: ^0.14.4
+  # sqlite3: used by Phase 2 developer tools (tools/build_database.dart).
+  # Not bundled in the app. Install separately when running build tools:
+  # dart pub global activate sqlite3
+  sqflite_common_ffi: ^2.3.0
 
 flutter_launcher_icons:
   android: true
@@ -80,6 +87,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/data/unit_information.json
+    - assets/database/stem_data.db
     - assets/icon.png
     - assets/adaptive_icon_foreground.png
 

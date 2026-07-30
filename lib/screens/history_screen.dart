@@ -140,7 +140,8 @@ class _HistoryScreenState extends State<HistoryScreen> with AutomaticKeepAliveCl
               e.category != 'Currency' &&
               e.category != 'Currency Exchange' &&
               e.category != 'Companion' &&
-              e.category != 'Unit Companion')
+              e.category != 'Unit Companion' &&
+              e.category != 'STEM Companion')
           .toList();
     } else if (_selectedFilterIndex == 2) {
       entries = entries
@@ -151,6 +152,7 @@ class _HistoryScreenState extends State<HistoryScreen> with AutomaticKeepAliveCl
           .where((e) =>
               e.category == 'Companion' ||
               e.category == 'Unit Companion' ||
+              e.category == 'STEM Companion' ||
               e.category.toLowerCase().contains('companion'))
           .toList();
     }
@@ -209,7 +211,7 @@ class _HistoryScreenState extends State<HistoryScreen> with AutomaticKeepAliveCl
                             ),
                             const SizedBox(width: 8),
                             _FilterChip(
-                              label: 'Companion',
+                              label: 'STEM Companion',
                               isSelected: _selectedFilterIndex == 3,
                               onTap: () {
                                 HapticFeedback.lightImpact();
@@ -235,7 +237,7 @@ class _HistoryScreenState extends State<HistoryScreen> with AutomaticKeepAliveCl
                     message: historyProv.entries.isEmpty
                         ? 'No Conversion History'
                         : _selectedFilterIndex == 3
-                            ? 'No Companion History'
+                            ? 'No STEM Companion History'
                             : _selectedFilterIndex == 2
                                 ? 'No Currency History'
                                 : _selectedFilterIndex == 1
@@ -244,7 +246,7 @@ class _HistoryScreenState extends State<HistoryScreen> with AutomaticKeepAliveCl
                     subtitle: historyProv.entries.isEmpty
                         ? 'Conversions you perform will automatically appear here.'
                         : _selectedFilterIndex == 3
-                            ? 'Conversions and discovery queries performed via Unit Companion will appear here.'
+                            ? 'Conversions and discovery queries performed via STEM Companion will appear here.'
                             : _selectedFilterIndex == 2
                                 ? 'Currency conversions you perform will appear here.'
                                 : _selectedFilterIndex == 1

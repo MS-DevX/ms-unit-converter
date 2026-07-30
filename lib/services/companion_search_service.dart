@@ -22,11 +22,14 @@ import '../screens/converter_screen.dart';
 import '../screens/custom_converter_screen.dart';
 import '../screens/notes_screen.dart';
 import '../core/colors.dart';
+import '../database/database_service.dart';
+import '../repositories/search_repository.dart';
+import '../screens/academy/formula_lesson_screen.dart';
 import '../services/smart_parse_service.dart';
 import '../services/unit_info_service.dart';
 import '../utils/formatters.dart';
 
-/// Pure-Dart offline search orchestrator for Unit Companion.
+/// Pure-Dart offline search orchestrator for STEM Companion.
 class CompanionSearchService {
   CompanionSearchService._();
 
@@ -66,7 +69,15 @@ class CompanionSearchService {
     'bar': ['pressure', 'psi'],
     'psi': ['pressure', 'bar'],
     'bmi': ['body mass index', 'health', 'fitness'],
+    'mathematics': ['math', 'angle', 'numberbase', 'percentage', 'formula'],
+    'physics': ['speed', 'force', 'energy', 'power', 'pressure', 'acceleration', 'torque', 'momentum'],
+    'chemistry': ['concentration', 'volume', 'density', 'temperature', 'cooking'],
+    'constants': ['constant', 'speed of light', 'gravity', 'avogadro'],
+    'engineering': ['pressure', 'stress', 'torque', 'voltage', 'current', 'resistance', 'power'],
+    'recently viewed': ['recent', 'history'],
+    'bookmarks': ['favorite', 'pinned', 'star', 'bookmark'],
   };
+
 
   /// Performs an offline search across all 11 local data sources.
   static Future<List<CompanionSearchResult>> search({
@@ -110,7 +121,7 @@ class CompanionSearchService {
     await _searchDefinitions(context, q, terms, results);
 
     // 3. Search Formulas
-    _searchFormulas(context, q, terms, results);
+    await _searchFormulas(context, q, terms, results);
 
     // 4. Search Currencies
     _searchCurrencies(context, q, terms, results);
@@ -320,54 +331,81 @@ class CompanionSearchService {
     }
   }
 
-  static void _searchFormulas(
+  static Future<void> _searchFormulas(
     BuildContext context,
     String rawQuery,
     Set<String> terms,
     List<CompanionSearchResult> results,
-  ) {
-    if (!terms.any((t) => t.contains('formula') || t.contains('calc') || t.contains('convert') || t.contains('how'))) {
-      return;
+  ) async {
+    // 1. Search STEM Academy Database Formulas via SearchRepository if DB initialized
+    if (DatabaseService.instance.isInitialized) {
+      final academyFormulas = await SearchRepository.instance.searchFormulas(rawQuery);
+      for (final f in academyFormulas) {
+        results.add(
+          CompanionSearchResult(
+            id: 'stem_formula_${f.id}',
+            type: CompanionResultType.formula,
+            title: f.name,
+            categoryName: '${f.topic} (Mathematics)',
+            description: f.description,
+            formula: f.formula,
+            icon: Icons.functions_rounded,
+            accentColor: const Color(0xFFA855F7),
+            score: 120,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => FormulaLessonScreen(formula: f),
+                ),
+              );
+            },
+          ),
+        );
+      }
     }
 
-    for (final cat in UnitCategory.values) {
-      final units = unitsData[cat] ?? [];
-      if (units.length < 2) continue;
-      final config = configFor(cat);
-      final baseUnit = units.firstWhere((u) => u.toBase == 1.0, orElse: () => units.first);
-      final secondary = units.firstWhere((u) => u.name != baseUnit.name, orElse: () => units.last);
+    // 2. Unit conversion formulas fallback
+    if (terms.any((t) => t.contains('formula') || t.contains('calc') || t.contains('convert') || t.contains('how'))) {
+      for (final cat in UnitCategory.values) {
+        final units = unitsData[cat] ?? [];
+        if (units.length < 2) continue;
+        final config = configFor(cat);
+        final baseUnit = units.firstWhere((u) => u.toBase == 1.0, orElse: () => units.first);
+        final secondary = units.firstWhere((u) => u.name != baseUnit.name, orElse: () => units.last);
 
-      String formulaStr;
-      if (cat == UnitCategory.temperature) {
-        formulaStr = '°F = (°C × 9/5) + 32  |  K = °C + 273.15';
-      } else {
-        formulaStr = '1 ${secondary.name} = ${secondary.toBase} ${baseUnit.name}';
+        String formulaStr;
+        if (cat == UnitCategory.temperature) {
+          formulaStr = '°F = (°C × 9/5) + 32  |  K = °C + 273.15';
+        } else {
+          formulaStr = '1 ${secondary.name} = ${secondary.toBase} ${baseUnit.name}';
+        }
+
+        results.add(
+          CompanionSearchResult(
+            id: 'formula_${cat.name}',
+            type: CompanionResultType.formula,
+            title: '${cat.displayName} Conversion Formula',
+            categoryName: cat.displayName,
+            description: 'Official formula for ${cat.displayName.toLowerCase()} conversions.',
+            formula: formulaStr,
+            icon: Icons.functions_rounded,
+            accentColor: config.primaryColor,
+            score: 65,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ConverterScreen(
+                    initialCategory: cat,
+                    isCompanion: true,
+                  ),
+                ),
+              );
+            },
+          ),
+        );
       }
-
-      results.add(
-        CompanionSearchResult(
-          id: 'formula_${cat.name}',
-          type: CompanionResultType.formula,
-          title: '${cat.displayName} Conversion Formula',
-          categoryName: cat.displayName,
-          description: 'Official formula for ${cat.displayName.toLowerCase()} conversions.',
-          formula: formulaStr,
-          icon: Icons.functions_rounded,
-          accentColor: config.primaryColor,
-          score: 65,
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ConverterScreen(
-                initialCategory: cat,
-                isCompanion: true,
-              ),
-              ),
-            );
-          },
-        ),
-      );
     }
   }
 
@@ -555,10 +593,14 @@ class CompanionSearchService {
     Set<String> terms,
     List<CompanionSearchResult> results,
   ) {
+    final isBookmarkSearch = terms.any(
+      (t) => t == 'bookmarks' || t == 'bookmark' || t == 'favorite' || t == 'pinned' || t == 'star',
+    );
+
     for (final cat in favProv.favorites) {
       final config = configFor(cat);
       final nameLower = cat.displayName.toLowerCase();
-      if (terms.any((t) => nameLower.contains(t))) {
+      if (isBookmarkSearch || terms.any((t) => nameLower.contains(t))) {
         results.add(
           CompanionSearchResult(
             id: 'fav_${cat.name}',
@@ -568,7 +610,7 @@ class CompanionSearchService {
             description: 'Favorite converter category in your library.',
             icon: Icons.star_rounded,
             accentColor: config.primaryColor,
-            score: 85,
+            score: isBookmarkSearch ? 95 : 85,
             onTap: () {
               Navigator.push(
                 context,
@@ -588,7 +630,7 @@ class CompanionSearchService {
     for (final cat in pinnedProv.pinned) {
       final config = configFor(cat);
       final nameLower = cat.displayName.toLowerCase();
-      if (terms.any((t) => nameLower.contains(t))) {
+      if (isBookmarkSearch || terms.any((t) => nameLower.contains(t))) {
         results.add(
           CompanionSearchResult(
             id: 'pinned_${cat.name}',
@@ -598,7 +640,7 @@ class CompanionSearchService {
             description: 'Pinned quick-access converter on your Home dashboard.',
             icon: Icons.push_pin_rounded,
             accentColor: config.primaryColor,
-            score: 85,
+            score: isBookmarkSearch ? 95 : 85,
             onTap: () {
               Navigator.push(
                 context,
@@ -623,12 +665,16 @@ class CompanionSearchService {
     Set<String> terms,
     List<CompanionSearchResult> results,
   ) {
+    final isRecentSearch = terms.any(
+      (t) => t == 'recently viewed' || t == 'recent' || t == 'history',
+    );
+
     for (final entry in historyProv.entries.take(20)) {
       final catNameLower = entry.category.toLowerCase();
       final fromLower = entry.fromUnit.toLowerCase();
       final toLower = entry.toUnit.toLowerCase();
 
-      if (terms.any((t) => catNameLower.contains(t) || fromLower.contains(t) || toLower.contains(t))) {
+      if (isRecentSearch || terms.any((t) => catNameLower.contains(t) || fromLower.contains(t) || toLower.contains(t))) {
         final catEnum = entry.categoryEnum;
         final config = configFor(catEnum);
         results.add(
@@ -640,7 +686,7 @@ class CompanionSearchService {
             description: 'Recent conversion: ${entry.fromUnit} to ${entry.toUnit}',
             icon: Icons.history_rounded,
             accentColor: config.primaryColor,
-            score: 60,
+            score: isRecentSearch ? 90 : 60,
             onTap: () {
               Navigator.push(
                 context,

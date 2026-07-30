@@ -12,7 +12,12 @@ import 'package:unit_converter/models/conversion_result.dart';
 import 'package:unit_converter/models/unit_model.dart';
 import 'package:unit_converter/utils/formatters.dart';
 
-/// Pure-logic conversion engine for MS Unit Converter.
+/// Pure mathematical conversion engine for MS Unit Converter.
+///
+/// ## ARCHITECTURE GUARDRAILS
+/// - Must remain a 100% pure, stateless, deterministic Dart service.
+/// - Performs ONLY mathematical calculations.
+/// - NEVER import repositories, database classes, or UI providers.
 class ConversionService {
   ConversionService._();
 

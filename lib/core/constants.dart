@@ -38,3 +38,10 @@ class AppConstants {
 
   static const int splashDurationMs = 1500;
 }
+
+class DatabaseConstants {
+  DatabaseConstants._();
+
+  static const String databaseFileName = 'stem_data.db';
+  static const String databaseAssetPath = 'assets/database/$databaseFileName';
+}

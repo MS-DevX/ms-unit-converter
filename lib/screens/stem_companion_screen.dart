@@ -1,26 +1,24 @@
-/// Unit Companion — 100% Offline Knowledge & Discovery Search Screen.
+/// STEM Companion — 100% Offline STEM Knowledge & Discovery Search Screen.
 library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../data/units_data.dart';
 import '../models/companion_result.dart';
 import '../services/companion_search_service.dart';
 import '../widgets/did_you_know_card.dart';
 import '../widgets/empty_state_widget.dart';
 import '../widgets/stitch_card.dart';
 import '../widgets/stitch_search_bar.dart';
-import 'converter_screen.dart';
 
-class UnitCompanionScreen extends StatefulWidget {
-  const UnitCompanionScreen({super.key});
+class StemCompanionScreen extends StatefulWidget {
+  const StemCompanionScreen({super.key});
 
   @override
-  State<UnitCompanionScreen> createState() => _UnitCompanionScreenState();
+  State<StemCompanionScreen> createState() => _StemCompanionScreenState();
 }
 
-class _UnitCompanionScreenState extends State<UnitCompanionScreen> {
+class _StemCompanionScreenState extends State<StemCompanionScreen> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
 
@@ -29,25 +27,15 @@ class _UnitCompanionScreenState extends State<UnitCompanionScreen> {
   String _activeQuery = '';
 
   static const List<String> _suggestionChips = [
-    'Length',
-    'Weight',
-    'Temperature',
-    'Speed',
-    'Area',
-    'Volume',
-    'Currency',
-    'Pressure',
-    'Power',
-    'Energy',
-    'Cooking',
+    'Mathematics',
+    'Physics',
+    'Chemistry',
+    'Units',
+    'Conversions',
+    'Constants',
     'Engineering',
-    'BMI',
-    'Shoe Size',
-    'Typography',
-    'Fuel Economy',
-    'Data Storage',
-    'Time',
-    'Angle',
+    'Recently Viewed',
+    'Bookmarks',
   ];
 
   @override
@@ -152,7 +140,7 @@ class _UnitCompanionScreenState extends State<UnitCompanionScreen> {
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                '100% Offline Companion',
+                                '100% Offline STEM Hub',
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
@@ -166,7 +154,7 @@ class _UnitCompanionScreenState extends State<UnitCompanionScreen> {
                     ),
                     const SizedBox(height: 10),
                     Text(
-                      'Unit Companion',
+                      'STEM Companion',
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.w800,
@@ -176,7 +164,7 @@ class _UnitCompanionScreenState extends State<UnitCompanionScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'What would you like to convert or learn today?',
+                      'Search your offline STEM library.',
                       style: TextStyle(
                         fontSize: 14,
                         color: colorScheme.onSurfaceVariant,
@@ -194,7 +182,7 @@ class _UnitCompanionScreenState extends State<UnitCompanionScreen> {
                 child: StitchSearchBar(
                   controller: _searchController,
                   focusNode: _searchFocusNode,
-                  hintText: 'Search units, categories, formulas, definitions...',
+                  hintText: 'Search units, formulas, constants, topics...',
                   horizontalMargin: 24,
                   onChanged: (_) {},
                   onClear: () {
@@ -268,9 +256,9 @@ class _UnitCompanionScreenState extends State<UnitCompanionScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
                   child: EmptyStateWidget(
                     icon: Icons.manage_search_rounded,
-                    message: 'No Matching Results Found',
+                    message: 'No Matching STEM Results Found',
                     subtitle:
-                        'No matching units or converter information were found for "$query". Try another keyword or browse one of the suggested categories above.',
+                        'No matching content was found in your offline library for "$query". Try searching another keyword or select one of the STEM quick topic chips above.',
                   ),
                 ),
               )
@@ -283,21 +271,7 @@ class _UnitCompanionScreenState extends State<UnitCompanionScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'I Want To...',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: colorScheme.onSurface,
-                          letterSpacing: -0.3,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      _QuickStartActionsBar(
-                        onSelect: (query) => _selectSuggestion(query),
-                      ),
-                      const SizedBox(height: 20),
-                      Text(
-                        'Popular Topics to Explore',
+                        'Explore STEM Topics',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
@@ -312,39 +286,39 @@ class _UnitCompanionScreenState extends State<UnitCompanionScreen> {
                         children: [
                           _QuickCategoryCard(
                             icon: Icons.straighten_rounded,
-                            label: 'Length',
+                            label: 'Units',
                             color: const Color(0xFF4F8CFF),
-                            onTap: () => _openCategory(UnitCategory.length),
+                            onTap: () => _selectSuggestion('Units'),
                           ),
                           _QuickCategoryCard(
-                            icon: Icons.scale_rounded,
-                            label: 'Weight',
-                            color: const Color(0xFFFFB77B),
-                            onTap: () => _openCategory(UnitCategory.weight),
+                            icon: Icons.functions_rounded,
+                            label: 'Mathematics',
+                            color: const Color(0xFFA855F7),
+                            onTap: () => _selectSuggestion('Mathematics'),
                           ),
                           _QuickCategoryCard(
-                            icon: Icons.device_thermostat_rounded,
-                            label: 'Temperature',
-                            color: const Color(0xFFFFB4AB),
-                            onTap: () => _openCategory(UnitCategory.temperature),
-                          ),
-                          _QuickCategoryCard(
-                            icon: Icons.speed_rounded,
-                            label: 'Speed',
+                            icon: Icons.science_rounded,
+                            label: 'Physics',
                             color: const Color(0xFF06B6D4),
-                            onTap: () => _openCategory(UnitCategory.speed),
+                            onTap: () => _selectSuggestion('Physics'),
                           ),
                           _QuickCategoryCard(
-                            icon: Icons.currency_exchange_rounded,
-                            label: 'Currency',
+                            icon: Icons.biotech_rounded,
+                            label: 'Chemistry',
+                            color: const Color(0xFFEC4899),
+                            onTap: () => _selectSuggestion('Chemistry'),
+                          ),
+                          _QuickCategoryCard(
+                            icon: Icons.compress_rounded,
+                            label: 'Constants',
+                            color: const Color(0xFFFFB77B),
+                            onTap: () => _selectSuggestion('Constants'),
+                          ),
+                          _QuickCategoryCard(
+                            icon: Icons.precision_manufacturing_rounded,
+                            label: 'Engineering',
                             color: const Color(0xFF22C55E),
-                            onTap: () => _selectSuggestion('Currency'),
-                          ),
-                          _QuickCategoryCard(
-                            icon: Icons.soup_kitchen_rounded,
-                            label: 'Cooking',
-                            color: const Color(0xFFF97316),
-                            onTap: () => _openCategory(UnitCategory.cooking),
+                            onTap: () => _selectSuggestion('Engineering'),
                           ),
                         ],
                       ),
@@ -401,7 +375,7 @@ class _UnitCompanionScreenState extends State<UnitCompanionScreen> {
                     delegate: SliverChildBuilderDelegate(
                       (context, index) {
                         final item = entry.value[index];
-                        return _CompanionResultTile(item: item);
+                        return _StemResultTile(item: item);
                       },
                       childCount: entry.value.length,
                     ),
@@ -412,15 +386,6 @@ class _UnitCompanionScreenState extends State<UnitCompanionScreen> {
             ],
           ],
         ),
-      ),
-    );
-  }
-
-  void _openCategory(UnitCategory category) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ConverterScreen(initialCategory: category),
       ),
     );
   }
@@ -485,10 +450,10 @@ class _QuickCategoryCard extends StatelessWidget {
   }
 }
 
-class _CompanionResultTile extends StatelessWidget {
+class _StemResultTile extends StatelessWidget {
   final CompanionSearchResult item;
 
-  const _CompanionResultTile({required this.item});
+  const _StemResultTile({required this.item});
 
   @override
   Widget build(BuildContext context) {
@@ -656,62 +621,6 @@ class _CompanionResultTile extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _QuickStartActionsBar extends StatelessWidget {
-  final ValueChanged<String> onSelect;
-
-  const _QuickStartActionsBar({required this.onSelect});
-
-  static const List<({String emoji, String title, String query})> _quickActions = [
-    (emoji: '🍳', title: 'Cook', query: 'Cooking'),
-    (emoji: '✈️', title: 'Travel', query: 'Travel'),
-    (emoji: '📚', title: 'Study', query: 'Length'),
-    (emoji: '🏗️', title: 'Engineering', query: 'Pressure'),
-    (emoji: '🏃', title: 'Fitness', query: 'BMI'),
-    (emoji: '💰', title: 'Finance', query: 'Currency'),
-    (emoji: '💻', title: 'Developer', query: 'Data Storage'),
-    (emoji: '🔬', title: 'Science', query: 'Radioactivity'),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return SizedBox(
-      height: 40,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        physics: const BouncingScrollPhysics(),
-        itemCount: _quickActions.length,
-        separatorBuilder: (context, index) => const SizedBox(width: 8),
-        itemBuilder: (context, index) {
-          final action = _quickActions[index];
-          return ActionChip(
-            avatar: Text(action.emoji, style: const TextStyle(fontSize: 13)),
-            label: Text(action.title),
-            onPressed: () {
-              HapticFeedback.lightImpact();
-              onSelect(action.query);
-            },
-            backgroundColor: colorScheme.surfaceContainerHigh,
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            labelStyle: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: colorScheme.onSurface,
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: BorderSide(
-                color: colorScheme.outlineVariant.withValues(alpha: 0.3),
-              ),
-            ),
-          );
-        },
       ),
     );
   }

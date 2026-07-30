@@ -9,7 +9,7 @@ import 'currency_screen.dart';
 import 'history_screen.dart';
 import 'home_screen.dart';
 import 'settings_screen.dart';
-import 'unit_companion_screen.dart';
+import 'stem_companion_screen.dart';
 
 class MainShell extends StatefulWidget {
   final int initialIndex;
@@ -29,7 +29,7 @@ class _MainShellState extends State<MainShell> {
 
   static const List<Widget> _screens = [
     HomeScreen(),
-    UnitCompanionScreen(),
+    StemCompanionScreen(),
     CurrencyScreen(),
     HistoryScreen(),
     SettingsScreen(),
@@ -44,7 +44,7 @@ class _MainShellState extends State<MainShell> {
     StitchNavItem(
       icon: Icons.auto_awesome_outlined,
       selectedIcon: Icons.auto_awesome_rounded,
-      label: 'Companion',
+      label: 'STEM Companion',
     ),
     StitchNavItem(
       icon: Icons.currency_exchange_outlined,

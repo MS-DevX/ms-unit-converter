@@ -2,12 +2,18 @@
 ///
 /// Manages the source currency, input value, exchange rates, and computes
 /// results for all currencies in a single list view.
+///
+/// Currency data (models + fallback rates) is sourced from [CurrencyRepository],
+/// which reads from SQLite. The Dart fallback list is used only for the instant
+/// synchronous population on first construction, before the async repository
+/// call completes.
 library;
 
 import 'package:flutter/foundation.dart';
 
 import '../data/currencies_data.dart';
 import '../models/currency_model.dart';
+import '../repositories/currency_repository.dart';
 import '../services/currency_service.dart';
 import '../utils/formatters.dart';
 
@@ -110,6 +116,29 @@ class CurrencyProvider extends ChangeNotifier {
   }
 
   Future<void> _init() async {
+    // Upgrade the currency list from the SQLite repository (full list with
+    // display metadata). Falls back silently to the Dart list if the DB is
+    // not ready.
+    try {
+      final dbCurrencies = await CurrencyRepository.instance.getAllCurrencies();
+      if (dbCurrencies.isNotEmpty) {
+        _currencies = dbCurrencies;
+        // Keep _fromCurrency pointing to USD if possible.
+        if (_fromCurrency != null &&
+            !_currencies.any((c) => c.code == _fromCurrency!.code)) {
+          _fromCurrency = _currencies.isNotEmpty ? _currencies.first : null;
+        }
+        // Also upgrade fallback rates from DB.
+        final dbRates = await CurrencyRepository.instance.getFallbackRates();
+        if (dbRates.isNotEmpty) {
+          _rates = Map.from(dbRates);
+        }
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('[CurrencyProvider] DB currency load failed — using Dart fallback: $e');
+    }
+
     final cached = await CurrencyService.loadCachedRates();
     if (cached != null) {
       _rates = cached;

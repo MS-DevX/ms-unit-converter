@@ -138,7 +138,7 @@ class _ConverterScreenState extends State<ConverterScreen> {
       context.read<HistoryProvider>().addEntry(
         HistoryEntry(
           id: DateTime.now().microsecondsSinceEpoch.toString(),
-          category: widget.isCompanion ? 'Unit Companion' : converter.selectedCategory.displayName,
+          category: widget.isCompanion ? 'STEM Companion' : converter.selectedCategory.displayName,
           fromUnit: fromUnit.name,
           fromSymbol: fromUnit.symbol,
           toUnit: toUnit.name,

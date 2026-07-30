@@ -1,0 +1,82 @@
+[
+  {
+    "id": "algebra",
+    "name": "Algebra",
+    "subject_id": 1,
+    "emoji": "📐",
+    "description": "Linear and quadratic equations, polynomials, sequences, Surds, and inequalities.",
+    "display_order": 1
+  },
+  {
+    "id": "geometry",
+    "name": "Geometry",
+    "subject_id": 1,
+    "emoji": "📏",
+    "description": "2D and 3D shapes, angles, theorems, area, volume, and geometric constructions.",
+    "display_order": 2
+  },
+  {
+    "id": "trigonometry",
+    "name": "Trigonometry",
+    "subject_id": 1,
+    "emoji": "📈",
+    "description": "Trigonometric ratios, identities, sine/cosine laws, and periodic functions.",
+    "display_order": 3
+  },
+  {
+    "id": "coordinate_geometry",
+    "name": "Coordinate Geometry",
+    "subject_id": 1,
+    "emoji": "📉",
+    "description": "Lines, distance formulas, slopes, circles, parabolas, and conic sections.",
+    "display_order": 4
+  },
+  {
+    "id": "calculus",
+    "name": "Calculus",
+    "subject_id": 1,
+    "emoji": "∞",
+    "description": "Limits, derivatives, integrals, differential equations, and series.",
+    "display_order": 5
+  },
+  {
+    "id": "probability",
+    "name": "Probability",
+    "subject_id": 1,
+    "emoji": "🎲",
+    "description": "Combinatorics, permutations, conditional probability, and random variables.",
+    "display_order": 6
+  },
+  {
+    "id": "statistics",
+    "name": "Statistics",
+    "subject_id": 1,
+    "emoji": "📊",
+    "description": "Mean, median, mode, variance, standard deviation, and normal distributions.",
+    "display_order": 7
+  },
+  {
+    "id": "matrices",
+    "name": "Matrices",
+    "subject_id": 1,
+    "emoji": "🧮",
+    "description": "Matrix operations, determinants, inverses, and systems of linear equations.",
+    "display_order": 8
+  },
+  {
+    "id": "vectors",
+    "name": "Vectors",
+    "subject_id": 1,
+    "emoji": "➡️",
+    "description": "Dot product, cross product, vector magnitude, projection, and 3D space.",
+    "display_order": 9
+  },
+  {
+    "id": "logarithms",
+    "name": "Logarithms",
+    "subject_id": 1,
+    "emoji": "➗",
+    "description": "Logarithmic identities, change of base, exponential growth, and decay.",
+    "display_order": 10
+  }
+]

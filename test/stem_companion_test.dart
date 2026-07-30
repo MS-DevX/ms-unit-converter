@@ -10,7 +10,7 @@ import 'package:unit_converter/providers/notes_provider.dart';
 import 'package:unit_converter/providers/pinned_provider.dart';
 import 'package:unit_converter/providers/settings_provider.dart';
 import 'package:unit_converter/providers/usage_provider.dart';
-import 'package:unit_converter/screens/unit_companion_screen.dart';
+import 'package:unit_converter/screens/stem_companion_screen.dart';
 import 'package:unit_converter/services/companion_search_service.dart';
 
 void main() {
@@ -21,12 +21,17 @@ void main() {
   });
 
   group('CompanionSearchResult Model Tests', () {
-    test('groupTitle returns appropriate group headers', () {
+    test('groupTitle returns appropriate group headers for STEM types', () {
       expect(CompanionSearchResult.groupTitle(CompanionResultType.unit), contains('Units'));
       expect(CompanionSearchResult.groupTitle(CompanionResultType.category), contains('Categories'));
       expect(CompanionSearchResult.groupTitle(CompanionResultType.currency), contains('Currency'));
       expect(CompanionSearchResult.groupTitle(CompanionResultType.definition), contains('Definitions'));
       expect(CompanionSearchResult.groupTitle(CompanionResultType.formula), contains('Formulas'));
+      expect(CompanionSearchResult.groupTitle(CompanionResultType.physics), contains('Physics'));
+      expect(CompanionSearchResult.groupTitle(CompanionResultType.chemistry), contains('Chemistry'));
+      expect(CompanionSearchResult.groupTitle(CompanionResultType.mathematics), contains('Mathematics'));
+      expect(CompanionSearchResult.groupTitle(CompanionResultType.constant), contains('Scientific Constants'));
+      expect(CompanionSearchResult.groupTitle(CompanionResultType.bookmark), contains('Bookmarks'));
     });
   });
 
@@ -66,6 +71,18 @@ void main() {
                     );
                     expect(guideResults, isNotEmpty);
                     expect(guideResults.any((r) => r.type == CompanionResultType.guide), isTrue);
+
+                    final mathResults = await CompanionSearchService.search(
+                      context: context,
+                      query: 'mathematics',
+                    );
+                    expect(mathResults, isNotEmpty);
+
+                    final physicsResults = await CompanionSearchService.search(
+                      context: context,
+                      query: 'physics',
+                    );
+                    expect(physicsResults, isNotEmpty);
                   },
                   child: const Text('Search'),
                 );
@@ -80,8 +97,8 @@ void main() {
     });
   });
 
-  group('UnitCompanionScreen Widget Tests', () {
-    testWidgets('renders header, search bar, and suggestion chips', (WidgetTester tester) async {
+  group('StemCompanionScreen Widget Tests', () {
+    testWidgets('renders STEM header, search bar, and suggested quick topic chips', (WidgetTester tester) async {
       await tester.pumpWidget(
         MultiProvider(
           providers: [
@@ -94,16 +111,24 @@ void main() {
             ChangeNotifierProvider(create: (_) => UsageProvider()..loadUsage()),
           ],
           child: const MaterialApp(
-            home: UnitCompanionScreen(),
+            home: StemCompanionScreen(),
           ),
         ),
       );
 
-      expect(find.text('Unit Companion'), findsOneWidget);
-      expect(find.text('100% Offline Companion'), findsOneWidget);
-      expect(find.text('Length'), findsWidgets);
-      expect(find.text('Weight'), findsWidgets);
-      expect(find.text('Temperature'), findsWidgets);
+      expect(find.text('STEM Companion'), findsOneWidget);
+      expect(find.text('Search your offline STEM library.'), findsOneWidget);
+      expect(find.text('100% Offline STEM Hub'), findsOneWidget);
+      expect(find.text('Mathematics'), findsWidgets);
+      expect(find.text('Physics'), findsWidgets);
+      expect(find.text('Chemistry'), findsWidgets);
+
+      // Scroll chip bar horizontally to expose Bookmarks chip
+      await tester.drag(find.byType(ListView).first, const Offset(-1000, 0));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Recently Viewed'), findsWidgets);
+      expect(find.text('Bookmarks'), findsWidgets);
     });
   });
 }

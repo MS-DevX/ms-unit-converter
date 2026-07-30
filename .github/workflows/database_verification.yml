@@ -1,0 +1,91 @@
+name: Database Verification
+
+# Validates content files and infrastructure on every PR and push.
+# In Phase 2, this workflow will also regenerate and verify the committed DB binary.
+
+on:
+  push:
+    branches: [main, develop, 'feature/**', 'release/**']
+    paths:
+      - 'lib/data/**'
+      - 'lib/database/**'
+      - 'lib/repositories/**'
+      - 'assets/data/**'
+      - 'tools/**'
+      - 'content/**'
+      - 'pubspec.yaml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'lib/data/**'
+      - 'lib/database/**'
+      - 'lib/repositories/**'
+      - 'assets/data/**'
+      - 'tools/**'
+      - 'content/**'
+      - 'pubspec.yaml'
+
+jobs:
+  validate-content:
+    name: Validate Content & Infrastructure
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run content linter
+        run: dart run tools/lint_content.dart
+
+      - name: Validate content files
+        run: dart run tools/validate_content.dart
+
+      - name: Flutter analyze
+        run: flutter analyze --no-fatal-infos
+
+  # ── Phase 2: Uncomment when JSON content source is implemented ─────────────
+  #
+  # verify-database:
+  #   name: Verify Committed Database
+  #   runs-on: ubuntu-latest
+  #   needs: validate-content
+  #
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v4
+  #
+  #     - name: Set up Flutter
+  #       uses: subosito/flutter-action@v2
+  #       with:
+  #         channel: stable
+  #
+  #     - name: Install dependencies
+  #       run: flutter pub get
+  #
+  #     - name: Install sqlite3
+  #       run: sudo apt-get install -y sqlite3
+  #
+  #     - name: Validate JSON content
+  #       run: dart run tools/validate_content.dart
+  #
+  #     - name: Regenerate database
+  #       run: dart run tools/build_database.dart
+  #
+  #     - name: Verify committed database matches generated database
+  #       run: dart run tools/verify_database.dart
+  #
+  #     - name: Upload generated database as artifact
+  #       uses: actions/upload-artifact@v4
+  #       if: failure()
+  #       with:
+  #         name: generated-database
+  #         path: assets/database/unit_converter.db
+  #         retention-days: 7

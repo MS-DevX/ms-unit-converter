@@ -1,18 +1,29 @@
 /// Core UI-state provider for the converter screen.
 ///
-/// Connects [ConversionService], [unitsData], and [Formatters] into a
+/// Connects [ConversionService], [UnitRepository], and [Formatters] into a
 /// single [ChangeNotifier] that the widget tree observes.
+///
+/// Units are loaded from the SQLite database via [UnitRepository]. After the
+/// first load per category, results are served from the repository's
+/// in-memory cache and are effectively instant.
 library;
 
 import 'package:flutter/foundation.dart';
 
 import '../data/units_data.dart';
+import '../database/database_service.dart';
 import '../models/conversion_result.dart';
 import '../models/unit_model.dart';
+import '../repositories/unit_repository.dart';
 import '../services/conversion_service.dart';
 import '../utils/formatters.dart';
 
-/// Exposes the full converter state to the widget tree.
+/// Exposes live unit conversion UI state to the widget tree.
+///
+/// ## ARCHITECTURE GUARDRAILS
+/// - Manages UI presentation state and notifies listeners.
+/// - NEVER executes raw SQL or imports `sqflite`.
+/// - Fetches unit data solely through [UnitRepository.instance].
 class ConverterProvider extends ChangeNotifier {
   // ─── State ────────────────────────────────────────────────────────────
 
@@ -21,6 +32,7 @@ class ConverterProvider extends ChangeNotifier {
   UnitModel? _toUnit;
   String _inputValue = '';
   ConversionResult? _result;
+  bool _isLoadingUnits = false;
 
   // ── Category-specific extras ─────────────────────────────────────────
   String _rawInput = ''; // raw text (Number Base accepts hex)
@@ -38,6 +50,10 @@ class ConverterProvider extends ChangeNotifier {
   double get baseFontSize => _baseFontSize;
   bool get isMenSize => _isMenSize;
 
+  /// True while units are being loaded from the database for a new category.
+  /// Only true on the very first access per category per session.
+  bool get isLoadingUnits => _isLoadingUnits;
+
   // ─── Constructor ──────────────────────────────────────────────────────
 
   ConverterProvider() {
@@ -46,6 +62,11 @@ class ConverterProvider extends ChangeNotifier {
 
   // ─── Public API ───────────────────────────────────────────────────────
 
+  /// Changes the active [category]. Resets both unit selections to index 0.
+  ///
+  /// Units are loaded asynchronously from [UnitRepository]. After the first
+  /// load per category per session, the result is served from the repository's
+  /// in-memory cache and [isLoadingUnits] remains `false`.
   void setCategory(UnitCategory category) {
     _selectedCategory = category;
     _inputValue = '';
@@ -105,18 +126,50 @@ class ConverterProvider extends ChangeNotifier {
 
   String get formattedInput => _inputValue.isEmpty ? '0' : _inputValue;
 
-  List<UnitModel> get currentUnits => getUnits(_selectedCategory);
+  /// Returns the cached units for the currently selected category.
+  ///
+  /// Returns an empty list while units are loading from the database.
+  List<UnitModel> get currentUnits =>
+      UnitRepository.instance.getCachedUnitsForCategory(_selectedCategory) ?? [];
 
   // ─── Private helpers ──────────────────────────────────────────────────
 
   void _initUnitsForCategory(UnitCategory category) {
-    final units = getUnits(category);
-    _fromUnit = units.isNotEmpty ? units[0] : null;
-    _toUnit = units.length > 1
-        ? units[1]
-        : units.isNotEmpty
-        ? units[0]
-        : null;
+    // Fall back to Dart data if DB is not initialized (e.g. unit/widget test runner).
+    if (!DatabaseService.instance.isInitialized) {
+      final units = getUnits(category);
+      _fromUnit = units.isNotEmpty ? units[0] : null;
+      _toUnit = units.length > 1
+          ? units[1]
+          : units.isNotEmpty
+              ? units[0]
+              : null;
+      return;
+    }
+
+    // If the repository already has this category cached, use it synchronously.
+    final cached = UnitRepository.instance.getCachedUnitsForCategory(category);
+    if (cached != null) {
+      _fromUnit = cached.isNotEmpty ? cached[0] : null;
+      _toUnit = cached.length > 1 ? cached[1] : cached.isNotEmpty ? cached[0] : null;
+      return;
+    }
+
+    // First access for this category — load from SQLite asynchronously.
+    _isLoadingUnits = true;
+    notifyListeners();
+
+    UnitRepository.instance.loadUnitsForCategory(category).then((units) {
+      if (_selectedCategory != category) return; // User changed category again
+      _fromUnit = units.isNotEmpty ? units[0] : null;
+      _toUnit = units.length > 1 ? units[1] : units.isNotEmpty ? units[0] : null;
+      _isLoadingUnits = false;
+      notifyListeners();
+    }).catchError((Object e) {
+      debugPrint('[ConverterProvider] Failed to load units for $category: $e');
+      _isLoadingUnits = false;
+      notifyListeners();
+    });
   }
 
   void _recalculate() {

@@ -1,0 +1,447 @@
+[
+  {
+    "id": 101,
+    "subject_id": 1,
+    "category_id": "algebra",
+    "topic": "Quadratic Equations",
+    "name": "Quadratic Formula",
+    "formula": "x = (-b ± √(b² - 4ac)) / (2a)",
+    "description": "Calculates the real or complex roots of any second-degree polynomial equation in the standard form ax² + bx + c = 0.",
+    "difficulty": 2,
+    "estimated_read_minutes": 3,
+    "variables": [
+      { "symbol": "a", "name": "Quadratic Coefficient", "description": "Coefficient of x² (must be non-zero)" },
+      { "symbol": "b", "name": "Linear Coefficient", "description": "Coefficient of x" },
+      { "symbol": "c", "name": "Constant Term", "description": "Numerical constant term" },
+      { "symbol": "x", "name": "Roots / Solutions", "description": "Values of x where the equation equals 0" }
+    ],
+    "worked_example": {
+      "problem": "Solve 2x² - 4x - 6 = 0 using the quadratic formula.",
+      "steps": [
+        "Identify coefficients: a = 2, b = -4, c = -6.",
+        "Compute the discriminant: Δ = b² - 4ac = (-4)² - 4(2)(-6) = 16 + 48 = 64.",
+        "Apply quadratic formula: x = (-(-4) ± √64) / (2 × 2) = (4 ± 8) / 4.",
+        "Calculate roots: x₁ = (4 + 8) / 4 = 3, and x₂ = (4 - 8) / 4 = -1."
+      ],
+      "solution": "x = 3 or x = -1"
+    },
+    "related_content": [
+      { "target_type": "formula", "target_id": "102", "title": "Discriminant Formula", "relationship_type": "prerequisite" },
+      { "target_type": "formula", "target_id": "103", "title": "Vertex Form of Parabola", "relationship_type": "extension" }
+    ],
+    "search_keywords": ["quadratic", "roots", "parabola", "equation", "formula", "algebra"],
+    "display_order": 1,
+    "tags": ["algebra", "polynomials", "equations"]
+  },
+  {
+    "id": 102,
+    "subject_id": 1,
+    "category_id": "algebra",
+    "topic": "Quadratic Equations",
+    "name": "Discriminant Formula",
+    "formula": "Δ = b² - 4ac",
+    "description": "Determines the number and nature of roots for a quadratic equation ax² + bx + c = 0.",
+    "difficulty": 1,
+    "estimated_read_minutes": 2,
+    "variables": [
+      { "symbol": "Δ", "name": "Discriminant", "description": "Determines nature of roots (Δ > 0: two real, Δ = 0: one real, Δ < 0: two complex)" },
+      { "symbol": "a", "name": "Coefficient of x²", "description": "Non-zero multiplier of x²" },
+      { "symbol": "b", "name": "Coefficient of x", "description": "Multiplier of x" },
+      { "symbol": "c", "name": "Constant", "description": "Constant term" }
+    ],
+    "worked_example": {
+      "problem": "Determine the nature of roots for x² + 2x + 5 = 0.",
+      "steps": [
+        "Identify a = 1, b = 2, c = 5.",
+        "Calculate Δ = (2)² - 4(1)(5) = 4 - 20 = -16.",
+        "Since Δ < 0, the equation has no real roots and two complex conjugate solutions."
+      ],
+      "solution": "Δ = -16 (Two distinct complex roots)"
+    },
+    "related_content": [
+      { "target_type": "formula", "target_id": "101", "title": "Quadratic Formula", "relationship_type": "parent" }
+    ],
+    "search_keywords": ["discriminant", "delta", "roots", "nature of roots"],
+    "display_order": 2,
+    "tags": ["algebra", "quadratic"]
+  },
+  {
+    "id": 103,
+    "subject_id": 1,
+    "category_id": "algebra",
+    "topic": "Polynomials",
+    "name": "Binomial Theorem",
+    "formula": "(a + b)ⁿ = ∑ₖ₌₀ⁿ (ⁿₖ) aⁿ⁻ᵏ bᵏ",
+    "description": "Expands powers of a binomial expression using combinations and Pascal's triangle coefficients.",
+    "difficulty": 3,
+    "estimated_read_minutes": 4,
+    "variables": [
+      { "symbol": "n", "name": "Exponent", "description": "Non-negative integer power" },
+      { "symbol": "k", "name": "Index", "description": "Term index from 0 to n" },
+      { "symbol": "(ⁿₖ)", "name": "Binomial Coefficient", "description": "n! / (k!(n - k)!)" }
+    ],
+    "worked_example": {
+      "problem": "Expand (x + 2)³ using the Binomial Theorem.",
+      "steps": [
+        "Identify n = 3, a = x, b = 2.",
+        "Apply theorem: (³₀)x³ + (³₁)x²(2)¹ + (³₂)x¹(2)² + (³₃)(2)³.",
+        "Evaluate coefficients: 1·x³ + 3·x²(2) + 3·x(4) + 1·8.",
+        "Simplify: x³ + 6x² + 12x + 8."
+      ],
+      "solution": "x³ + 6x² + 12x + 8"
+    },
+    "related_content": [],
+    "search_keywords": ["binomial", "theorem", "pascal", "expansion", "combination"],
+    "display_order": 3,
+    "tags": ["algebra", "polynomials"]
+  },
+  {
+    "id": 201,
+    "subject_id": 1,
+    "category_id": "geometry",
+    "topic": "Triangles & Circles",
+    "name": "Pythagorean Theorem",
+    "formula": "a² + b² = c²",
+    "description": "Fundamental relationship in Euclidean geometry among the three sides of a right triangle.",
+    "difficulty": 1,
+    "estimated_read_minutes": 2,
+    "variables": [
+      { "symbol": "a", "name": "Leg A", "description": "Length of first perpendicular leg" },
+      { "symbol": "b", "name": "Leg B", "description": "Length of second perpendicular leg" },
+      { "symbol": "c", "name": "Hypotenuse", "description": "Length of side opposite the right angle" }
+    ],
+    "worked_example": {
+      "problem": "Find the hypotenuse c of a right triangle with leg lengths a = 6 cm and b = 8 cm.",
+      "steps": [
+        "Square both leg lengths: 6² = 36, 8² = 64.",
+        "Add squares: 36 + 64 = 100.",
+        "Take square root of sum: c = √100 = 10 cm."
+      ],
+      "solution": "c = 10 cm"
+    },
+    "related_content": [
+      { "target_type": "formula", "target_id": "301", "title": "Sine Law", "relationship_type": "generalization" }
+    ],
+    "search_keywords": ["pythagoras", "pythagorean", "hypotenuse", "right triangle", "geometry"],
+    "display_order": 1,
+    "tags": ["geometry", "triangles"]
+  },
+  {
+    "id": 202,
+    "subject_id": 1,
+    "category_id": "geometry",
+    "topic": "Circles & Spheres",
+    "name": "Area of a Circle",
+    "formula": "A = πr²",
+    "description": "Calculates the total two-dimensional surface space enclosed by a circle of radius r.",
+    "difficulty": 1,
+    "estimated_read_minutes": 2,
+    "variables": [
+      { "symbol": "A", "name": "Area", "description": "Total area in square units" },
+      { "symbol": "r", "name": "Radius", "description": "Distance from center to edge of circle" },
+      { "symbol": "π", "name": "Pi Constant", "description": "Archimedes' constant (~3.14159)" }
+    ],
+    "worked_example": {
+      "problem": "Find the area of a circle with radius r = 7 meters.",
+      "steps": [
+        "Square the radius: r² = 7² = 49.",
+        "Multiply by π: A = 49 × π ≈ 49 × 3.14159 = 153.94 m²."
+      ],
+      "solution": "A ≈ 153.94 m²"
+    },
+    "related_content": [],
+    "search_keywords": ["circle", "area", "pi", "radius"],
+    "display_order": 2,
+    "tags": ["geometry", "circles"]
+  },
+  {
+    "id": 301,
+    "subject_id": 1,
+    "category_id": "trigonometry",
+    "topic": "Triangles & Ratios",
+    "name": "Law of Sines",
+    "formula": "a / sin(A) = b / sin(B) = c / sin(C)",
+    "description": "Relates the side lengths of any oblique triangle to the sines of its interior angles.",
+    "difficulty": 2,
+    "estimated_read_minutes": 3,
+    "variables": [
+      { "symbol": "a, b, c", "name": "Side Lengths", "description": "Opposite sides of angles A, B, C" },
+      { "symbol": "A, B, C", "name": "Interior Angles", "description": "Opposite angles of sides a, b, c" }
+    ],
+    "worked_example": {
+      "problem": "In triangle ABC, side a = 10, angle A = 30°, and angle B = 45°. Find side b.",
+      "steps": [
+        "Set up equation: 10 / sin(30°) = b / sin(45°).",
+        "Know values: sin(30°) = 0.5, sin(45°) = √2 / 2 ≈ 0.7071.",
+        "Solve for b: 10 / 0.5 = b / 0.7071 ⇒ 20 = b / 0.7071.",
+        "Multiply: b = 20 × 0.7071 = 14.14."
+      ],
+      "solution": "b ≈ 14.14"
+    },
+    "related_content": [
+      { "target_type": "formula", "target_id": "302", "title": "Law of Cosines", "relationship_type": "complement" }
+    ],
+    "search_keywords": ["sine", "law of sines", "trigonometry", "triangle", "ratio"],
+    "display_order": 1,
+    "tags": ["trigonometry", "triangles"]
+  },
+  {
+    "id": 302,
+    "subject_id": 1,
+    "category_id": "trigonometry",
+    "topic": "Triangles & Ratios",
+    "name": "Law of Cosines",
+    "formula": "c² = a² + b² - 2ab cos(C)",
+    "description": "Generalizes the Pythagorean theorem for non-right triangles.",
+    "difficulty": 2,
+    "estimated_read_minutes": 3,
+    "variables": [
+      { "symbol": "c", "name": "Unknown Side", "description": "Side opposite to angle C" },
+      { "symbol": "a, b", "name": "Known Sides", "description": "Adjacent sides enclosing angle C" },
+      { "symbol": "C", "name": "Included Angle", "description": "Angle between sides a and b" }
+    ],
+    "worked_example": {
+      "problem": "Find side c when a = 5, b = 7, and angle C = 60°.",
+      "steps": [
+        "Apply formula: c² = 5² + 7² - 2(5)(7)cos(60°).",
+        "Calculate squares and product: 25 + 49 - 70(0.5) = 74 - 35 = 39.",
+        "Take square root: c = √39 ≈ 6.24."
+      ],
+      "solution": "c ≈ 6.24"
+    },
+    "related_content": [],
+    "search_keywords": ["cosine", "law of cosines", "trigonometry", "oblique triangle"],
+    "display_order": 2,
+    "tags": ["trigonometry", "triangles"]
+  },
+  {
+    "id": 401,
+    "subject_id": 1,
+    "category_id": "coordinate_geometry",
+    "topic": "Lines & Distances",
+    "name": "Distance Formula",
+    "formula": "d = √((x₂ - x₁)² + (y₂ - y₁)²)",
+    "description": "Calculates the straight-line distance between two points (x₁, y₁) and (x₂, y₂) in a 2D Cartesian plane.",
+    "difficulty": 1,
+    "estimated_read_minutes": 2,
+    "variables": [
+      { "symbol": "d", "name": "Distance", "description": "Euclidean distance between two points" },
+      { "symbol": "(x₁, y₁)", "name": "Point 1", "description": "Cartesian coordinates of first point" },
+      { "symbol": "(x₂, y₂)", "name": "Point 2", "description": "Cartesian coordinates of second point" }
+    ],
+    "worked_example": {
+      "problem": "Find the distance between P₁(1, 2) and P₂(4, 6).",
+      "steps": [
+        "Compute difference in x: 4 - 1 = 3.",
+        "Compute difference in y: 6 - 2 = 4.",
+        "Square and sum: 3² + 4² = 9 + 16 = 25.",
+        "Take square root: d = √25 = 5."
+      ],
+      "solution": "d = 5 units"
+    },
+    "related_content": [],
+    "search_keywords": ["distance", "coordinates", "cartesian", "points", "line"],
+    "display_order": 1,
+    "tags": ["coordinate_geometry", "lines"]
+  },
+  {
+    "id": 501,
+    "subject_id": 1,
+    "category_id": "calculus",
+    "topic": "Derivatives",
+    "name": "Power Rule for Derivatives",
+    "formula": "d/dx (xⁿ) = n · xⁿ⁻¹",
+    "description": "Fundamental calculus rule for computing the rate of change / derivative of monomial functions.",
+    "difficulty": 1,
+    "estimated_read_minutes": 2,
+    "variables": [
+      { "symbol": "n", "name": "Power / Exponent", "description": "Any real number power" },
+      { "symbol": "x", "name": "Variable", "description": "Independent variable of function" },
+      { "symbol": "d/dx", "name": "Derivative Operator", "description": "Rate of change with respect to x" }
+    ],
+    "worked_example": {
+      "problem": "Find derivative of f(x) = x⁴.",
+      "steps": [
+        "Identify exponent n = 4.",
+        "Bring exponent to front and subtract 1 from power: d/dx (x⁴) = 4 · x⁴⁻¹ = 4x³."
+      ],
+      "solution": "f'(x) = 4x³"
+    },
+    "related_content": [
+      { "target_type": "formula", "target_id": "502", "title": "Power Rule for Integration", "relationship_type": "inverse" }
+    ],
+    "search_keywords": ["derivative", "power rule", "calculus", "differential", "rate of change"],
+    "display_order": 1,
+    "tags": ["calculus", "derivatives"]
+  },
+  {
+    "id": 502,
+    "subject_id": 1,
+    "category_id": "calculus",
+    "topic": "Integration",
+    "name": "Power Rule for Integration",
+    "formula": "∫ xⁿ dx = (xⁿ⁺¹ / (n + 1)) + C  (n ≠ -1)",
+    "description": "Calculates the indefinite integral (antiderivative) of x raised to any real power except -1.",
+    "difficulty": 2,
+    "estimated_read_minutes": 3,
+    "variables": [
+      { "symbol": "n", "name": "Exponent", "description": "Real exponent (n ≠ -1)" },
+      { "symbol": "C", "name": "Integration Constant", "description": "Arbitrary constant of integration" }
+    ],
+    "worked_example": {
+      "problem": "Evaluate ∫ x³ dx.",
+      "steps": [
+        "Identify exponent n = 3.",
+        "Add 1 to exponent: n + 1 = 4.",
+        "Divide by new exponent: (x⁴ / 4) + C."
+      ],
+      "solution": "(x⁴ / 4) + C"
+    },
+    "related_content": [],
+    "search_keywords": ["integration", "integral", "antiderivative", "calculus", "power rule"],
+    "display_order": 2,
+    "tags": ["calculus", "integration"]
+  },
+  {
+    "id": 601,
+    "subject_id": 1,
+    "category_id": "probability",
+    "topic": "Foundations",
+    "name": "Classical Probability Formula",
+    "formula": "P(E) = n(E) / n(S)",
+    "description": "Measures the likelihood of event E occurring in a finite sample space S of equally likely outcomes.",
+    "difficulty": 1,
+    "estimated_read_minutes": 2,
+    "variables": [
+      { "symbol": "P(E)", "name": "Probability of Event E", "description": "Value between 0 and 1" },
+      { "symbol": "n(E)", "name": "Favorable Outcomes", "description": "Count of outcomes in event E" },
+      { "symbol": "n(S)", "name": "Total Outcomes", "description": "Total count of sample space outcomes" }
+    ],
+    "worked_example": {
+      "problem": "What is the probability of rolling an even number on a standard 6-sided die?",
+      "steps": [
+        "Favorable outcomes E = {2, 4, 6} ⇒ n(E) = 3.",
+        "Total sample space S = {1, 2, 3, 4, 5, 6} ⇒ n(S) = 6.",
+        "Calculate P(E) = 3 / 6 = 0.5 (or 50%)."
+      ],
+      "solution": "P(E) = 0.5 (50%)"
+    },
+    "related_content": [],
+    "search_keywords": ["probability", "event", "sample space", "odds", "chance"],
+    "display_order": 1,
+    "tags": ["probability", "foundations"]
+  },
+  {
+    "id": 701,
+    "subject_id": 1,
+    "category_id": "statistics",
+    "topic": "Descriptive Statistics",
+    "name": "Sample Mean Formula",
+    "formula": "x̄ = (∑ xᵢ) / n",
+    "description": "Calculates the arithmetic average of a numerical dataset sample.",
+    "difficulty": 1,
+    "estimated_read_minutes": 2,
+    "variables": [
+      { "symbol": "x̄", "name": "Sample Mean", "description": "Arithmetic average of sample" },
+      { "symbol": "∑ xᵢ", "name": "Sum of Values", "description": "Sum of all data points in dataset" },
+      { "symbol": "n", "name": "Sample Size", "description": "Total number of observations" }
+    ],
+    "worked_example": {
+      "problem": "Find the mean of scores: 12, 15, 18, 20, 25.",
+      "steps": [
+        "Sum values: 12 + 15 + 18 + 20 + 25 = 90.",
+        "Count observations: n = 5.",
+        "Divide sum by count: x̄ = 90 / 5 = 18."
+      ],
+      "solution": "x̄ = 18"
+    },
+    "related_content": [],
+    "search_keywords": ["mean", "average", "statistics", "sample", "arithmetic mean"],
+    "display_order": 1,
+    "tags": ["statistics", "descriptive"]
+  },
+  {
+    "id": 801,
+    "subject_id": 1,
+    "category_id": "matrices",
+    "topic": "Linear Algebra",
+    "name": "2x2 Matrix Determinant",
+    "formula": "det(A) = |a b; c d| = ad - bc",
+    "description": "Calculates the scalar determinant value of a 2x2 square matrix A = [[a, b], [c, d]].",
+    "difficulty": 1,
+    "estimated_read_minutes": 2,
+    "variables": [
+      { "symbol": "det(A)", "name": "Determinant", "description": "Scalar characteristic value of matrix A" },
+      { "symbol": "a, b, c, d", "name": "Matrix Elements", "description": "Numerical entries of 2x2 matrix" }
+    ],
+    "worked_example": {
+      "problem": "Calculate determinant of A = [[4, 3], [2, 5]].",
+      "steps": [
+        "Identify elements: a = 4, b = 3, c = 2, d = 5.",
+        "Apply formula: det(A) = (4 × 5) - (3 × 2) = 20 - 6 = 14."
+      ],
+      "solution": "det(A) = 14"
+    },
+    "related_content": [],
+    "search_keywords": ["matrix", "determinant", "matrices", "2x2", "linear algebra"],
+    "display_order": 1,
+    "tags": ["matrices", "linear_algebra"]
+  },
+  {
+    "id": 901,
+    "subject_id": 1,
+    "category_id": "vectors",
+    "topic": "Vector Algebra",
+    "name": "Dot Product Formula",
+    "formula": "u · v = uₓvₓ + uᵧvᵧ + u_z v_z = |u||v| cos(θ)",
+    "description": "Calculates the scalar dot product of two vectors, measuring directional alignment.",
+    "difficulty": 2,
+    "estimated_read_minutes": 3,
+    "variables": [
+      { "symbol": "u · v", "name": "Dot Product", "description": "Scalar product result" },
+      { "symbol": "|u|, |v|", "name": "Vector Magnitudes", "description": "Lengths of vectors u and v" },
+      { "symbol": "θ", "name": "Angle", "description": "Angle between vectors u and v" }
+    ],
+    "worked_example": {
+      "problem": "Find dot product of u = (2, 3, 4) and v = (1, -2, 5).",
+      "steps": [
+        "Multiply corresponding components: (2)(1) + (3)(-2) + (4)(5).",
+        "Sum products: 2 - 6 + 20 = 16."
+      ],
+      "solution": "u · v = 16"
+    },
+    "related_content": [],
+    "search_keywords": ["vector", "dot product", "scalar product", "angle"],
+    "display_order": 1,
+    "tags": ["vectors", "algebra"]
+  },
+  {
+    "id": 1001,
+    "subject_id": 1,
+    "category_id": "logarithms",
+    "topic": "Logarithmic Functions",
+    "name": "Change of Base Formula",
+    "formula": "log_b(x) = log_k(x) / log_k(b)",
+    "description": "Converts logarithms from any base b to a convenient new base k (such as base 10 or e).",
+    "difficulty": 2,
+    "estimated_read_minutes": 2,
+    "variables": [
+      { "symbol": "b", "name": "Original Base", "description": "Starting logarithm base (b > 0, b ≠ 1)" },
+      { "symbol": "k", "name": "Target Base", "description": "New logarithm base (e.g. 10 or e)" },
+      { "symbol": "x", "name": "Argument", "description": "Positive value inside logarithm" }
+    ],
+    "worked_example": {
+      "problem": "Calculate log_2(32) using natural log (ln).",
+      "steps": [
+        "Apply change of base: log_2(32) = ln(32) / ln(2).",
+        "Compute: ln(32) ≈ 3.4657, ln(2) ≈ 0.6931.",
+        "Divide: 3.4657 / 0.6931 = 5."
+      ],
+      "solution": "log_2(32) = 5"
+    },
+    "related_content": [],
+    "search_keywords": ["logarithm", "change of base", "log", "ln", "exponent"],
+    "display_order": 1,
+    "tags": ["logarithms", "algebra"]
+  }
+]

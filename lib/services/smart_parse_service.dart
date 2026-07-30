@@ -6,7 +6,9 @@ library;
 
 import '../data/currencies_data.dart';
 import '../data/units_data.dart';
+import '../models/currency_model.dart';
 import '../models/unit_model.dart';
+import '../repositories/currency_repository.dart';
 
 /// Result of a single [SmartParseService.parse] call.
 ///
@@ -289,10 +291,34 @@ class SmartParseService {
 
   static Set<String> get _currencyCodes {
     if (_currencyCodeSet != null) return _currencyCodeSet!;
+    // Try DB-backed currency list first; fall back to Dart data.
+    _warmCurrencyCodesSync();
+    return _currencyCodeSet ?? {};
+  }
+
+  /// Synchronously warms the currency code set from Dart data (immediate).
+  /// The DB-backed version is warmed asynchronously via [_warmCurrencyCodesFromDb].
+  static void _warmCurrencyCodesSync() {
+    if (_currencyCodeSet != null) return;
     _currencyCodeSet = buildFallbackCurrencies()
         .map((c) => c.code.toLowerCase())
         .toSet();
-    return _currencyCodeSet!;
+    // Kick off an async DB warm in the background.
+    _warmCurrencyCodesFromDb();
+  }
+
+  /// Upgrades the currency code set from [CurrencyRepository] in the background.
+  static Future<void> _warmCurrencyCodesFromDb() async {
+    try {
+      final dbCurrencies = await CurrencyRepository.instance.getAllCurrencies();
+      if (dbCurrencies.isNotEmpty) {
+        _currencyCodeSet = dbCurrencies.map((c) => c.code.toLowerCase()).toSet();
+        // Also rebuild alias cache with DB data.
+        _currencyAliasCache = _buildCurrencyAliasesFromList(dbCurrencies);
+      }
+    } catch (_) {
+      // DB not available; keep Dart fallback.
+    }
   }
 
   /// Maps lowercase currency aliases (code or common name) to uppercase ISO
@@ -306,8 +332,15 @@ class SmartParseService {
   }
 
   static Map<String, String> _buildCurrencyAliases() {
+    return _buildCurrencyAliasesFromList(buildFallbackCurrencies());
+  }
+
+  /// Builds the currency alias map from a [List<CurrencyModel>].
+  static Map<String, String> _buildCurrencyAliasesFromList(
+    List<CurrencyModel> currencies,
+  ) {
     final map = <String, String>{};
-    for (final c in buildFallbackCurrencies()) {
+    for (final c in currencies) {
       map[c.code.toLowerCase()] = c.code;
       map[c.name.toLowerCase()] = c.code;
     }
