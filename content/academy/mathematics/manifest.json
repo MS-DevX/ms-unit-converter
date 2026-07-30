@@ -1,0 +1,66 @@
+{
+  "subject_id": "mathematics",
+  "subject_name": "Mathematics",
+  "categories": [
+    {
+      "id": "algebra",
+      "file": "algebra.json",
+      "name": "Algebra",
+      "emoji": "📐"
+    },
+    {
+      "id": "geometry",
+      "file": "geometry.json",
+      "name": "Geometry",
+      "emoji": "📏"
+    },
+    {
+      "id": "trigonometry",
+      "file": "trigonometry.json",
+      "name": "Trigonometry",
+      "emoji": "📈"
+    },
+    {
+      "id": "coordinate_geometry",
+      "file": "coordinate_geometry.json",
+      "name": "Coordinate Geometry",
+      "emoji": "📉"
+    },
+    {
+      "id": "calculus",
+      "file": "calculus.json",
+      "name": "Calculus",
+      "emoji": "∞"
+    },
+    {
+      "id": "probability",
+      "file": "probability.json",
+      "name": "Probability",
+      "emoji": "🎲"
+    },
+    {
+      "id": "statistics",
+      "file": "statistics.json",
+      "name": "Statistics",
+      "emoji": "📊"
+    },
+    {
+      "id": "matrices",
+      "file": "matrices.json",
+      "name": "Matrices & Determinants",
+      "emoji": "🧮"
+    },
+    {
+      "id": "vectors",
+      "file": "vectors.json",
+      "name": "Vectors",
+      "emoji": "➡️"
+    },
+    {
+      "id": "logarithms",
+      "file": "logarithms.json",
+      "name": "Logarithms & Exponents",
+      "emoji": "➗"
+    }
+  ]
+}

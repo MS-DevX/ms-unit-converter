@@ -1,0 +1,39 @@
+{
+  "category": {
+    "id": "coordinate_geometry",
+    "subject_id": "mathematics",
+    "name": "Coordinate Geometry",
+    "emoji": "📉",
+    "description": "Distance formula, midpoint formula, slope, and line equations.",
+    "display_order": 4
+  },
+  "lessons": [
+    {
+      "id": "math.coordinate_geometry.distance_formula",
+      "numeric_id": 106,
+      "subject_id": "mathematics",
+      "category_id": "coordinate_geometry",
+      "topic": "Plane Geometry",
+      "name": "Distance Formula",
+      "formula": "d = √((x₂ - x₁)² + (y₂ - y₁)²)",
+      "description": "Calculates the straight-line distance between two Cartesian points (x₁, y₁) and (x₂, y₂).",
+      "difficulty": "beginner",
+      "estimated_read_minutes": 2,
+      "display_order": 1,
+      "variables": [
+        { "symbol": "d", "name": "Distance", "description": "Euclidean distance between points" },
+        { "symbol": "(x₁, y₁)", "name": "Point 1", "description": "First coordinate pair" },
+        { "symbol": "(x₂, y₂)", "name": "Point 2", "description": "Second coordinate pair" }
+      ],
+      "worked_example": {
+        "problem": "Find distance between P₁(1, 2) and P₂(4, 6)",
+        "steps": [
+          "x₂ - x₁ = 4 - 1 = 3, y₂ - y₁ = 6 - 2 = 4",
+          "d = √(3² + 4²) = √(9 + 16) = √25 = 5"
+        ],
+        "solution": "d = 5 units"
+      },
+      "related_content": []
+    }
+  ]
+}

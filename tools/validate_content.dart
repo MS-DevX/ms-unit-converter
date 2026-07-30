@@ -64,7 +64,7 @@ void main(List<String> args) async {
   // Full content validation runs via `flutter analyze` in CI.
   // Phase 2 will add explicit JSON schema validation here.
 
-  // Check that content files exist
+  // Check that content & schema files exist
   final filesToCheck = [
     'lib/data/units_data.dart',
     'lib/data/currencies_data.dart',
@@ -72,6 +72,14 @@ void main(List<String> args) async {
     'lib/data/did_you_know.dart',
     'lib/data/converter_config.dart',
     'assets/data/unit_information.json',
+    'content/schema/manifest.schema.json',
+    'content/schema/subject.schema.json',
+    'content/schema/category.schema.json',
+    'content/schema/lesson.schema.json',
+    'content/academy/manifest.json',
+    'content/academy/mathematics/manifest.json',
+    'content/academy/mathematics/algebra.json',
+    'content/academy/mathematics/geometry.json',
   ];
 
   for (final filePath in filesToCheck) {

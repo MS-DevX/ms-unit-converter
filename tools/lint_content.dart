@@ -150,6 +150,101 @@ void main(List<String> args) async {
     errors.add('pubspec.yaml not found');
   }
 
+  // ── Check 5: STEM Academy Content & Manifest Validation ─────────────────────
+  print('');
+  print('Checking STEM Academy modular content & manifests…');
+  checksRun++;
+  final rootManifestFile = File('content/academy/manifest.json');
+  if (!rootManifestFile.existsSync()) {
+    errors.add('content/academy/manifest.json missing');
+    print('  ✗ content/academy/manifest.json — MISSING');
+  } else {
+    try {
+      final rootMap = jsonDecode(rootManifestFile.readAsStringSync()) as Map<String, dynamic>;
+      final subjects = rootMap['subjects'] as List<dynamic>? ?? [];
+      print('  ✓ Root manifest valid (${subjects.length} subjects declared)');
+
+      final seenLessonStringIds = <String>{};
+      final seenLessonNumericIds = <int>{};
+      final declaredLessonIds = <String>{};
+
+      for (final sub in subjects) {
+        checksRun++;
+        final manifestPath = sub['manifest_path'] as String?;
+        if (sub['is_available'] == true && manifestPath != null) {
+          final subjectManifestFile = File('content/academy/$manifestPath');
+          if (!subjectManifestFile.existsSync()) {
+            errors.add('Subject manifest missing: content/academy/$manifestPath');
+            print('  ✗ Subject manifest content/academy/$manifestPath — MISSING');
+            continue;
+          }
+
+          final subjectMap = jsonDecode(subjectManifestFile.readAsStringSync()) as Map<String, dynamic>;
+          final categories = subjectMap['categories'] as List<dynamic>? ?? [];
+          final subjectDir = subjectManifestFile.parent;
+
+          for (final catRef in categories) {
+            checksRun++;
+            final catFileName = catRef['file'] as String;
+            final catFile = File('${subjectDir.path}/$catFileName');
+            if (!catFile.existsSync()) {
+              errors.add('Category file missing: ${catFile.path}');
+              print('  ✗ Category file ${catFile.path} — MISSING');
+              continue;
+            }
+
+            final catData = jsonDecode(catFile.readAsStringSync()) as Map<String, dynamic>;
+            final lessons = catData['lessons'] as List<dynamic>? ?? [];
+
+            for (final lesson in lessons) {
+              final lessonStringId = lesson['id'] as String?;
+              final lessonNumId = lesson['numeric_id'] as int?;
+
+              if (lessonStringId == null || lessonStringId.isEmpty) {
+                errors.add('${catFile.path}: Lesson missing string "id"');
+              } else {
+                if (seenLessonStringIds.contains(lessonStringId)) {
+                  errors.add('${catFile.path}: Duplicate string lesson ID "$lessonStringId"');
+                } else {
+                  seenLessonStringIds.add(lessonStringId);
+                  declaredLessonIds.add(lessonStringId);
+                }
+              }
+
+              if (lessonNumId == null) {
+                errors.add('${catFile.path}: Lesson missing "numeric_id"');
+              } else {
+                if (seenLessonNumericIds.contains(lessonNumId)) {
+                  errors.add('${catFile.path}: Duplicate numeric_id $lessonNumId');
+                } else {
+                  seenLessonNumericIds.add(lessonNumId);
+                }
+              }
+
+              final requiredLessonFields = [
+                'topic',
+                'name',
+                'formula',
+                'description',
+                'difficulty',
+                'variables',
+                'worked_example'
+              ];
+              for (final reqField in requiredLessonFields) {
+                if (!lesson.containsKey(reqField)) {
+                  errors.add('${catFile.path} [${lessonStringId ?? 'unknown'}]: missing field "$reqField"');
+                }
+              }
+            }
+          }
+        }
+      }
+      print('  ✓ STEM Academy content linted (${seenLessonStringIds.length} lessons verified, 0 duplicate IDs)');
+    } catch (e) {
+      errors.add('STEM Academy content validation failed: $e');
+    }
+  }
+
   // ── Summary ────────────────────────────────────────────────────────────────
   print('');
   print('─' * 60);

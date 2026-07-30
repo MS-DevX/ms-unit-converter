@@ -25,12 +25,13 @@ class MigrationService {
   MigrationService._();
 
   /// Current schema version. Increment when adding or modifying tables.
-  static const int currentSchemaVersion = 1;
+  static const int currentSchemaVersion = 2;
 
   /// Creates the full schema from scratch (called via sqflite's [onCreate]).
   static Future<void> createSchema(Database db) async {
     await db.transaction((txn) async {
       await _runMigration1(txn);
+      await _runMigration2(txn);
     });
   }
 
@@ -48,10 +49,8 @@ class MigrationService {
         switch (v) {
           case 1:
             await _runMigration1(txn);
-          // case 2:
-          //   await _runMigration2(txn);  // Future: Formula Library
-          // case 3:
-          //   await _runMigration3(txn);  // Future: Scientific Constants
+          case 2:
+            await _runMigration2(txn);
           default:
             break;
         }
@@ -236,22 +235,24 @@ class MigrationService {
 
     await txn.execute('''
       CREATE TABLE IF NOT EXISTS formulas (
-        id            INTEGER PRIMARY KEY AUTOINCREMENT,
-        subject_id    INTEGER REFERENCES subjects(id),
-        grade_id      INTEGER REFERENCES grades(id),
-        category_id   TEXT    REFERENCES categories(id),
-        title         TEXT,
-        expression    TEXT,
-        description   TEXT,
-        difficulty    TEXT,
-        chapter       TEXT,
-        example       TEXT,
-        variables     TEXT,
-        units         TEXT,
-        display_order INTEGER NOT NULL DEFAULT 0,
-        is_featured   INTEGER NOT NULL DEFAULT 0,
-        is_hidden     INTEGER NOT NULL DEFAULT 0,
-        search_weight INTEGER NOT NULL DEFAULT 100
+        id              INTEGER PRIMARY KEY AUTOINCREMENT,
+        subject_id      INTEGER REFERENCES subjects(id),
+        grade_id        INTEGER REFERENCES grades(id),
+        category_id     TEXT    REFERENCES categories(id),
+        title           TEXT,
+        expression      TEXT,
+        description     TEXT,
+        difficulty      TEXT,
+        chapter         TEXT,
+        example         TEXT,
+        variables       TEXT,
+        units           TEXT,
+        calculator_json TEXT,
+        sections_json   TEXT,
+        display_order   INTEGER NOT NULL DEFAULT 0,
+        is_featured     INTEGER NOT NULL DEFAULT 0,
+        is_hidden       INTEGER NOT NULL DEFAULT 0,
+        search_weight   INTEGER NOT NULL DEFAULT 100
       )
     ''');
 
@@ -323,18 +324,13 @@ class MigrationService {
     await txn.execute('CREATE INDEX IF NOT EXISTS idx_constants_subject ON scientific_constants(subject_id)');
   }
 
-  // ── Future migration stubs ──────────────────────────────────────────────────
-  //
-  // static Future<void> _runMigration2(Transaction txn) async {
-  //   // Formula Library: populate formulas + formula_categories
-  //   // Add any new columns to existing tables here (ALTER TABLE ... ADD COLUMN)
-  // }
-  //
-  // static Future<void> _runMigration3(Transaction txn) async {
-  //   // Scientific Constants: populate scientific_constants
-  // }
-  //
-  // static Future<void> _runMigration4(Transaction txn) async {
-  //   // Measurement Guides + Engineering Reference
-  // }
+  // ── Migration Step 2 ────────────────────────────────────────────────────────
+  static Future<void> _runMigration2(Transaction txn) async {
+    try {
+      await txn.execute('ALTER TABLE formulas ADD COLUMN calculator_json TEXT;');
+    } catch (_) {}
+    try {
+      await txn.execute('ALTER TABLE formulas ADD COLUMN sections_json TEXT;');
+    } catch (_) {}
+  }
 }

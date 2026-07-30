@@ -113,107 +113,133 @@ Future<void> main(List<String> args) async {
 /// Seeds STEM Academy tables directly from developer JSON files in `content/academy/`.
 Future<void> _seedAcademyContentFromContentDir(Database db) async {
   final contentDir = Directory(path.join(Directory.current.path, 'content', 'academy'));
-  if (!contentDir.existsSync()) {
-    print('⚠️ Warning: content/academy/ directory not found: ${contentDir.path}');
+  final rootManifestFile = File(path.join(contentDir.path, 'manifest.json'));
+  if (!rootManifestFile.existsSync()) {
+    print('⚠️ Warning: content/academy/manifest.json not found: ${rootManifestFile.path}');
     return;
   }
 
-  print('Seeding STEM Academy content from content/academy/…');
+  print('Seeding STEM Academy content dynamically from manifests…');
+
+  final rootManifest = jsonDecode(rootManifestFile.readAsStringSync()) as Map<String, dynamic>;
+  final subjectsList = rootManifest['subjects'] as List<dynamic>? ?? [];
 
   await db.transaction((txn) async {
-    // 1. Seed Subjects
-    final subjectsFile = File(path.join(contentDir.path, 'subjects.json'));
-    if (subjectsFile.existsSync()) {
-      final List<dynamic> list = jsonDecode(subjectsFile.readAsStringSync());
-      for (final item in list) {
-        await txn.insert(
-          'subjects',
-          {
-            'id': item['id'],
-            'name': item['name'],
-            'icon': item['icon'],
-            'display_order': item['display_order'] ?? 0,
-          },
-          conflictAlgorithm: ConflictAlgorithm.replace,
-        );
-      }
-      print('  ↳ Seeded ${list.length} subjects');
-    }
+    var subjectCount = 0;
+    var categoryCount = 0;
+    var formulaCount = 0;
+    var relatedCount = 0;
 
-    // 2. Seed Formula Categories
-    final categoriesFile = File(path.join(contentDir.path, 'mathematics_categories.json'));
-    if (categoriesFile.existsSync()) {
-      final List<dynamic> list = jsonDecode(categoriesFile.readAsStringSync());
-      for (final item in list) {
+    final subjectIdMap = <String, int>{};
+
+    for (final sub in subjectsList) {
+      final subStringId = sub['id'] as String;
+      final numericId = sub['numeric_id'] as int? ?? (subjectCount + 1);
+      subjectIdMap[subStringId] = numericId;
+
+      await txn.insert(
+        'subjects',
+        {
+          'id': numericId,
+          'name': sub['name'],
+          'icon': sub['icon'],
+          'display_order': sub['display_order'] ?? 0,
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+      subjectCount++;
+
+      final manifestRelativePath = sub['manifest_path'] as String?;
+      if (manifestRelativePath == null || sub['is_available'] != true) {
+        continue;
+      }
+
+      final subjectManifestFile = File(path.join(contentDir.path, manifestRelativePath));
+      if (!subjectManifestFile.existsSync()) {
+        continue;
+      }
+
+      final subjectManifest = jsonDecode(subjectManifestFile.readAsStringSync()) as Map<String, dynamic>;
+      final categoriesList = subjectManifest['categories'] as List<dynamic>? ?? [];
+      final subjectDir = subjectManifestFile.parent;
+
+      for (final catRef in categoriesList) {
+        final catFileName = catRef['file'] as String;
+        final catFile = File(path.join(subjectDir.path, catFileName));
+        if (!catFile.existsSync()) continue;
+
+        final catData = jsonDecode(catFile.readAsStringSync()) as Map<String, dynamic>;
+        final catObj = catData['category'] as Map<String, dynamic>;
+        final categoryId = catObj['id'] as String;
+
         await txn.insert(
           'formula_categories',
           {
-            'id': item['id'],
-            'name': item['name'],
-            'subject_id': item['subject_id'],
-            'description': item['description'],
-            'display_order': item['display_order'] ?? 0,
+            'id': categoryId,
+            'name': catObj['name'],
+            'subject_id': numericId,
+            'description': catObj['description'],
+            'display_order': catObj['display_order'] ?? 0,
           },
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
-      }
-      print('  ↳ Seeded ${list.length} formula categories');
-    }
+        categoryCount++;
 
-    // 3. Seed Formulas & Related Content
-    final formulasFile = File(path.join(contentDir.path, 'mathematics_formulas.json'));
-    if (formulasFile.existsSync()) {
-      final List<dynamic> list = jsonDecode(formulasFile.readAsStringSync());
-      var formulaCount = 0;
-      var relatedCount = 0;
+        final lessons = catData['lessons'] as List<dynamic>? ?? [];
+        for (final lesson in lessons) {
+          final formulaId = lesson['numeric_id'] as int;
+          final variablesJson = jsonEncode(lesson['variables'] ?? []);
+          final exampleJson = jsonEncode(lesson['worked_example'] ?? {});
+          final calculatorJson = lesson['calculator'] != null ? jsonEncode(lesson['calculator']) : null;
+          final sectionsJson = lesson['sections'] != null ? jsonEncode(lesson['sections']) : null;
 
-      for (final item in list) {
-        final formulaId = item['id'] as int;
-        final variablesJson = jsonEncode(item['variables'] ?? []);
-        final exampleJson = jsonEncode(item['worked_example'] ?? {});
-
-        await txn.insert(
-          'formulas',
-          {
-            'id': formulaId,
-            'subject_id': item['subject_id'],
-            'category_id': item['category_id'],
-            'title': item['name'],
-            'expression': item['formula'],
-            'description': item['description'],
-            'difficulty': item['difficulty'].toString(),
-            'chapter': item['topic'],
-            'example': exampleJson,
-            'variables': variablesJson,
-            'units': item['estimated_read_minutes']?.toString() ?? '3',
-            'display_order': item['display_order'] ?? 0,
-            'is_featured': 1,
-            'is_hidden': 0,
-            'search_weight': 100,
-          },
-          conflictAlgorithm: ConflictAlgorithm.replace,
-        );
-        formulaCount++;
-
-        // Seed related content
-        final relatedList = item['related_content'] as List<dynamic>? ?? [];
-        for (final rel in relatedList) {
           await txn.insert(
-            'related_content',
+            'formulas',
             {
-              'source_type': 'formula',
-              'source_id': formulaId.toString(),
-              'target_type': rel['target_type'] ?? 'formula',
-              'target_id': rel['target_id']?.toString() ?? '',
-              'relationship_type': rel['relationship_type'] ?? 'related',
-              'display_order': 0,
+              'id': formulaId,
+              'subject_id': numericId,
+              'category_id': categoryId,
+              'title': lesson['name'],
+              'expression': lesson['formula'],
+              'description': lesson['description'],
+              'difficulty': lesson['difficulty'].toString(),
+              'chapter': lesson['topic'],
+              'example': exampleJson,
+              'variables': variablesJson,
+              'units': lesson['estimated_read_minutes']?.toString() ?? '3',
+              'calculator_json': calculatorJson,
+              'sections_json': sectionsJson,
+              'display_order': lesson['display_order'] ?? 0,
+              'is_featured': 1,
+              'is_hidden': 0,
+              'search_weight': 100,
             },
             conflictAlgorithm: ConflictAlgorithm.replace,
           );
-          relatedCount++;
+          formulaCount++;
+
+          final relatedList = lesson['related_content'] as List<dynamic>? ?? [];
+          for (final rel in relatedList) {
+            await txn.insert(
+              'related_content',
+              {
+                'source_type': 'formula',
+                'source_id': formulaId.toString(),
+                'target_type': rel['target_type'] ?? 'formula',
+                'target_id': rel['target_id']?.toString() ?? '',
+                'relationship_type': rel['relationship_type'] ?? 'related',
+                'display_order': 0,
+              },
+              conflictAlgorithm: ConflictAlgorithm.replace,
+            );
+            relatedCount++;
+          }
         }
       }
-      print('  ↳ Seeded $formulaCount formulas & $relatedCount related content linkages');
     }
+
+    print('  ↳ Seeded $subjectCount subjects');
+    print('  ↳ Seeded $categoryCount categories');
+    print('  ↳ Seeded $formulaCount formulas & $relatedCount related content linkages');
   });
 }

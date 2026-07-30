@@ -1,0 +1,38 @@
+{
+  "category": {
+    "id": "matrices",
+    "subject_id": "mathematics",
+    "name": "Matrices & Determinants",
+    "emoji": "🧮",
+    "description": "2x2 determinant, 3x3 determinant, matrix multiplication, and inverses.",
+    "display_order": 8
+  },
+  "lessons": [
+    {
+      "id": "math.matrices.determinant_2x2",
+      "numeric_id": 110,
+      "subject_id": "mathematics",
+      "category_id": "matrices",
+      "topic": "Matrix Determinants",
+      "name": "2x2 Matrix Determinant",
+      "formula": "det(A) = ad - bc",
+      "description": "Calculates scalar value determinant for 2x2 matrix [[a, b], [c, d]].",
+      "difficulty": "beginner",
+      "estimated_read_minutes": 2,
+      "display_order": 1,
+      "variables": [
+        { "symbol": "a, b, c, d", "name": "Matrix Elements", "description": "Entries of 2x2 matrix" },
+        { "symbol": "det(A)", "name": "Determinant", "description": "Scalar determinant value" }
+      ],
+      "worked_example": {
+        "problem": "Calculate determinant of [[3, 8], [4, 6]]",
+        "steps": [
+          "a = 3, b = 8, c = 4, d = 6",
+          "ad - bc = (3 · 6) - (8 · 4) = 18 - 32 = -14"
+        ],
+        "solution": "det(A) = -14"
+      },
+      "related_content": []
+    }
+  ]
+}

@@ -1,230 +1,120 @@
-# Phase 2 JSON Content Format
+# STEM Academy Developer Content Repository
 
-This directory will contain the JSON source of truth for all static reference data
-when the migration from Dart data files is complete.
+This directory contains the source of truth for all educational content in **STEM Academy**. 
 
-## Current Status: Phase 1
+All content here is processed at build-time by `tools/build_database.dart` and compiled into the pre-populated SQLite database asset (`assets/database/stem_data.db`).
 
-The database is seeded at runtime from Dart data files:
+> [!IMPORTANT]
+> **Runtime Isolation**: The Flutter production app reads exclusively from `assets/database/stem_data.db`. The application **never** parses runtime JSON educational files.
 
-```
-lib/data/units_data.dart        → units + categories
-lib/data/currencies_data.dart   → currencies
-lib/data/collections_data.dart  → collections
-lib/data/did_you_know.dart      → educational facts
-lib/data/converter_config.dart  → UI config (icon/gradient per category)
-assets/data/unit_information.json → unit educational info
-```
+---
 
-## Phase 2 JSON Files (planned)
+## 1. Directory Structure
 
-When Phase 2 is implemented, these JSON files will replace the Dart data files:
-
-```
+```text
 content/
-├── categories.json           ← category metadata + display config
-├── units.json               ← all units organized by category
-├── currencies.json          ← 170+ ISO currencies with fallback rates
-├── collections.json         ← 9 predefined collections
-├── educational_facts.json   ← "Did You Know" facts
-├── search_aliases.json      ← keyword → canonical name mappings
-├── unit_information.json    ← unit educational info (replaces assets/data/)
-└── README.md                ← this file
+├── schema/                           ← Formal JSON Schemas for validation
+│   ├── manifest.schema.json          ← Schema for content manifests
+│   ├── subject.schema.json           ← Schema for subject definitions
+│   ├── category.schema.json          ← Schema for category files
+│   └── lesson.schema.json            ← Schema for lesson/formula entries
+│
+└── academy/                          ← Educational Content Library
+    ├── manifest.json                 ← Top-level content manifest
+    │
+    ├── mathematics/                  ← Mathematics Subject Directory
+    │   ├── manifest.json             ← Subject manifest listing categories
+    │   ├── algebra.json              ← Algebra lessons & formulas
+    │   ├── geometry.json             ← Geometry lessons & formulas
+    │   ├── trigonometry.json         ← Trigonometry lessons & formulas
+    │   ├── coordinate_geometry.json  ← Coordinate Geometry lessons
+    │   ├── calculus.json             ← Calculus lessons & formulas
+    │   ├── probability.json          ← Probability lessons
+    │   ├── statistics.json           ← Statistics lessons
+    │   ├── matrices.json             ← Matrices lessons
+    │   ├── vectors.json              ← Vectors lessons
+    │   └── logarithms.json           ← Logarithms lessons
+    │
+    ├── physics/ (future)             ← Physics Subject Directory
+    ├── chemistry/ (future)           ← Chemistry Subject Directory
+    ├── engineering/ (future)         ← Engineering Subject Directory
+    └── computer_science/ (future)    ← Computer Science Subject Directory
 ```
 
 ---
 
-## Phase 2 JSON Schema Reference
+## 2. Permanent String Identifiers
 
-### categories.json
+All lessons, formulas, and relationship linkages must use permanent dot-notated string identifiers:
 
-```json
-{
-  "length": {
-    "display_name": "Length",
-    "description": "Measure of distance between two points.",
-    "group": "Everyday",
-    "emoji": "📏",
-    "icon_codepoint": 57368,
-    "icon_font_family": "MaterialIcons",
-    "gradient_start": "4281544702",
-    "gradient_end": "4280085666",
-    "display_order": 0,
-    "is_featured": true,
-    "search_weight": 150
-  }
-}
-```
+- **Format**: `<subject>.<category>.<slug>`
+- **Examples**:
+  - `math.algebra.quadratic_formula`
+  - `math.geometry.pythagorean_theorem`
+  - `math.trigonometry.law_of_sines`
 
-### units.json
+### Numeric IDs
+Each lesson also contains a unique `numeric_id` integer (e.g. `101`, `102`) for backwards compatibility with SQLite integer primary keys.
 
-```json
-{
-  "length": [
-    {
-      "name": "Meter",
-      "symbol": "m",
-      "to_base": 1.0,
-      "is_special_case": false,
-      "display_order": 0
-    },
-    {
-      "name": "Kilometer",
-      "symbol": "km",
-      "to_base": 1000.0,
-      "is_special_case": false,
-      "display_order": 1
-    }
-  ]
-}
-```
+---
 
-### currencies.json
+## 3. Dynamic Content Discovery
 
-```json
-[
-  {
-    "iso_code": "USD",
-    "name": "US Dollar",
-    "symbol": "$",
-    "flag": "🇺🇸",
-    "country": "United States",
-    "decimal_digits": 2,
-    "fallback_rate_to_usd": 1.0,
-    "is_pinned": true,
-    "pin_order": 0
-  }
-]
-```
+`tools/build_database.dart` discovers content recursively:
+1. Reads `content/academy/manifest.json` for declared subjects.
+2. For available subjects, loads the subject manifest (e.g., `content/academy/mathematics/manifest.json`).
+3. Discovers category JSON files declared in the subject manifest.
+4. Compiles subjects, categories, formulas, variables, worked examples, and `related_content` into SQLite tables in `stem_data.db`.
 
-### collections.json
+---
 
-```json
-[
-  {
-    "id": "everyday",
-    "name": "Everyday",
-    "emoji": "🏠",
-    "description": "Most commonly used converters for daily life.",
-    "display_order": 0,
-    "categories": ["length", "weight", "temperature", "volume", "area", "speed"]
-  }
-]
-```
+## 4. Developer Validation Workflow
 
-### educational_facts.json
+Before building or committing database changes, run the content validation tools:
 
-```json
-[
-  {
-    "emoji": "📏",
-    "fact": "The meter was originally defined as one ten-millionth of the distance from the equator to the North Pole.",
-    "category_id": "length",
-    "display_order": 0
-  }
-]
-```
+```bash
+# 1. Run static content linter (checks manifests, schemas, unique IDs, and required fields)
+dart run tools/lint_content.dart
 
-### search_aliases.json
+# 2. Run structural infrastructure validator
+dart run tools/validate_content.dart
 
-```json
-[
-  { "keyword": "metre",   "canonical": "Meter",     "priority": 10 },
-  { "keyword": "meters",  "canonical": "Meter",     "priority": 10 },
-  { "keyword": "km",      "canonical": "Kilometer", "priority": 20 },
-  { "keyword": "lbs",     "canonical": "Pound",     "priority": 20 }
-]
-```
+# 3. Generate pre-populated SQLite database binary asset
+flutter test test/build_database_runner_test.dart
 
-### unit_information.json (replaces assets/data/unit_information.json)
-
-```json
-{
-  "meter": {
-    "symbol": "m",
-    "definition": "The SI base unit of length...",
-    "history": "Originally defined in 1799...",
-    "used_for": "Engineering, physics, everyday measurement",
-    "examples": ["A door is about 2 meters tall", "A football field is about 100 meters"]
-  }
-}
+# 4. Run database health diagnostic check
+dart run tools/check_database.dart assets/database/stem_data.db
 ```
 
 ---
 
-## How to Add New Content (Phase 2)
+## 5. Adding New Subjects or Categories
 
-### Adding a new unit to an existing category
-
-1. Open `content/units.json`
-2. Find the category key (e.g. `"length"`)
-3. Add a new entry:
+### Adding a New Category (e.g. Linear Algebra to Mathematics):
+1. Create `content/academy/mathematics/linear_algebra.json` following `content/schema/category.schema.json`.
+2. Add category entry to `content/academy/mathematics/manifest.json`:
    ```json
    {
-     "name": "Parsec",
-     "symbol": "pc",
-     "to_base": 3.085677581e16,
-     "is_special_case": false,
-     "display_order": 20
+     "id": "linear_algebra",
+     "file": "linear_algebra.json",
+     "name": "Linear Algebra",
+     "emoji": "🔢"
    }
    ```
-4. Run `dart run tools/validate_content.dart`
-5. Run `dart run tools/build_database.dart`
-6. Commit both the JSON change and the regenerated `.db` file
+3. Run `dart run tools/lint_content.dart` and `flutter test test/build_database_runner_test.dart`.
 
-### Adding a new category
-
-1. Add the category name to `lib/data/units_data.dart` (enum `UnitCategory`)
-2. Add category metadata to `content/categories.json`
-3. Add units to `content/units.json`
-4. Add UI config to `lib/data/converter_config.dart` (icon/gradient)
-5. Add the category to [ConversionService] if it requires special formulas
-6. Validate, build, commit
-
-### Adding new educational facts
-
-1. Open `content/educational_facts.json`
-2. Add entries (no rebuild required if category_id is null or references an existing category)
-3. Run `dart run tools/build_database.dart`
-
-### Adding a new currency
-
-1. Open `content/currencies.json`
-2. Add an entry with a valid ISO 4217 code
-3. Run `dart run tools/validate_content.dart` (validates ISO code format)
-4. Run `dart run tools/build_database.dart`
-
----
-
-## Validation Rules
-
-All content runs through these checks before the database is generated:
-
-| Rule | Description |
-|---|---|
-| Unique IDs | No duplicate category IDs, unit names per category, currency ISO codes |
-| Required fields | No empty name, symbol, display_name, iso_code, etc. |
-| Numeric validity | `to_base` is finite, non-zero, non-NaN |
-| ISO codes | Currency codes are exactly 3 uppercase ASCII letters |
-| Foreign keys | Collection items reference existing categories |
-| Completeness | All 53 UnitCategory enum values have ≥ 2 units |
-| Circular refs | No circular relationships in related_content |
-
----
-
-## Troubleshooting
-
-### "Database not ready" error on app start
-- Ensure `DatabaseService.instance.initialize()` is called before `runApp()` in `main.dart`
-
-### Units not showing after content update
-- Increment `_contentVersion` in `lib/database/database_service.dart`
-- The app will auto-reseed on next launch
-
-### Search not finding results
-- Check `search_aliases.json` / `_searchAliasMap` in `DatabaseService`
-- Clear app data to force a reseed
-
-### Build tool fails validation
-- Read the error output — each rule violation includes the file and entry key
-- Fix the content file and re-run
+### Adding a New Subject (e.g. Physics):
+1. Create `content/academy/physics/manifest.json`.
+2. Declare `physics` subject in `content/academy/manifest.json`:
+   ```json
+   {
+     "id": "physics",
+     "numeric_id": 2,
+     "name": "Physics",
+     "icon": "⚛️",
+     "is_available": true,
+     "display_order": 2,
+     "manifest_path": "physics/manifest.json"
+   }
+   ```
+3. Add modular category JSON files under `content/academy/physics/`.

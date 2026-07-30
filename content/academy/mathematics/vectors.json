@@ -1,0 +1,37 @@
+{
+  "category": {
+    "id": "vectors",
+    "subject_id": "mathematics",
+    "name": "Vectors",
+    "emoji": "➡️",
+    "description": "Vector dot product, cross product, vector magnitude, and unit vectors.",
+    "display_order": 9
+  },
+  "lessons": [
+    {
+      "id": "math.vectors.dot_product",
+      "numeric_id": 111,
+      "subject_id": "mathematics",
+      "category_id": "vectors",
+      "topic": "Vector Operations",
+      "name": "Vector Dot Product",
+      "formula": "u · v = u₁v₁ + u₂v₂ + u₃v₃",
+      "description": "Calculates the scalar dot product of two 3D vectors u and v.",
+      "difficulty": "beginner",
+      "estimated_read_minutes": 2,
+      "display_order": 1,
+      "variables": [
+        { "symbol": "u", "name": "Vector U", "description": "First vector [u₁, u₂, u₃]" },
+        { "symbol": "v", "name": "Vector V", "description": "Second vector [v₁, v₂, v₃]" }
+      ],
+      "worked_example": {
+        "problem": "Calculate dot product of u = [1, 2, 3] and v = [4, 5, 6]",
+        "steps": [
+          "u · v = (1 · 4) + (2 · 5) + (3 · 6) = 4 + 10 + 18 = 32"
+        ],
+        "solution": "u · v = 32"
+      },
+      "related_content": []
+    }
+  ]
+}

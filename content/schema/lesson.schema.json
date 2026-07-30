@@ -1,0 +1,129 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "STEM Lesson / Formula Schema",
+  "description": "Schema for section-driven lessons, interactive calculator metadata, and formulas.",
+  "type": "object",
+  "properties": {
+    "id": { "type": "string" },
+    "numeric_id": { "type": "integer" },
+    "subject_id": { "type": "string" },
+    "category_id": { "type": "string" },
+    "topic": { "type": "string" },
+    "name": { "type": "string" },
+    "formula": { "type": "string" },
+    "description": { "type": "string" },
+    "difficulty": { "type": ["string", "integer"] },
+    "estimated_read_minutes": { "type": "integer" },
+    "display_order": { "type": "integer" },
+    "variables": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "symbol": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" }
+        },
+        "required": ["symbol", "name", "description"]
+      }
+    },
+    "worked_example": {
+      "type": "object",
+      "properties": {
+        "problem": { "type": "string" },
+        "steps": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "solution": { "type": "string" }
+      },
+      "required": ["problem", "steps", "solution"]
+    },
+    "calculator": {
+      "type": "object",
+      "properties": {
+        "version": { "type": "string" },
+        "engine_type": { "type": "string", "enum": ["expression", "solver"] },
+        "expression": { "type": "string" },
+        "solver_id": { "type": "string" },
+        "inputs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "symbol": { "type": "string" },
+              "label": { "type": "string" },
+              "default_value": { "type": "number" },
+              "example_value": { "type": "number" },
+              "unit": { "type": "string" },
+              "validation": {
+                "type": "object",
+                "properties": {
+                  "min": { "type": "number" },
+                  "max": { "type": "number" },
+                  "allow_zero": { "type": "boolean" },
+                  "allow_negative": { "type": "boolean" },
+                  "integer_only": { "type": "boolean" },
+                  "error_message": { "type": "string" }
+                }
+              }
+            },
+            "required": ["symbol", "label", "default_value"]
+          }
+        },
+        "outputs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "symbol": { "type": "string" },
+              "label": { "type": "string" },
+              "unit": { "type": "string" },
+              "expression": { "type": "string" }
+            },
+            "required": ["symbol", "label"]
+          }
+        }
+      },
+      "required": ["engine_type", "inputs", "outputs"]
+    },
+    "sections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": { "type": "string" },
+          "title": { "type": "string" },
+          "content": { "type": "string" }
+        },
+        "required": ["type", "title", "content"]
+      }
+    },
+    "related_content": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "target_type": { "type": "string" },
+          "target_id": { "type": "string" },
+          "title": { "type": "string" },
+          "relationship_type": { "type": "string" }
+        },
+        "required": ["target_type", "target_id", "title", "relationship_type"]
+      }
+    }
+  },
+  "required": [
+    "id",
+    "numeric_id",
+    "subject_id",
+    "category_id",
+    "topic",
+    "name",
+    "formula",
+    "description",
+    "difficulty",
+    "estimated_read_minutes",
+    "display_order"
+  ]
+}

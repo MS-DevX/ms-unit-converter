@@ -1,0 +1,38 @@
+{
+  "category": {
+    "id": "calculus",
+    "subject_id": "mathematics",
+    "name": "Calculus",
+    "emoji": "∞",
+    "description": "Limits, derivatives, power rule, integration, and Fundamental Theorem of Calculus.",
+    "display_order": 5
+  },
+  "lessons": [
+    {
+      "id": "math.calculus.power_rule_derivative",
+      "numeric_id": 107,
+      "subject_id": "mathematics",
+      "category_id": "calculus",
+      "topic": "Differential Calculus",
+      "name": "Power Rule (Differentiation)",
+      "formula": "d/dx [xⁿ] = n · xⁿ⁻¹",
+      "description": "Calculates the derivative of a variable raised to a constant power n.",
+      "difficulty": "intermediate",
+      "estimated_read_minutes": 3,
+      "display_order": 1,
+      "variables": [
+        { "symbol": "x", "name": "Variable", "description": "Independent variable" },
+        { "symbol": "n", "name": "Exponent", "description": "Real number exponent" }
+      ],
+      "worked_example": {
+        "problem": "Find the derivative of f(x) = x⁴",
+        "steps": [
+          "Identify exponent n = 4",
+          "Apply power rule: 4 · x⁴⁻¹ = 4x³"
+        ],
+        "solution": "f'(x) = 4x³"
+      },
+      "related_content": []
+    }
+  ]
+}

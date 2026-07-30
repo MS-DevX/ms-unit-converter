@@ -8,6 +8,8 @@ import 'package:provider/provider.dart';
 import '../../models/formula_model.dart';
 import '../../providers/academy_user_provider.dart';
 import '../../repositories/formula_repository.dart';
+import '../../widgets/formula_calculator_widget.dart';
+import '../../widgets/formula_renderer.dart';
 import '../../widgets/stitch_card.dart';
 
 class FormulaLessonScreen extends StatefulWidget {
@@ -196,31 +198,23 @@ class _FormulaLessonScreenState extends State<FormulaLessonScreen> {
                       ],
                     ),
                     const SizedBox(height: 12),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                      decoration: BoxDecoration(
-                        color: colorScheme.surfaceContainerLowest,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: colorScheme.primary.withValues(alpha: 0.3),
-                        ),
-                      ),
-                      child: SelectableText(
-                        widget.formula.formula,
-                        style: TextStyle(
-                          fontFamily: 'monospace',
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          color: colorScheme.primary,
-                          height: 1.4,
-                        ),
-                      ),
+                    FormulaRenderer(
+                      formula: widget.formula.formula,
+                      showCardBackground: true,
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 20),
+
+              // ── 3.5 INTERACTIVE CALCULATOR (If Available) ──────────────────
+              if (widget.formula.calculator != null) ...[
+                FormulaCalculatorWidget(
+                  calculator: widget.formula.calculator!,
+                  workedExample: widget.formula.workedExample,
+                ),
+                const SizedBox(height: 24),
+              ],
 
               // ── 4. CONCEPT DESCRIPTION (Hidden in strict Study Mode if desired) ──
               if (!_studyMode) ...[

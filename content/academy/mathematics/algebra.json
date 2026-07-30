@@ -1,0 +1,110 @@
+{
+  "category": {
+    "id": "algebra",
+    "subject_id": "mathematics",
+    "name": "Algebra",
+    "emoji": "📐",
+    "description": "Linear, quadratic, polynomial equations, factoring, and binomial expansion.",
+    "display_order": 1
+  },
+  "lessons": [
+    {
+      "id": "math.algebra.quadratic_formula",
+      "numeric_id": 101,
+      "subject_id": "mathematics",
+      "category_id": "algebra",
+      "topic": "Quadratic Equations",
+      "name": "Quadratic Formula",
+      "formula": "x = (-b ± √(b² - 4ac)) / (2a)",
+      "description": "Calculates the real or complex roots of any second-degree quadratic equation ax² + bx + c = 0.",
+      "difficulty": "intermediate",
+      "estimated_read_minutes": 3,
+      "display_order": 1,
+      "variables": [
+        { "symbol": "a", "name": "Quadratic Coefficient", "description": "Multiplier of x² (a ≠ 0)" },
+        { "symbol": "b", "name": "Linear Coefficient", "description": "Multiplier of x" },
+        { "symbol": "c", "name": "Constant Term", "description": "Independent term" },
+        { "symbol": "x", "name": "Roots / Solutions", "description": "Values of x where equation equals 0" }
+      ],
+      "worked_example": {
+        "problem": "Find the roots of 2x² - 4x - 6 = 0",
+        "steps": [
+          "Identify a = 2, b = -4, c = -6",
+          "Calculate discriminant b² - 4ac = (-4)² - 4(2)(-6) = 16 + 48 = 64",
+          "Apply formula: x = (4 ± √64) / (2 × 2) = (4 ± 8) / 4",
+          "Calculate x₁ = (4 + 8) / 4 = 3, x₂ = (4 - 8) / 4 = -1"
+        ],
+        "solution": "x = 3 or x = -1"
+      },
+      "calculator": {
+        "version": "1.0",
+        "engine_type": "solver",
+        "solver_id": "quadratic_formula",
+        "inputs": [
+          { "symbol": "a", "label": "Coefficient a", "default_value": 2.0, "example_value": 2.0, "validation": { "allow_zero": false, "error_message": "Coefficient 'a' cannot be 0 in a quadratic equation." } },
+          { "symbol": "b", "label": "Coefficient b", "default_value": -4.0, "example_value": -4.0 },
+          { "symbol": "c", "label": "Constant c", "default_value": -6.0, "example_value": -6.0 }
+        ],
+        "outputs": [
+          { "symbol": "x₁", "label": "First Root" },
+          { "symbol": "x₂", "label": "Second Root" },
+          { "symbol": "Δ", "label": "Discriminant" }
+        ]
+      },
+      "sections": [
+        { "type": "overview", "title": "Overview & Concept", "content": "Quadratic equations are second-degree polynomial equations of the form ax² + bx + c = 0." },
+        { "type": "formula", "title": "Mathematical Formula", "content": "x = (-b ± √(b² - 4ac)) / (2a)" }
+      ],
+      "related_content": [
+        { "target_type": "formula", "target_id": "math.algebra.discriminant", "title": "Discriminant (b² - 4ac)", "relationship_type": "component" }
+      ]
+    },
+    {
+      "id": "math.algebra.discriminant",
+      "numeric_id": 103,
+      "subject_id": "mathematics",
+      "category_id": "algebra",
+      "topic": "Quadratic Equations",
+      "name": "Discriminant",
+      "formula": "Δ = b² - 4*a*c",
+      "description": "Determines the nature and number of roots of a quadratic equation ax² + bx + c = 0.",
+      "difficulty": "beginner",
+      "estimated_read_minutes": 2,
+      "display_order": 2,
+      "variables": [
+        { "symbol": "Δ", "name": "Discriminant", "description": "Value determining root nature (Δ > 0: 2 real, Δ = 0: 1 real, Δ < 0: 2 complex)" },
+        { "symbol": "b", "name": "Linear Coefficient", "description": "Multiplier of x" },
+        { "symbol": "a", "name": "Quadratic Coefficient", "description": "Multiplier of x²" },
+        { "symbol": "c", "name": "Constant Term", "description": "Constant value" }
+      ],
+      "worked_example": {
+        "problem": "Find the discriminant of x² + 4x + 5 = 0",
+        "steps": [
+          "Identify a = 1, b = 4, c = 5",
+          "Δ = 4² - 4(1)(5) = 16 - 20 = -4",
+          "Since Δ < 0, equation has 2 complex roots"
+        ],
+        "solution": "Δ = -4 (Two complex roots)"
+      },
+      "calculator": {
+        "version": "1.0",
+        "engine_type": "expression",
+        "expression": "b^2 - 4 * a * c",
+        "inputs": [
+          { "symbol": "a", "label": "Coefficient a", "default_value": 1.0, "example_value": 1.0 },
+          { "symbol": "b", "label": "Coefficient b", "default_value": 4.0, "example_value": 4.0 },
+          { "symbol": "c", "label": "Constant c", "default_value": 5.0, "example_value": 5.0 }
+        ],
+        "outputs": [
+          { "symbol": "Δ", "label": "Discriminant", "expression": "b^2 - 4 * a * c" }
+        ]
+      },
+      "sections": [
+        { "type": "overview", "title": "Overview", "content": "The discriminant determines root properties without solving the full quadratic formula." }
+      ],
+      "related_content": [
+        { "target_type": "formula", "target_id": "math.algebra.quadratic_formula", "title": "Quadratic Formula", "relationship_type": "parent" }
+      ]
+    }
+  ]
+}

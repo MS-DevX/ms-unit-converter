@@ -1,0 +1,97 @@
+{
+  "category": {
+    "id": "geometry",
+    "subject_id": "mathematics",
+    "name": "Geometry",
+    "emoji": "📏",
+    "description": "2D/3D shapes, area, volume, surface area, and right triangles.",
+    "display_order": 2
+  },
+  "lessons": [
+    {
+      "id": "math.geometry.pythagorean_theorem",
+      "numeric_id": 102,
+      "subject_id": "mathematics",
+      "category_id": "geometry",
+      "topic": "Right Triangles",
+      "name": "Pythagorean Theorem",
+      "formula": "a² + b² = c²",
+      "description": "Relates the side lengths of a right-angled triangle where c is the hypotenuse.",
+      "difficulty": "beginner",
+      "estimated_read_minutes": 2,
+      "display_order": 1,
+      "variables": [
+        { "symbol": "a", "name": "Leg A", "description": "First perpendicular side" },
+        { "symbol": "b", "name": "Leg B", "description": "Second perpendicular side" },
+        { "symbol": "c", "name": "Hypotenuse", "description": "Longest side opposite right angle" }
+      ],
+      "worked_example": {
+        "problem": "Find the hypotenuse c of a right triangle with legs a = 3 cm and b = 4 cm",
+        "steps": [
+          "a² = 3² = 9, b² = 4² = 16",
+          "c² = 9 + 16 = 25",
+          "c = √25 = 5 cm"
+        ],
+        "solution": "c = 5 cm"
+      },
+      "calculator": {
+        "version": "1.0",
+        "engine_type": "solver",
+        "solver_id": "pythagorean_theorem",
+        "inputs": [
+          { "symbol": "a", "label": "Leg a", "default_value": 3.0, "example_value": 3.0, "unit": "cm", "validation": { "min": 0.0, "allow_zero": false, "allow_negative": false } },
+          { "symbol": "b", "label": "Leg b", "default_value": 4.0, "example_value": 4.0, "unit": "cm", "validation": { "min": 0.0, "allow_zero": false, "allow_negative": false } }
+        ],
+        "outputs": [
+          { "symbol": "c", "label": "Hypotenuse", "unit": "cm" }
+        ]
+      },
+      "sections": [
+        { "type": "overview", "title": "Overview", "content": "Fundamental relation in Euclidean geometry among the three sides of a right triangle." }
+      ],
+      "related_content": []
+    },
+    {
+      "id": "math.geometry.circle_area",
+      "numeric_id": 104,
+      "subject_id": "mathematics",
+      "category_id": "geometry",
+      "topic": "Circle Geometry",
+      "name": "Area of a Circle",
+      "formula": "A = π * r^2",
+      "description": "Calculates the total two-dimensional surface space inside a circle of radius r.",
+      "difficulty": "beginner",
+      "estimated_read_minutes": 2,
+      "display_order": 2,
+      "variables": [
+        { "symbol": "A", "name": "Area", "description": "Total surface area of circle" },
+        { "symbol": "r", "name": "Radius", "description": "Distance from circle center to edge" },
+        { "symbol": "π", "name": "Pi Constant", "description": "Mathematical constant ≈ 3.14159" }
+      ],
+      "worked_example": {
+        "problem": "Calculate the area of a circle with radius r = 7 cm",
+        "steps": [
+          "r² = 7² = 49",
+          "A = π × 49 ≈ 3.14159 × 49 = 153.94 cm²"
+        ],
+        "solution": "A ≈ 153.94 cm²"
+      },
+      "calculator": {
+        "version": "1.0",
+        "engine_type": "solver",
+        "solver_id": "circle_area",
+        "inputs": [
+          { "symbol": "r", "label": "Radius r", "default_value": 7.0, "example_value": 7.0, "unit": "cm", "validation": { "min": 0.0, "allow_negative": false } }
+        ],
+        "outputs": [
+          { "symbol": "A", "label": "Area", "unit": "cm²" },
+          { "symbol": "C", "label": "Circumference", "unit": "cm" }
+        ]
+      },
+      "sections": [
+        { "type": "overview", "title": "Overview", "content": "Calculates circle surface area using constant π." }
+      ],
+      "related_content": []
+    }
+  ]
+}
