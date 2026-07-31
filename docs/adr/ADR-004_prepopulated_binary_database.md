@@ -10,7 +10,7 @@ Seeding hundreds of categories, units, currencies, search aliases, and education
 
 ## Decision
 
-We introduced a developer build pipeline (`tools/build_database.dart`) to generate a pre-populated SQLite database asset (`assets/database/stem_data.db`, 316 KB). On first launch, `DatabaseService.initialize()` copies this asset directly to the application documents directory.
+We introduced a developer build pipeline (`tools/build_database.dart`) to generate a pre-populated SQLite database asset (`assets/database/unit_converter.db`, 316 KB). On first launch, `DatabaseService.initialize()` copies this asset directly to the application documents directory.
 
 ## Rationale
 

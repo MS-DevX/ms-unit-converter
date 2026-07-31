@@ -22,6 +22,11 @@ void main() {
       DatabaseConstants.databaseFileName,
     );
 
+    final targetFile = File(absolutePath);
+    if (await targetFile.exists()) {
+      await targetFile.delete();
+    }
+
     final db = await openDatabase(absolutePath);
     try {
       await DatabaseService.seedDatabase(db);

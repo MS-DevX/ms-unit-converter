@@ -3,7 +3,7 @@
 /// Database Build Tool — MS Unit Converter
 ///
 /// Generates the pre-populated SQLite database binary file at
-/// `assets/database/stem_data.db` from all reference data sources
+/// `assets/database/unit_converter.db` from all reference data sources
 /// (categories, units, currencies, collections, educational facts, aliases,
 /// and unit educational information).
 ///
@@ -45,6 +45,11 @@ Future<void> main(List<String> args) async {
   if (!dir.existsSync()) {
     dir.createSync(recursive: true);
     print('Created directory: ${dir.path}');
+  }
+
+  final targetFile = File(outputPath);
+  if (targetFile.existsSync()) {
+    targetFile.deleteSync();
   }
 
   print('Building pre-populated SQLite database at: $outputPath…');

@@ -7,7 +7,7 @@
 ///
 /// ## Usage
 /// ```bash
-/// dart run tools/check_database.dart [path/to/stem_data.db]
+/// dart run tools/check_database.dart [path/to/unit_converter.db]
 /// ```
 library;
 

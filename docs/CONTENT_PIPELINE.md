@@ -24,7 +24,7 @@ tools/validate_content.dart
 tools/build_database.dart
   (Generates SQLite database using sqflite_common_ffi & DatabaseService.seedDatabase)
         ↓
-assets/database/stem_data.db
+assets/database/unit_converter.db
   (Pre-populated 316 KB binary asset registered in pubspec.yaml)
         ↓
 DatabaseService.initialize()
@@ -39,7 +39,7 @@ DatabaseService.initialize()
 |---|---|---|---|
 | [`tools/lint_content.dart`](file:///home/marth/Desktop/unit-converter/tools/lint_content.dart) | Content & JSON linter | Data files, JSON assets, `pubspec.yaml` | 20-check validation status (exit 0 on success, exit 1 on error) |
 | [`tools/validate_content.dart`](file:///home/marth/Desktop/unit-converter/tools/validate_content.dart) | Structural integrity validator | Project infrastructure paths | Infrastructure verification status |
-| [`tools/build_database.dart`](file:///home/marth/Desktop/unit-converter/tools/build_database.dart) | Database pre-population builder | Reference datasets + `unit_information.json` | [`assets/database/stem_data.db`](file:///home/marth/Desktop/unit-converter/assets/database/stem_data.db) (316 KB) |
+| [`tools/build_database.dart`](file:///home/marth/Desktop/unit-converter/tools/build_database.dart) | Database pre-population builder | Reference datasets + `unit_information.json` | [`assets/database/unit_converter.db`](file:///home/marth/Desktop/unit-converter/assets/database/unit_converter.db) (316 KB) |
 | [`tools/check_database.dart`](file:///home/marth/Desktop/unit-converter/tools/check_database.dart) | Database integrity checker | Path to SQLite DB file | `PRAGMA integrity_check;` and `PRAGMA foreign_key_check;` report |
 | [`tools/inspect_database.dart`](file:///home/marth/Desktop/unit-converter/tools/inspect_database.dart) | Database row count inspector | Path to SQLite DB file | Table row counts and file size diagnostics |
 | [`tools/verify_database.dart`](file:///home/marth/Desktop/unit-converter/tools/verify_database.dart) | CI database binary verification stub | Committed DB vs Generated DB | SHA-256 binary hash comparison for CI |
@@ -61,5 +61,5 @@ dart run tools/validate_content.dart
 flutter test test/build_database_runner_test.dart
 
 # 4. Verify database health & integrity
-dart run tools/check_database.dart assets/database/stem_data.db
+dart run tools/check_database.dart assets/database/unit_converter.db
 ```

@@ -9,7 +9,7 @@
 /// Run after building and running the app at least once (so the DB is seeded):
 ///
 /// ```bash
-/// dart run tools/inspect_database.dart [path/to/stem_data.db]
+/// dart run tools/inspect_database.dart [path/to/unit_converter.db]
 /// ```
 ///
 /// If no path is provided, the tool attempts to find the database in common
@@ -27,17 +27,14 @@
 ///
 /// Table                   Rows
 /// ─────────────────────── ────
-/// categories                53
-/// units                    312
-/// currencies               172
+/// categories                60
+/// units                    480
+/// currencies               151
 /// collections                 9
-/// collection_items          52
+/// collection_items          78
 /// educational_facts         321
-/// search_aliases            156
-/// unit_information            0  ← empty in Phase 1
-/// formulas                    0  ← future
-/// scientific_constants        0  ← future
-/// ...
+/// search_aliases            111
+/// unit_information           18
 /// ```
 library;
 

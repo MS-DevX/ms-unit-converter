@@ -8,7 +8,7 @@ This document outlines the phased evolution of data storage and content architec
 
 * **Architecture Modernization**: Created SQLite database infrastructure (`DatabaseService`, `MigrationService`, Schema v1 with 20 tables and 16 indexes).
 * **Repository Layer**: Implemented 7 singletons with in-memory caching (`UnitRepository`, `CategoryRepository`, `CurrencyRepository`, `CollectionRepository`, `SearchRepository`, `UnitInformationRepository`, `EducationalFactsRepository`).
-* **Pre-Populated Binary Database Asset**: Built `tools/build_database.dart` developer pipeline to generate [`assets/database/stem_data.db`](file:///home/marth/Desktop/unit-converter/assets/database/stem_data.db) (316 KB). Registered in `pubspec.yaml`.
+* **Pre-Populated Binary Database Asset**: Built `tools/build_database.dart` developer pipeline to generate [`assets/database/unit_converter.db`](file:///home/marth/Desktop/unit-converter/assets/database/unit_converter.db) (316 KB). Registered in `pubspec.yaml`.
 * **First-Launch Asset Copy**: `DatabaseService.initialize()` copies the pre-populated asset database to the application documents directory on first launch.
 * **Developer & Quality Tooling**: Created static content linter (`lint_content.dart`), database checker (`check_database.dart`), inspector (`inspect_database.dart`), and health diagnostic service (`DatabaseHealthService`).
 * **Test Suite**: 311 unit and widget tests passing (100% pass rate). Zero static analysis issues.

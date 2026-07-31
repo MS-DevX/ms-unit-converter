@@ -33,7 +33,7 @@ This document defines the official software architecture of **MS Unit Converter*
                                ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                   SQLite Database File                      │
-│             (assets/database/stem_data.db)             │
+│             (assets/database/unit_converter.db)             │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -62,7 +62,7 @@ This document defines the official software architecture of **MS Unit Converter*
 ## 3. Runtime Data Flow
 
 ```text
-SQLite Database (assets/database/stem_data.db)
+SQLite Database (assets/database/unit_converter.db)
       ↓
 Repository (e.g. UnitRepository queries units table & populates _categoryCache)
       ↓
@@ -117,7 +117,7 @@ SearchRepository (lib/repositories/search_repository.dart)
       ↓
 SqliteSearchBackend (queries search_aliases, categories, units tables)
       ↓
-SQLite Database (stem_data.db)
+SQLite Database (unit_converter.db)
 ```
 
 * **Rule**: Search must query SQLite indexed tables (`search_aliases`, `categories`, `units`) during runtime. Searching JSON assets or Dart files during normal app execution is strictly prohibited.
