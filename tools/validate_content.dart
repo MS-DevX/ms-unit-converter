@@ -72,14 +72,6 @@ void main(List<String> args) async {
     'lib/data/did_you_know.dart',
     'lib/data/converter_config.dart',
     'assets/data/unit_information.json',
-    'content/schema/manifest.schema.json',
-    'content/schema/subject.schema.json',
-    'content/schema/category.schema.json',
-    'content/schema/lesson.schema.json',
-    'content/academy/manifest.json',
-    'content/academy/mathematics/manifest.json',
-    'content/academy/mathematics/algebra.json',
-    'content/academy/mathematics/geometry.json',
   ];
 
   for (final filePath in filesToCheck) {

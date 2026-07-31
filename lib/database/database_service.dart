@@ -37,7 +37,7 @@ import '../data/units_data.dart';
 /// Current content version — matches the app release that last changed reference data.
 /// Increment this when any reference data changes (units, currencies, facts, etc.)
 /// to trigger an automatic reseed on the next launch.
-const String _contentVersion = '2.4.0+physics1';
+const String _contentVersion = '2.3.0';
 
 /// SQLite database filename stored in the app documents directory.
 const String _dbFileName = DatabaseConstants.databaseFileName;
@@ -172,28 +172,28 @@ class DatabaseService {
 
   // ─── Private helpers ───────────────────────────────────────────────────────
 
-  /// Resolves the full path to the database file in the documents directory.
+  /// Resolves the absolute file path for storing the SQLite database file.
   Future<String> _resolveDbPath() async {
     try {
-      final dir = await getApplicationDocumentsDirectory();
-      return path.join(dir.path, _dbFileName);
+      final docsDir = await getApplicationDocumentsDirectory();
+      return path.join(docsDir.path, _dbFileName);
     } catch (_) {
       // Fallback for headless unit test runner where path_provider plugin is unmocked
       return path.join(Directory.systemTemp.path, _dbFileName);
     }
   }
 
-  /// Checks the stored content version; reseeds all reference data if it
-  /// differs from [_contentVersion].
+  /// Checks if the content version in the DB matches [_contentVersion].
+  /// Reseeds reference data if the version has changed.
   Future<void> _reseedIfContentChanged(Database db) async {
     final storedVersion = await _readContentVersion(db);
     if (storedVersion == _contentVersion) {
       debugPrint('[DatabaseService] Content version current ($_contentVersion) — skip reseed');
       return;
     }
+
     debugPrint(
-      '[DatabaseService] Content version changed: '
-      '${storedVersion ?? 'none'} → $_contentVersion — reseeding',
+      '[DatabaseService] Content version changed: ${storedVersion ?? 'none'} → $_contentVersion — reseeding reference tables…',
     );
     await _clearReferenceData(db);
     await _seedAllData(db);
@@ -223,14 +223,14 @@ class DatabaseService {
   /// All reference tables that are cleared and reseeded on content version change.
   static const List<String> _referenceTablesToClear = [
     'related_content',
-    'formulas',
-    'formula_categories',
-    'subjects',
     'educational_facts',
     'collection_items',
     'collections',
     'search_aliases',
     'unit_information',
+    'formulas',
+    'formula_categories',
+    'subjects',
     'units',
     'categories',
     'currencies',
@@ -252,7 +252,6 @@ class DatabaseService {
       await _seedCurrencies(txn);
       await _seedEducationalFacts(txn);
       await _seedUnitInformation(txn);
-      await _seedAcademyContent(txn);
     });
 
     stopwatch.stop();
@@ -656,124 +655,7 @@ class DatabaseService {
     }
   }
 
-  /// Seeds STEM Academy subjects, categories, and formulas into [txn].
-  Future<void> _seedAcademyContent(Transaction txn) async {
-    // 1. Subjects
-    final subjects = [
-      {'id': 1, 'name': 'Mathematics', 'icon': '📐', 'display_order': 1},
-      {'id': 2, 'name': 'Physics', 'icon': '⚛️', 'display_order': 2},
-      {'id': 3, 'name': 'Chemistry', 'icon': '🧪', 'display_order': 3},
-      {'id': 4, 'name': 'Engineering', 'icon': '⚙️', 'display_order': 4},
-      {'id': 5, 'name': 'Computer Science', 'icon': '💻', 'display_order': 5},
-      {'id': 6, 'name': 'Scientific Constants', 'icon': '🔬', 'display_order': 6},
-    ];
-    for (final s in subjects) {
-      await txn.insert('subjects', s, conflictAlgorithm: ConflictAlgorithm.replace);
-    }
 
-    // 2. Categories
-    final categories = [
-      {'id': 'algebra', 'name': 'Algebra', 'subject_id': 1, 'description': 'Linear, quadratic, and polynomial equations.', 'display_order': 1},
-      {'id': 'geometry', 'name': 'Geometry', 'subject_id': 1, 'description': '2D/3D shapes, area, volume, and perimeter.', 'display_order': 2},
-      {'id': 'trigonometry', 'name': 'Trigonometry', 'subject_id': 1, 'description': 'Sine, cosine, tangent, and trigonometric identities.', 'display_order': 3},
-      {'id': 'coordinate_geometry', 'name': 'Coordinate Geometry', 'subject_id': 1, 'description': 'Distance, midpoint, and lines on Cartesian plane.', 'display_order': 4},
-      {'id': 'calculus', 'name': 'Calculus', 'subject_id': 1, 'description': 'Limits, derivatives, integrals, and rate of change.', 'display_order': 5},
-      {'id': 'probability', 'name': 'Probability', 'subject_id': 1, 'description': 'Permutations, combinations, and likelihood.', 'display_order': 6},
-      {'id': 'statistics', 'name': 'Statistics', 'subject_id': 1, 'description': 'Mean, median, mode, and standard deviation.', 'display_order': 7},
-      {'id': 'matrices', 'name': 'Matrices & Determinants', 'subject_id': 1, 'description': 'Matrix arithmetic, inverses, and determinants.', 'display_order': 8},
-      {'id': 'vectors', 'name': 'Vectors', 'subject_id': 1, 'description': 'Dot product, cross product, and magnitude.', 'display_order': 9},
-      {'id': 'logarithms', 'name': 'Logarithms & Exponents', 'subject_id': 1, 'description': 'Log rules, natural logs, and exponential growth.', 'display_order': 10},
-      {'id': 'kinematics', 'name': 'Kinematics & Motion', 'subject_id': 2, 'description': 'Motion of objects without forces.', 'display_order': 1},
-      {'id': 'dynamics', 'name': 'Dynamics & Forces', 'subject_id': 2, 'description': 'Forces and laws of motion.', 'display_order': 2},
-      {'id': 'work_energy', 'name': 'Work, Energy & Power', 'subject_id': 2, 'description': 'Energy transfers and rate of work.', 'display_order': 3},
-      {'id': 'matter', 'name': 'Properties of Matter', 'subject_id': 2, 'description': 'Density and fluid pressure.', 'display_order': 4},
-      {'id': 'thermal_physics', 'name': 'Thermal Physics', 'subject_id': 2, 'description': 'Heat and temperature.', 'display_order': 5},
-      {'id': 'waves_optics', 'name': 'Waves & Optics', 'subject_id': 2, 'description': 'Waves and optics.', 'display_order': 6},
-      {'id': 'electricity', 'name': 'Electricity & Circuits', 'subject_id': 2, 'description': 'Circuits and Ohm\'s Law.', 'display_order': 7},
-      {'id': 'magnetism', 'name': 'Magnetism & Electromagnetism', 'subject_id': 2, 'description': 'Magnetic forces and fields.', 'display_order': 8},
-    ];
-    for (final c in categories) {
-      await txn.insert('formula_categories', c, conflictAlgorithm: ConflictAlgorithm.replace);
-    }
-
-    // 3. Formulas
-    final formulas = [
-      {
-        'id': 101,
-        'subject_id': 1,
-        'category_id': 'algebra',
-        'chapter': 'Quadratic Equations',
-        'title': 'Quadratic Formula',
-        'expression': 'x = (-b ± √(b² - 4ac)) / (2a)',
-        'description': 'Calculates the real or complex roots of any second-degree quadratic equation ax² + bx + c = 0.',
-        'difficulty': '2',
-        'variables': '[{"symbol":"a","name":"Quadratic Coefficient","description":"Multiplier of x² (a ≠ 0)"},{"symbol":"b","name":"Linear Coefficient","description":"Multiplier of x"},{"symbol":"c","name":"Constant Term","description":"Independent term"},{"symbol":"x","name":"Roots / Solutions","description":"Values of x where equation equals 0"}]',
-        'example': '{"problem":"Find roots of 2x² - 4x - 6 = 0","steps":["Identify a = 2, b = -4, c = -6","Discriminant b² - 4ac = 16 - 4(2)(-6) = 64","x = (4 ± √64) / 4 = (4 ± 8) / 4","x₁ = 3, x₂ = -1"],"solution":"x = 3 or x = -1"}',
-        'units': '3',
-        'display_order': 1,
-      },
-      {
-        'id': 102,
-        'subject_id': 1,
-        'category_id': 'geometry',
-        'chapter': 'Right Triangles',
-        'title': 'Pythagorean Theorem',
-        'expression': 'a² + b² = c²',
-        'description': 'Relates the side lengths of a right-angled triangle where c is the hypotenuse.',
-        'difficulty': '1',
-        'variables': '[{"symbol":"a","name":"Leg A","description":"First perpendicular side"},{"symbol":"b","name":"Leg B","description":"Second perpendicular side"},{"symbol":"c","name":"Hypotenuse","description":"Longest side opposite the right angle"}]',
-        'example': '{"problem":"Calculate hypotenuse when a = 3 cm and b = 4 cm","steps":["a² = 9, b² = 16","c² = 9 + 16 = 25","c = √25 = 5"],"solution":"c = 5 cm"}',
-        'units': '2',
-        'display_order': 2,
-      },
-      {
-        'id': 201,
-        'subject_id': 2,
-        'category_id': 'kinematics',
-        'chapter': 'Motion in One Dimension',
-        'title': 'Speed & Velocity',
-        'expression': 'v = d / t',
-        'description': 'Speed is the rate at which distance is covered.',
-        'difficulty': '1',
-        'variables': '[{"symbol":"v","name":"Speed","description":"m/s"},{"symbol":"d","name":"Distance","description":"m"},{"symbol":"t","name":"Time","description":"s"}]',
-        'calculator_json': '{"version":"1.0","engine_type":"expression","expression":"d / t","inputs":[{"symbol":"d","label":"Distance","default_value":150.0},{"symbol":"t","label":"Time","default_value":10.0}],"outputs":[{"symbol":"v","label":"Speed","unit":"m/s"}]}',
-        'units': '3',
-        'display_order': 1,
-      },
-      {
-        'id': 202,
-        'subject_id': 2,
-        'category_id': 'kinematics',
-        'chapter': 'Linear Acceleration',
-        'title': 'Acceleration',
-        'expression': 'a = (v - u) / t',
-        'description': 'Rate of change of velocity.',
-        'difficulty': '1',
-        'variables': '[{"symbol":"a","name":"Acceleration","description":"m/s²"},{"symbol":"v","name":"Final Velocity","description":"m/s"},{"symbol":"u","name":"Initial Velocity","description":"m/s"},{"symbol":"t","name":"Time","description":"s"}]',
-        'calculator_json': '{"version":"1.0","engine_type":"expression","expression":"(v - u) / t","inputs":[{"symbol":"v","label":"Final Velocity","default_value":30.0},{"symbol":"u","label":"Initial Velocity","default_value":10.0},{"symbol":"t","label":"Time","default_value":5.0}],"outputs":[{"symbol":"a","label":"Acceleration","unit":"m/s²"}]}',
-        'units': '3',
-        'display_order': 2,
-      },
-      {
-        'id': 203,
-        'subject_id': 2,
-        'category_id': 'dynamics',
-        'chapter': 'Newton\'s Laws',
-        'title': 'Newton\'s Second Law of Motion',
-        'expression': 'F = m * a',
-        'description': 'Acceleration is directly proportional to net force.',
-        'difficulty': '1',
-        'variables': '[{"symbol":"F","name":"Force","description":"N"},{"symbol":"m","name":"Mass","description":"kg"},{"symbol":"a","name":"Acceleration","description":"m/s²"}]',
-        'calculator_json': '{"version":"1.0","engine_type":"expression","expression":"m * a","inputs":[{"symbol":"m","label":"Mass","default_value":5.0},{"symbol":"a","label":"Acceleration","default_value":3.0}],"outputs":[{"symbol":"F","label":"Force","unit":"N"}]}',
-        'units': '3',
-        'display_order': 1,
-      },
-    ];
-
-    for (final f in formulas) {
-      await txn.insert('formulas', f, conflictAlgorithm: ConflictAlgorithm.replace);
-    }
-  }
 
   /// Closes the database. Should only be called when the app is disposing.
   Future<void> close() async {

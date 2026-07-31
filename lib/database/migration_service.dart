@@ -6,16 +6,13 @@
 ///   columns in a way that destroys data.
 /// - User-generated data tables (`favorites`, `history`, `notes`, etc.) are
 ///   never created here — they remain in SharedPreferences for this release.
-/// - Future user-data migrations will be handled in a dedicated UserDataRepository
-///   without changing the public provider APIs.
 ///
 /// ## Version History
 /// | Schema Version | Changes |
 /// |---|---|
 /// | 1 | Initial schema: categories, units, unit_information, search_aliases, |
 /// |   | collections, collection_items, currencies, educational_facts, tags, |
-/// |   | content_tags, related_content, schema_version, content_version, |
-/// |   | and all future empty tables (subjects, grades, formulas, etc.) |
+/// |   | content_tags, related_content, schema_version, content_version |
 library;
 
 import 'package:sqflite/sqflite.dart';
@@ -25,20 +22,16 @@ class MigrationService {
   MigrationService._();
 
   /// Current schema version. Increment when adding or modifying tables.
-  static const int currentSchemaVersion = 2;
+  static const int currentSchemaVersion = 1;
 
   /// Creates the full schema from scratch (called via sqflite's [onCreate]).
   static Future<void> createSchema(Database db) async {
     await db.transaction((txn) async {
       await _runMigration1(txn);
-      await _runMigration2(txn);
     });
   }
 
   /// Runs incremental migrations from [oldVersion] to [newVersion].
-  ///
-  /// Each step is additive. Future schema versions add tables or columns
-  /// without modifying existing structure.
   static Future<void> upgrade(
     Database db,
     int oldVersion,
@@ -49,8 +42,6 @@ class MigrationService {
         switch (v) {
           case 1:
             await _runMigration1(txn);
-          case 2:
-            await _runMigration2(txn);
           default:
             break;
         }
@@ -60,7 +51,7 @@ class MigrationService {
 
   // ─── Migration Steps ───────────────────────────────────────────────────────
 
-  /// Schema v1 — Initial: all reference tables + future scaffolding.
+  /// Schema v1 — Initial: all reference tables.
   static Future<void> _runMigration1(Transaction txn) async {
     // ── Version tables ──────────────────────────────────────────────
     await txn.execute('''
@@ -214,97 +205,6 @@ class MigrationService {
       )
     ''');
 
-    // ── Future educational scaffolding (empty until future releases) ─
-    await txn.execute('''
-      CREATE TABLE IF NOT EXISTS subjects (
-        id            INTEGER PRIMARY KEY AUTOINCREMENT,
-        name          TEXT    NOT NULL UNIQUE,
-        icon          TEXT,
-        display_order INTEGER NOT NULL DEFAULT 0
-      )
-    ''');
-
-    await txn.execute('''
-      CREATE TABLE IF NOT EXISTS grades (
-        id            INTEGER PRIMARY KEY AUTOINCREMENT,
-        subject_id    INTEGER NOT NULL REFERENCES subjects(id),
-        name          TEXT    NOT NULL,
-        display_order INTEGER NOT NULL DEFAULT 0
-      )
-    ''');
-
-    await txn.execute('''
-      CREATE TABLE IF NOT EXISTS formulas (
-        id              INTEGER PRIMARY KEY AUTOINCREMENT,
-        subject_id      INTEGER REFERENCES subjects(id),
-        grade_id        INTEGER REFERENCES grades(id),
-        category_id     TEXT    REFERENCES categories(id),
-        title           TEXT,
-        expression      TEXT,
-        description     TEXT,
-        difficulty      TEXT,
-        chapter         TEXT,
-        example         TEXT,
-        variables       TEXT,
-        units           TEXT,
-        calculator_json TEXT,
-        sections_json   TEXT,
-        display_order   INTEGER NOT NULL DEFAULT 0,
-        is_featured     INTEGER NOT NULL DEFAULT 0,
-        is_hidden       INTEGER NOT NULL DEFAULT 0,
-        search_weight   INTEGER NOT NULL DEFAULT 100
-      )
-    ''');
-
-    await txn.execute('''
-      CREATE TABLE IF NOT EXISTS formula_categories (
-        id            TEXT    PRIMARY KEY,
-        name          TEXT    NOT NULL,
-        subject_id    INTEGER REFERENCES subjects(id),
-        description   TEXT,
-        display_order INTEGER NOT NULL DEFAULT 0
-      )
-    ''');
-
-    await txn.execute('''
-      CREATE TABLE IF NOT EXISTS scientific_constants (
-        id            INTEGER PRIMARY KEY AUTOINCREMENT,
-        subject_id    INTEGER REFERENCES subjects(id),
-        name          TEXT,
-        symbol        TEXT,
-        value         REAL,
-        value_text    TEXT,
-        unit          TEXT,
-        uncertainty   TEXT,
-        description   TEXT,
-        display_order INTEGER NOT NULL DEFAULT 0,
-        is_featured   INTEGER NOT NULL DEFAULT 0,
-        search_weight INTEGER NOT NULL DEFAULT 100
-      )
-    ''');
-
-    await txn.execute('''
-      CREATE TABLE IF NOT EXISTS measurement_guides (
-        id            INTEGER PRIMARY KEY AUTOINCREMENT,
-        title         TEXT,
-        content       TEXT,
-        category_id   TEXT REFERENCES categories(id),
-        subject_id    INTEGER REFERENCES subjects(id),
-        display_order INTEGER NOT NULL DEFAULT 0
-      )
-    ''');
-
-    await txn.execute('''
-      CREATE TABLE IF NOT EXISTS engineering_reference (
-        id            INTEGER PRIMARY KEY AUTOINCREMENT,
-        title         TEXT,
-        content       TEXT,
-        subject_id    INTEGER REFERENCES subjects(id),
-        subcategory   TEXT,
-        display_order INTEGER NOT NULL DEFAULT 0
-      )
-    ''');
-
     // ── Performance indexes ─────────────────────────────────────────
     await txn.execute('CREATE INDEX IF NOT EXISTS idx_units_category    ON units(category_id)');
     await txn.execute('CREATE INDEX IF NOT EXISTS idx_units_name        ON units(name)');
@@ -320,17 +220,5 @@ class MigrationService {
     await txn.execute('CREATE INDEX IF NOT EXISTS idx_content_tags_src  ON content_tags(source_type, source_id)');
     await txn.execute('CREATE INDEX IF NOT EXISTS idx_related_src       ON related_content(source_type, source_id)');
     await txn.execute('CREATE INDEX IF NOT EXISTS idx_related_tgt       ON related_content(target_type, target_id)');
-    await txn.execute('CREATE INDEX IF NOT EXISTS idx_formulas_subject  ON formulas(subject_id)');
-    await txn.execute('CREATE INDEX IF NOT EXISTS idx_constants_subject ON scientific_constants(subject_id)');
-  }
-
-  // ── Migration Step 2 ────────────────────────────────────────────────────────
-  static Future<void> _runMigration2(Transaction txn) async {
-    try {
-      await txn.execute('ALTER TABLE formulas ADD COLUMN calculator_json TEXT;');
-    } catch (_) {}
-    try {
-      await txn.execute('ALTER TABLE formulas ADD COLUMN sections_json TEXT;');
-    } catch (_) {}
   }
 }

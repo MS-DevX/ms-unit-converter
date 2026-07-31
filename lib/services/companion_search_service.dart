@@ -22,9 +22,6 @@ import '../screens/converter_screen.dart';
 import '../screens/custom_converter_screen.dart';
 import '../screens/notes_screen.dart';
 import '../core/colors.dart';
-import '../database/database_service.dart';
-import '../repositories/search_repository.dart';
-import '../screens/academy/formula_lesson_screen.dart';
 import '../services/smart_parse_service.dart';
 import '../services/unit_info_service.dart';
 import '../utils/formatters.dart';
@@ -337,35 +334,7 @@ class CompanionSearchService {
     Set<String> terms,
     List<CompanionSearchResult> results,
   ) async {
-    // 1. Search STEM Academy Database Formulas via SearchRepository if DB initialized
-    if (DatabaseService.instance.isInitialized) {
-      final academyFormulas = await SearchRepository.instance.searchFormulas(rawQuery);
-      for (final f in academyFormulas) {
-        results.add(
-          CompanionSearchResult(
-            id: 'stem_formula_${f.id}',
-            type: CompanionResultType.formula,
-            title: f.name,
-            categoryName: '${f.topic} (Mathematics)',
-            description: f.description,
-            formula: f.formula,
-            icon: Icons.functions_rounded,
-            accentColor: const Color(0xFFA855F7),
-            score: 120,
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => FormulaLessonScreen(formula: f),
-                ),
-              );
-            },
-          ),
-        );
-      }
-    }
-
-    // 2. Unit conversion formulas fallback
+    // Unit conversion formulas
     if (terms.any((t) => t.contains('formula') || t.contains('calc') || t.contains('convert') || t.contains('how'))) {
       for (final cat in UnitCategory.values) {
         final units = unitsData[cat] ?? [];

@@ -7,7 +7,8 @@
 /// and in-memory category/unit filtering.
 ///
 /// In a future release, a [Fts5SearchBackend] will be added. Enabling FTS5
-/// requires:/// 1. Creating FTS5 virtual tables in a new schema migration.
+/// requires:
+/// 1. Creating FTS5 virtual tables in a new schema migration.
 /// 2. Instantiating [Fts5SearchBackend] instead of [SqliteSearchBackend] in
 ///    [SearchRepository._backend].
 ///
@@ -28,8 +29,6 @@ import '../data/units_data.dart';
 import '../models/unit_model.dart';
 import 'unit_repository.dart';
 import 'category_repository.dart';
-import '../models/formula_model.dart';
-import 'formula_repository.dart';
 
 // ─── Backend Contract ──────────────────────────────────────────────────────
 
@@ -49,9 +48,6 @@ abstract class SearchBackend {
 
   /// Searches across all categories for units matching [query].
   Future<List<UnitModel>> searchAllUnits(String query);
-
-  /// Searches STEM formulas and lessons matching [query].
-  Future<List<FormulaModel>> searchFormulas(String query);
 }
 
 // ─── Phase 1: SQLite LIKE Backend ─────────────────────────────────────────
@@ -98,11 +94,6 @@ class SqliteSearchBackend implements SearchBackend {
     return UnitRepository.instance.search(query);
   }
 
-  @override
-  Future<List<FormulaModel>> searchFormulas(String query) async {
-    return FormulaRepository.instance.search(query);
-  }
-
   /// Warms the alias cache from the [search_aliases] table.
   Future<void> _warmAliasCache() async {
     if (_aliasCache != null) return;
@@ -118,32 +109,11 @@ class SqliteSearchBackend implements SearchBackend {
   void clearAliasCache() => _aliasCache = null;
 }
 
-// ─── Phase 2 Stub: FTS5 Backend ────────────────────────────────────────────
-
-// /// FTS5 virtual-table-based search backend (Phase 2+).
-// ///
-// /// Enabled by:
-// /// 1. Schema migration adding FTS5 virtual tables for units and categories.
-// /// 2. Swapping SearchRepository._backend to Fts5SearchBackend().
-// class Fts5SearchBackend implements SearchBackend {
-//   @override
-//   Future<String?> resolveAlias(String keyword) async { ... }
-//
-//   @override
-//   Future<List<CategoryRow>> searchCategories(String query) async { ... }
-//
-//   @override
-//   Future<List<UnitModel>> searchUnits(String query, UnitCategory category) async { ... }
-//
-//   @override
-//   Future<List<UnitModel>> searchAllUnits(String query) async { ... }
-// }
-
 // ─── Repository Facade ─────────────────────────────────────────────────────
 
 /// Singleton search repository that exposes [SearchBackend] operations.
 ///
-/// All callers (SearchHelper, SmartParseService, CompanionSearchService) use this repository.
+/// All callers (SearchHelper, SmartParseService) use this repository.
 /// The active backend can be swapped without changing any caller code.
 class SearchRepository {
   SearchRepository._();
@@ -202,19 +172,8 @@ class SearchRepository {
     }
   }
 
-  /// Searches STEM formulas and lessons matching [query].
-  Future<List<FormulaModel>> searchFormulas(String query) async {
-    try {
-      return await backend.searchFormulas(query);
-    } catch (e) {
-      debugPrint('[SearchRepository] searchFormulas error: $e');
-      return [];
-    }
-  }
-
   /// Resets the backend (dev/test use only).
   void resetBackend() {
     _backend = null;
   }
 }
-

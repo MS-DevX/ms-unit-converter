@@ -6,7 +6,6 @@ import 'package:provider/provider.dart';
 
 import 'core/theme.dart';
 import 'database/database_service.dart';
-import 'providers/academy_user_provider.dart';
 import 'providers/collections_provider.dart';
 import 'providers/converter_provider.dart';
 import 'providers/currency_provider.dart';
@@ -51,7 +50,6 @@ class _MyAppState extends State<MyApp> {
   final NotesProvider _notes = NotesProvider();
   final CustomConverterProvider _customConverters = CustomConverterProvider();
   final HomeLayoutProvider _homeLayout = HomeLayoutProvider();
-  final AcademyUserProvider _academyUser = AcademyUserProvider();
 
   @override
   void initState() {
@@ -65,7 +63,6 @@ class _MyAppState extends State<MyApp> {
     _notes.loadNotes();
     _customConverters.load();
     _homeLayout.load();
-    _academyUser.load();
   }
 
   @override
@@ -85,8 +82,6 @@ class _MyAppState extends State<MyApp> {
             value: _customConverters),
         ChangeNotifierProvider<HomeLayoutProvider>.value(
             value: _homeLayout),
-        ChangeNotifierProvider<AcademyUserProvider>.value(
-            value: _academyUser),
       ],
       child: Consumer<SettingsProvider>(
         builder: (context, settings, _) {
