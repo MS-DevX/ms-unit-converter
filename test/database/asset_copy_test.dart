@@ -28,8 +28,8 @@ void main() {
       final health = await DatabaseHealthService.checkHealth();
       expect(health.isHealthy, isTrue);
       expect(health.isInitialized, isTrue);
-      expect(health.schemaVersion, equals(1));
-      expect(health.contentVersion, startsWith('2.3.0'));
+      expect(health.schemaVersion, equals(2));
+      expect(health.contentVersion, startsWith('2.4.0'));
 
       expect(health.tableCounts['categories'], greaterThanOrEqualTo(50));
       expect(health.tableCounts['units'], greaterThanOrEqualTo(300));

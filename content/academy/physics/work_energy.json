@@ -1,0 +1,187 @@
+{
+  "category": {
+    "id": "work_energy",
+    "subject_id": "physics",
+    "name": "Work, Energy & Power",
+    "emoji": "⚡",
+    "description": "Concepts of energy transfer, kinetic and potential states, and rate of work done.",
+    "display_order": 3
+  },
+  "lessons": [
+    {
+      "id": "physics.work_energy.work",
+      "numeric_id": 207,
+      "subject_id": "physics",
+      "category_id": "work_energy",
+      "topic": "Work Done",
+      "name": "Mechanical Work",
+      "formula": "W = F * d",
+      "description": "Work is done when a force acts on an object causing displacement in the direction of the force.",
+      "difficulty": "beginner",
+      "estimated_read_minutes": 3,
+      "display_order": 1,
+      "variables": [
+        { "symbol": "W", "name": "Work Done", "description": "Energy transferred (SI unit: Joule J = N·m)" },
+        { "symbol": "F", "name": "Applied Force", "description": "Force in direction of motion (SI unit: N)" },
+        { "symbol": "d", "name": "Displacement", "description": "Distance moved along force vector (SI unit: m)" }
+      ],
+      "worked_example": {
+        "problem": "A force of 50 N pushes a box across a smooth floor by 4 meters. Calculate the work done.",
+        "steps": [
+          "Given: F = 50 N, d = 4 m",
+          "Apply formula: W = F × d = 50 × 4",
+          "Calculate work: W = 200 J"
+        ],
+        "solution": "W = 200 J"
+      },
+      "calculator": {
+        "version": "1.0",
+        "engine_type": "expression",
+        "expression": "F * d",
+        "inputs": [
+          { "symbol": "F", "label": "Force (F)", "default_value": 50.0, "example_value": 50.0, "unit": "N" },
+          { "symbol": "d", "label": "Displacement (d)", "default_value": 4.0, "example_value": 4.0, "unit": "m", "validation": { "min": 0.0, "allow_negative": false } }
+        ],
+        "outputs": [
+          { "symbol": "W", "label": "Work Done", "unit": "J" }
+        ]
+      },
+      "sections": [
+        { "type": "overview", "title": "Overview", "content": "Work is a scalar quantity measuring energy transfer. One Joule is the work done by a force of 1 N moving an object 1 meter." }
+      ],
+      "related_content": []
+    },
+    {
+      "id": "physics.work_energy.kinetic_energy",
+      "numeric_id": 208,
+      "subject_id": "physics",
+      "category_id": "work_energy",
+      "topic": "Energy Forms",
+      "name": "Kinetic Energy",
+      "formula": "KE = 0.5 * m * v^2",
+      "description": "Energy possessed by a body due to its motion.",
+      "difficulty": "beginner",
+      "estimated_read_minutes": 3,
+      "display_order": 2,
+      "variables": [
+        { "symbol": "KE", "name": "Kinetic Energy", "description": "Energy of motion (SI unit: J)" },
+        { "symbol": "m", "name": "Mass", "description": "Mass of object (SI unit: kg)" },
+        { "symbol": "v", "name": "Speed", "description": "Scalar speed (SI unit: m/s)" }
+      ],
+      "worked_example": {
+        "problem": "Calculate the kinetic energy of a 1000 kg car traveling at 20 m/s.",
+        "steps": [
+          "Given: m = 1000 kg, v = 20 m/s",
+          "v² = 20² = 400",
+          "Apply formula: KE = 0.5 × 1000 × 400",
+          "Calculate KE: KE = 200,000 J = 200 kJ"
+        ],
+        "solution": "KE = 200,000 J (200 kJ)"
+      },
+      "calculator": {
+        "version": "1.0",
+        "engine_type": "expression",
+        "expression": "0.5 * m * v^2",
+        "inputs": [
+          { "symbol": "m", "label": "Mass (m)", "default_value": 1000.0, "example_value": 1000.0, "unit": "kg", "validation": { "min": 0.0, "allow_zero": false, "allow_negative": false } },
+          { "symbol": "v", "label": "Speed (v)", "default_value": 20.0, "example_value": 20.0, "unit": "m/s" }
+        ],
+        "outputs": [
+          { "symbol": "KE", "label": "Kinetic Energy", "unit": "J" }
+        ]
+      },
+      "sections": [
+        { "type": "overview", "title": "Overview", "content": "Kinetic energy depends quadratically on speed: doubling speed quadruples kinetic energy." }
+      ],
+      "related_content": []
+    },
+    {
+      "id": "physics.work_energy.potential_energy",
+      "numeric_id": 209,
+      "subject_id": "physics",
+      "category_id": "work_energy",
+      "topic": "Energy Forms",
+      "name": "Gravitational Potential Energy",
+      "formula": "PE = m * g * h",
+      "description": "Energy stored in a body due to its elevated position in a gravitational field.",
+      "difficulty": "beginner",
+      "estimated_read_minutes": 2,
+      "display_order": 3,
+      "variables": [
+        { "symbol": "PE", "name": "Potential Energy", "description": "Stored gravitational energy (SI unit: J)" },
+        { "symbol": "m", "name": "Mass", "description": "Mass of object (SI unit: kg)" },
+        { "symbol": "g", "name": "Gravitational Field Strength", "description": "Gravity acceleration (g ≈ 9.8 m/s²)" },
+        { "symbol": "h", "name": "Height", "description": "Vertical elevation above reference point (SI unit: m)" }
+      ],
+      "worked_example": {
+        "problem": "A 2 kg stone is lifted to a height of 5 meters. Calculate its potential energy relative to ground.",
+        "steps": [
+          "Given: m = 2 kg, g = 9.8 m/s², h = 5 m",
+          "Apply formula: PE = 2 × 9.8 × 5",
+          "Calculate PE: PE = 98 J"
+        ],
+        "solution": "PE = 98 J"
+      },
+      "calculator": {
+        "version": "1.0",
+        "engine_type": "expression",
+        "expression": "m * g * h",
+        "inputs": [
+          { "symbol": "m", "label": "Mass (m)", "default_value": 2.0, "example_value": 2.0, "unit": "kg", "validation": { "min": 0.0, "allow_negative": false } },
+          { "symbol": "g", "label": "Gravity Acceleration (g)", "default_value": 9.8, "example_value": 9.8, "unit": "m/s²", "validation": { "min": 0.0, "allow_zero": false } },
+          { "symbol": "h", "label": "Height (h)", "default_value": 5.0, "example_value": 5.0, "unit": "m", "validation": { "min": 0.0, "allow_negative": false } }
+        ],
+        "outputs": [
+          { "symbol": "PE", "label": "Potential Energy", "unit": "J" }
+        ]
+      },
+      "sections": [
+        { "type": "overview", "title": "Overview", "content": "Gravitational potential energy represents work done against gravity to elevate an object to height h." }
+      ],
+      "related_content": []
+    },
+    {
+      "id": "physics.work_energy.power",
+      "numeric_id": 210,
+      "subject_id": "physics",
+      "category_id": "work_energy",
+      "topic": "Power & Rate",
+      "name": "Mechanical Power",
+      "formula": "P = W / t",
+      "description": "Rate at which work is done or energy is converted over time.",
+      "difficulty": "beginner",
+      "estimated_read_minutes": 2,
+      "display_order": 4,
+      "variables": [
+        { "symbol": "P", "name": "Power", "description": "Work rate (SI unit: Watt W = J/s)" },
+        { "symbol": "W", "name": "Work Done", "description": "Total work or energy transferred (SI unit: J)" },
+        { "symbol": "t", "name": "Time Taken", "description": "Duration of work execution (SI unit: s)" }
+      ],
+      "worked_example": {
+        "problem": "An electric crane performs 12,000 J of work in 10 seconds. Calculate its power output.",
+        "steps": [
+          "Given: W = 12000 J, t = 10 s",
+          "Apply formula: P = 12000 / 10",
+          "Calculate power: P = 1200 W = 1.2 kW"
+        ],
+        "solution": "P = 1200 W (1.2 kW)"
+      },
+      "calculator": {
+        "version": "1.0",
+        "engine_type": "expression",
+        "expression": "W / t",
+        "inputs": [
+          { "symbol": "W", "label": "Work Done (W)", "default_value": 12000.0, "example_value": 12000.0, "unit": "J" },
+          { "symbol": "t", "label": "Time (t)", "default_value": 10.0, "example_value": 10.0, "unit": "s", "validation": { "allow_zero": false, "allow_negative": false, "error_message": "Time must be greater than zero." } }
+        ],
+        "outputs": [
+          { "symbol": "P", "label": "Power Output", "unit": "W" }
+        ]
+      },
+      "sections": [
+        { "type": "overview", "title": "Overview", "content": "One Watt (W) equals 1 Joule of work per second. Power describes how quickly work gets accomplished." }
+      ],
+      "related_content": []
+    }
+  ]
+}

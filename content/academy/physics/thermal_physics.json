@@ -1,0 +1,98 @@
+{
+  "category": {
+    "id": "thermal_physics",
+    "subject_id": "physics",
+    "name": "Thermal Physics",
+    "emoji": "🌡️",
+    "description": "Heat transfer, thermal capacity, expansion, and temperature scale conversions.",
+    "display_order": 5
+  },
+  "lessons": [
+    {
+      "id": "physics.thermal.specific_heat",
+      "numeric_id": 214,
+      "subject_id": "physics",
+      "category_id": "thermal_physics",
+      "topic": "Thermal Energy",
+      "name": "Specific Heat Capacity",
+      "formula": "Q = m * c * dT",
+      "description": "Quantity of heat energy required to raise the temperature of 1 kg of a substance by 1 Kelvin.",
+      "difficulty": "intermediate",
+      "estimated_read_minutes": 3,
+      "display_order": 1,
+      "variables": [
+        { "symbol": "Q", "name": "Heat Energy", "description": "Thermal energy absorbed or released (SI unit: J)" },
+        { "symbol": "m", "name": "Mass", "description": "Substance mass (SI unit: kg)" },
+        { "symbol": "c", "name": "Specific Heat Capacity", "description": "Thermal constant (Water c ≈ 4200 J/kg·K)" },
+        { "symbol": "dT", "name": "Temperature Difference", "description": "Change in temperature (SI unit: K or °C)" }
+      ],
+      "worked_example": {
+        "problem": "Calculate heat required to raise temperature of 2 kg of water by 30°C (c = 4200 J/kg·K).",
+        "steps": [
+          "Given: m = 2 kg, c = 4200 J/kg·K, dT = 30°C",
+          "Apply formula: Q = 2 × 4200 × 30",
+          "Calculate heat: Q = 252,000 J = 252 kJ"
+        ],
+        "solution": "Q = 252,000 J (252 kJ)"
+      },
+      "calculator": {
+        "version": "1.0",
+        "engine_type": "expression",
+        "expression": "m * c * dT",
+        "inputs": [
+          { "symbol": "m", "label": "Mass (m)", "default_value": 2.0, "example_value": 2.0, "unit": "kg", "validation": { "min": 0.0, "allow_zero": false, "allow_negative": false } },
+          { "symbol": "c", "label": "Specific Heat (c)", "default_value": 4200.0, "example_value": 4200.0, "unit": "J/kg·K", "validation": { "min": 0.0, "allow_zero": false } },
+          { "symbol": "dT", "label": "Temp Change (ΔT)", "default_value": 30.0, "example_value": 30.0, "unit": "°C" }
+        ],
+        "outputs": [
+          { "symbol": "Q", "label": "Heat Energy", "unit": "J" }
+        ]
+      },
+      "sections": [
+        { "type": "overview", "title": "Overview", "content": "Water has an exceptionally high specific heat capacity, making it an excellent coolant and climate stabilizer." }
+      ],
+      "related_content": []
+    },
+    {
+      "id": "physics.thermal.temperature_scales",
+      "numeric_id": 215,
+      "subject_id": "physics",
+      "category_id": "thermal_physics",
+      "topic": "Thermodynamic Temperature",
+      "name": "Celsius to Kelvin Conversion",
+      "formula": "K = C + 273.15",
+      "description": "Relates the empirical Celsius scale to the absolute thermodynamic Kelvin scale.",
+      "difficulty": "beginner",
+      "estimated_read_minutes": 2,
+      "display_order": 2,
+      "variables": [
+        { "symbol": "K", "name": "Kelvin Temperature", "description": "Absolute thermodynamic temperature (SI unit: K)" },
+        { "symbol": "C", "name": "Celsius Temperature", "description": "Empirical temperature (°C)" }
+      ],
+      "worked_example": {
+        "problem": "Convert room temperature 25°C to the absolute Kelvin scale.",
+        "steps": [
+          "Given: C = 25°C",
+          "Apply formula: K = 25 + 273.15",
+          "Calculate Kelvin: K = 298.15 K"
+        ],
+        "solution": "K = 298.15 K"
+      },
+      "calculator": {
+        "version": "1.0",
+        "engine_type": "expression",
+        "expression": "C + 273.15",
+        "inputs": [
+          { "symbol": "C", "label": "Celsius (°C)", "default_value": 25.0, "example_value": 25.0, "unit": "°C", "validation": { "min": -273.15, "error_message": "Temperature cannot be below absolute zero (-273.15°C)." } }
+        ],
+        "outputs": [
+          { "symbol": "K", "label": "Kelvin Temperature", "unit": "K" }
+        ]
+      },
+      "sections": [
+        { "type": "overview", "title": "Overview", "content": "Absolute zero (0 K or -273.15°C) is the lowest possible theoretical temperature where thermal motion ceases." }
+      ],
+      "related_content": []
+    }
+  ]
+}

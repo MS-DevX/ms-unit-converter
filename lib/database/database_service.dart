@@ -37,7 +37,7 @@ import '../data/units_data.dart';
 /// Current content version — matches the app release that last changed reference data.
 /// Increment this when any reference data changes (units, currencies, facts, etc.)
 /// to trigger an automatic reseed on the next launch.
-const String _contentVersion = '2.3.0+stem2';
+const String _contentVersion = '2.4.0+physics1';
 
 /// SQLite database filename stored in the app documents directory.
 const String _dbFileName = DatabaseConstants.databaseFileName;
@@ -683,6 +683,14 @@ class DatabaseService {
       {'id': 'matrices', 'name': 'Matrices & Determinants', 'subject_id': 1, 'description': 'Matrix arithmetic, inverses, and determinants.', 'display_order': 8},
       {'id': 'vectors', 'name': 'Vectors', 'subject_id': 1, 'description': 'Dot product, cross product, and magnitude.', 'display_order': 9},
       {'id': 'logarithms', 'name': 'Logarithms & Exponents', 'subject_id': 1, 'description': 'Log rules, natural logs, and exponential growth.', 'display_order': 10},
+      {'id': 'kinematics', 'name': 'Kinematics & Motion', 'subject_id': 2, 'description': 'Motion of objects without forces.', 'display_order': 1},
+      {'id': 'dynamics', 'name': 'Dynamics & Forces', 'subject_id': 2, 'description': 'Forces and laws of motion.', 'display_order': 2},
+      {'id': 'work_energy', 'name': 'Work, Energy & Power', 'subject_id': 2, 'description': 'Energy transfers and rate of work.', 'display_order': 3},
+      {'id': 'matter', 'name': 'Properties of Matter', 'subject_id': 2, 'description': 'Density and fluid pressure.', 'display_order': 4},
+      {'id': 'thermal_physics', 'name': 'Thermal Physics', 'subject_id': 2, 'description': 'Heat and temperature.', 'display_order': 5},
+      {'id': 'waves_optics', 'name': 'Waves & Optics', 'subject_id': 2, 'description': 'Waves and optics.', 'display_order': 6},
+      {'id': 'electricity', 'name': 'Electricity & Circuits', 'subject_id': 2, 'description': 'Circuits and Ohm\'s Law.', 'display_order': 7},
+      {'id': 'magnetism', 'name': 'Magnetism & Electromagnetism', 'subject_id': 2, 'description': 'Magnetic forces and fields.', 'display_order': 8},
     ];
     for (final c in categories) {
       await txn.insert('formula_categories', c, conflictAlgorithm: ConflictAlgorithm.replace);
@@ -717,6 +725,48 @@ class DatabaseService {
         'example': '{"problem":"Calculate hypotenuse when a = 3 cm and b = 4 cm","steps":["a² = 9, b² = 16","c² = 9 + 16 = 25","c = √25 = 5"],"solution":"c = 5 cm"}',
         'units': '2',
         'display_order': 2,
+      },
+      {
+        'id': 201,
+        'subject_id': 2,
+        'category_id': 'kinematics',
+        'chapter': 'Motion in One Dimension',
+        'title': 'Speed & Velocity',
+        'expression': 'v = d / t',
+        'description': 'Speed is the rate at which distance is covered.',
+        'difficulty': '1',
+        'variables': '[{"symbol":"v","name":"Speed","description":"m/s"},{"symbol":"d","name":"Distance","description":"m"},{"symbol":"t","name":"Time","description":"s"}]',
+        'calculator_json': '{"version":"1.0","engine_type":"expression","expression":"d / t","inputs":[{"symbol":"d","label":"Distance","default_value":150.0},{"symbol":"t","label":"Time","default_value":10.0}],"outputs":[{"symbol":"v","label":"Speed","unit":"m/s"}]}',
+        'units': '3',
+        'display_order': 1,
+      },
+      {
+        'id': 202,
+        'subject_id': 2,
+        'category_id': 'kinematics',
+        'chapter': 'Linear Acceleration',
+        'title': 'Acceleration',
+        'expression': 'a = (v - u) / t',
+        'description': 'Rate of change of velocity.',
+        'difficulty': '1',
+        'variables': '[{"symbol":"a","name":"Acceleration","description":"m/s²"},{"symbol":"v","name":"Final Velocity","description":"m/s"},{"symbol":"u","name":"Initial Velocity","description":"m/s"},{"symbol":"t","name":"Time","description":"s"}]',
+        'calculator_json': '{"version":"1.0","engine_type":"expression","expression":"(v - u) / t","inputs":[{"symbol":"v","label":"Final Velocity","default_value":30.0},{"symbol":"u","label":"Initial Velocity","default_value":10.0},{"symbol":"t","label":"Time","default_value":5.0}],"outputs":[{"symbol":"a","label":"Acceleration","unit":"m/s²"}]}',
+        'units': '3',
+        'display_order': 2,
+      },
+      {
+        'id': 203,
+        'subject_id': 2,
+        'category_id': 'dynamics',
+        'chapter': 'Newton\'s Laws',
+        'title': 'Newton\'s Second Law of Motion',
+        'expression': 'F = m * a',
+        'description': 'Acceleration is directly proportional to net force.',
+        'difficulty': '1',
+        'variables': '[{"symbol":"F","name":"Force","description":"N"},{"symbol":"m","name":"Mass","description":"kg"},{"symbol":"a","name":"Acceleration","description":"m/s²"}]',
+        'calculator_json': '{"version":"1.0","engine_type":"expression","expression":"m * a","inputs":[{"symbol":"m","label":"Mass","default_value":5.0},{"symbol":"a","label":"Acceleration","default_value":3.0}],"outputs":[{"symbol":"F","label":"Force","unit":"N"}]}',
+        'units': '3',
+        'display_order': 1,
       },
     ];
 

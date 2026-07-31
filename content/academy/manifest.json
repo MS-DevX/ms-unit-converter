@@ -15,7 +15,7 @@
       "numeric_id": 2,
       "name": "Physics",
       "icon": "⚛️",
-      "is_available": false,
+      "is_available": true,
       "display_order": 2,
       "manifest_path": "physics/manifest.json"
     },

@@ -179,5 +179,26 @@ void main() {
       expect(find.text('📖 Study Mode'), findsOneWidget);
       expect(find.text('Calculator'), findsNothing);
     });
+
+    test('SubjectRepository fetches Physics subject and categories', () async {
+      final subjects = await SubjectRepository.instance.loadSubjects();
+      final physics = subjects.firstWhere((s) => s.id == 2 || s.name == 'Physics');
+      expect(physics.name, equals('Physics'));
+
+      final categories = await FormulaRepository.instance.loadCategories(subjectId: 2);
+      expect(categories.length, equals(8));
+    });
+
+    test('FormulaRepository fetches Physics lessons by category', () async {
+      final kinematicsLessons = await FormulaRepository.instance.loadFormulasForCategory('kinematics');
+      expect(kinematicsLessons.length, equals(2));
+      expect(kinematicsLessons.first.name, equals('Speed & Velocity'));
+      expect(kinematicsLessons.first.calculator, isNotNull);
+    });
+
+    test('SearchRepository indexes Physics lessons for STEM Companion search', () async {
+      final results = await SearchRepository.instance.searchFormulas('Newton');
+      expect(results.any((r) => r.name.contains("Newton's")), isTrue);
+    });
   });
 }

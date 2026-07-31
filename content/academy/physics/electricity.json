@@ -1,0 +1,98 @@
+{
+  "category": {
+    "id": "electricity",
+    "subject_id": "physics",
+    "name": "Electricity & Circuits",
+    "emoji": "💡",
+    "description": "Electric charge, current, potential difference, resistance, and electrical energy.",
+    "display_order": 7
+  },
+  "lessons": [
+    {
+      "id": "physics.electricity.ohms_law",
+      "numeric_id": 218,
+      "subject_id": "physics",
+      "category_id": "electricity",
+      "topic": "DC Circuits",
+      "name": "Ohm's Law",
+      "formula": "V = I * R",
+      "description": "Current flowing through an ohmic conductor is directly proportional to voltage and inversely proportional to resistance.",
+      "difficulty": "beginner",
+      "estimated_read_minutes": 3,
+      "display_order": 1,
+      "variables": [
+        { "symbol": "V", "name": "Voltage / Potential Difference", "description": "Electric potential difference across component (SI unit: Volt V)" },
+        { "symbol": "I", "name": "Electric Current", "description": "Flow rate of electric charge (SI unit: Ampere A = C/s)" },
+        { "symbol": "R", "name": "Electrical Resistance", "description": "Opposition to charge flow (SI unit: Ohm Ω = V/A)" }
+      ],
+      "worked_example": {
+        "problem": "A 12 V battery is connected to a resistor of 4 Ω. Calculate the current flowing in the circuit.",
+        "steps": [
+          "Given: V = 12 V, R = 4 Ω",
+          "Rearrange formula: I = V / R",
+          "Apply values: I = 12 / 4 = 3 A"
+        ],
+        "solution": "I = 3 A"
+      },
+      "calculator": {
+        "version": "1.0",
+        "engine_type": "expression",
+        "expression": "I * R",
+        "inputs": [
+          { "symbol": "I", "label": "Current (I)", "default_value": 3.0, "example_value": 3.0, "unit": "A", "validation": { "min": 0.0, "allow_negative": false } },
+          { "symbol": "R", "label": "Resistance (R)", "default_value": 4.0, "example_value": 4.0, "unit": "Ω", "validation": { "min": 0.0, "allow_zero": false, "allow_negative": false, "error_message": "Resistance must be greater than zero." } }
+        ],
+        "outputs": [
+          { "symbol": "V", "label": "Voltage Potential", "unit": "V" }
+        ]
+      },
+      "sections": [
+        { "type": "overview", "title": "Overview", "content": "Ohm's law forms the foundation of circuit analysis for linear resistive components." }
+      ],
+      "related_content": []
+    },
+    {
+      "id": "physics.electricity.electric_power",
+      "numeric_id": 219,
+      "subject_id": "physics",
+      "category_id": "electricity",
+      "topic": "Electrical Power",
+      "name": "Electrical Power",
+      "formula": "P = V * I",
+      "description": "Rate at which electrical energy is converted into heat, light, or mechanical work in a circuit.",
+      "difficulty": "beginner",
+      "estimated_read_minutes": 2,
+      "display_order": 2,
+      "variables": [
+        { "symbol": "P", "name": "Electrical Power", "description": "Dissipated electrical power (SI unit: Watt W)" },
+        { "symbol": "V", "name": "Voltage", "description": "Potential difference (SI unit: V)" },
+        { "symbol": "I", "name": "Current", "description": "Electric current flow (SI unit: A)" }
+      ],
+      "worked_example": {
+        "problem": "An electric heater draws 5 A of current when plugged into a 220 V outlet. Find its power rating.",
+        "steps": [
+          "Given: V = 220 V, I = 5 A",
+          "Apply formula: P = V × I = 220 × 5",
+          "Calculate power: P = 1100 W = 1.1 kW"
+        ],
+        "solution": "P = 1100 W (1.1 kW)"
+      },
+      "calculator": {
+        "version": "1.0",
+        "engine_type": "expression",
+        "expression": "V * I",
+        "inputs": [
+          { "symbol": "V", "label": "Voltage (V)", "default_value": 220.0, "example_value": 220.0, "unit": "V" },
+          { "symbol": "I", "label": "Current (I)", "default_value": 5.0, "example_value": 5.0, "unit": "A" }
+        ],
+        "outputs": [
+          { "symbol": "P", "label": "Electrical Power", "unit": "W" }
+        ]
+      },
+      "sections": [
+        { "type": "overview", "title": "Joule Heating", "content": "Using Ohm's law, electrical power can also be expressed as P = I²R or P = V²/R." }
+      ],
+      "related_content": []
+    }
+  ]
+}
