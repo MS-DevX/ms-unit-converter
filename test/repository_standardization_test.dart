@@ -171,8 +171,8 @@ void main() {
       expect(repo, isA<BaseRepository>());
 
       final all = await repo.getAll();
-      expect(all.length, equals(26));
-      expect(await repo.count(), equals(26));
+      expect(all.length, equals(242));
+      expect(await repo.count(), equals(242));
 
       final first = all.first;
       expect(await repo.getById(first.id), equals(first));

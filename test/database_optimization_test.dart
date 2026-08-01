@@ -30,7 +30,7 @@ void main() {
       expect(result.isHealthy, isTrue);
       expect(result.isInitialized, isTrue);
       expect(result.schemaVersion, equals(MigrationService.currentSchemaVersion));
-      expect(result.contentVersion, equals('2.3.1'));
+      expect(result.contentVersion, equals('2.3.2'));
       expect(result.tableCounts['categories'], equals(60));
       expect(result.tableCounts['units'], equals(480));
       expect(result.tableCounts['currencies'], equals(151));
@@ -40,7 +40,7 @@ void main() {
       expect(result.tableCounts['search_aliases'], equals(242));
       expect(result.tableCounts['tags'], equals(16));
       expect(result.tableCounts['content_tags'], equals(82));
-      expect(result.tableCounts['related_content'], equals(26));
+      expect(result.tableCounts['related_content'], equals(242));
       expect(result.errors, isEmpty);
     });
 
