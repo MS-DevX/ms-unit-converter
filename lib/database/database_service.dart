@@ -37,7 +37,7 @@ import '../data/units_data.dart';
 /// Current content version — matches the app release that last changed reference data.
 /// Increment this when any reference data changes (units, currencies, facts, etc.)
 /// to trigger an automatic reseed on the next launch.
-const String _contentVersion = '2.3.3';
+const String _contentVersion = '2.3.4';
 
 /// SQLite database filename stored in the app documents directory.
 const String _dbFileName = DatabaseConstants.databaseFileName;

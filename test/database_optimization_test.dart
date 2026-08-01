@@ -30,12 +30,12 @@ void main() {
       expect(result.isHealthy, isTrue);
       expect(result.isInitialized, isTrue);
       expect(result.schemaVersion, equals(MigrationService.currentSchemaVersion));
-      expect(result.contentVersion, equals('2.3.3'));
+      expect(result.contentVersion, equals('2.3.4'));
       expect(result.tableCounts['categories'], equals(60));
       expect(result.tableCounts['units'], equals(480));
       expect(result.tableCounts['currencies'], equals(151));
-      expect(result.tableCounts['collections'], equals(18));
-      expect(result.tableCounts['collection_items'], equals(126));
+      expect(result.tableCounts['collections'], equals(32));
+      expect(result.tableCounts['collection_items'], equals(207));
       expect(result.tableCounts['educational_facts'], equals(457));
       expect(result.tableCounts['search_aliases'], equals(779));
       expect(result.tableCounts['tags'], equals(16));

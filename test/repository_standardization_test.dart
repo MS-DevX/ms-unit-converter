@@ -84,8 +84,8 @@ void main() {
       expect(repo, isA<BaseRepository>());
 
       final all = await repo.getAll();
-      expect(all.length, equals(18));
-      expect(await repo.count(), equals(18));
+      expect(all.length, equals(32));
+      expect(await repo.count(), equals(32));
 
       expect(await repo.exists('everyday'), isTrue);
       expect(await repo.exists('non_existent_collection'), isFalse);
