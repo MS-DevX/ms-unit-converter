@@ -101,8 +101,8 @@ void main() {
       expect(repo, isA<BaseRepository>());
 
       final all = await repo.getAll();
-      expect(all.length, equals(457));
-      expect(await repo.count(), equals(457));
+      expect(all.length, equals(742));
+      expect(await repo.count(), equals(742));
 
       expect(await repo.getById(0), isNotNull);
       expect(await repo.exists(0), isTrue);
