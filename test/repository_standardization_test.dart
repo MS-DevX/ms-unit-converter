@@ -134,7 +134,7 @@ void main() {
       expect(repo, isA<BaseRepository>());
 
       final count = await repo.count();
-      expect(count, equals(242));
+      expect(count, equals(779));
 
       expect(await repo.exists('km'), isTrue);
       expect(await repo.exists('non_existent_alias_xyz'), isFalse);
