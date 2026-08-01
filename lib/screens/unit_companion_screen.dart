@@ -290,6 +290,32 @@ class _UnitCompanionScreenState extends State<UnitCompanionScreen> {
         sliver: SliverToBoxAdapter(child: DidYouKnowCard()),
       ),
       SliverPadding(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+        sliver: SliverToBoxAdapter(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'I WANT TO...',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: colorScheme.outline,
+                  letterSpacing: 0.8,
+                ),
+              ),
+              const SizedBox(height: 10),
+              _QuickStartActionsBar(
+                onSelect: (query) {
+                  _searchController.text = query;
+                  _onSearchChanged(query);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+      SliverPadding(
         padding: const EdgeInsets.symmetric(horizontal: 20),
         sliver: SliverToBoxAdapter(
           child: Text(
@@ -495,3 +521,60 @@ class _UnitResultTile extends StatelessWidget {
     );
   }
 }
+
+class _QuickStartActionsBar extends StatelessWidget {
+  final ValueChanged<String> onSelect;
+
+  const _QuickStartActionsBar({required this.onSelect});
+
+  static const List<({String emoji, String title, String query})> _quickActions = [
+    (emoji: '🍳', title: 'Cook', query: 'Cooking'),
+    (emoji: '✈️', title: 'Travel', query: 'Travel'),
+    (emoji: '📚', title: 'Study', query: 'Length'),
+    (emoji: '🏗️', title: 'Engineering', query: 'Pressure'),
+    (emoji: '🏃', title: 'Fitness', query: 'BMI'),
+    (emoji: '💰', title: 'Finance', query: 'Currency'),
+    (emoji: '💻', title: 'Developer', query: 'Data Storage'),
+    (emoji: '🔬', title: 'Science', query: 'Radioactivity'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return SizedBox(
+      height: 40,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        itemCount: _quickActions.length,
+        separatorBuilder: (context, index) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final action = _quickActions[index];
+          return ActionChip(
+            avatar: Text(action.emoji, style: const TextStyle(fontSize: 13)),
+            label: Text(action.title),
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              onSelect(action.query);
+            },
+            backgroundColor: colorScheme.surfaceContainerHigh,
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            labelStyle: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: colorScheme.onSurface,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(
+                color: colorScheme.outlineVariant.withValues(alpha: 0.3),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
