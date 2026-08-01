@@ -1,6 +1,8 @@
-library;
+import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as path;
+import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/constants.dart';
@@ -61,38 +63,42 @@ class SettingsProvider extends ChangeNotifier {
     return '$timeGreeting 👋';
   }
 
-  /// Returns user initials (e.g. "Shahzad" -> "S", "John Doe" -> "JD", default "U")
+  /// Extracts user initials for fallback default avatar representation.
   String getInitials() {
     final name = userName.trim();
     if (name.isEmpty) return 'U';
-    final parts = name.split(RegExp(r'\s+'));
-    if (parts.length >= 2 && parts[1].isNotEmpty) {
-      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+
+    final parts = name.split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+    if (parts.isEmpty) return 'U';
+
+    if (parts.length == 1) {
+      return parts[0].substring(0, 1).toUpperCase();
     }
-    return name[0].toUpperCase();
+    return '${parts[0].substring(0, 1)}${parts[1].substring(0, 1)}'.toUpperCase();
   }
 
   Future<void> loadSettings() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      themeMode = _modeFromString(
-        prefs.getString(AppConstants.themeModeStorageKey),
-      );
-
-      final precisionIndex =
-          prefs.getInt(AppConstants.decimalPrecisionKey) ?? 0;
+      themeMode = _modeFromString(prefs.getString(AppConstants.themeModeStorageKey));
+      final precisionIndex = prefs.getInt(AppConstants.decimalPrecisionKey) ?? 0;
       if (precisionIndex >= 0 && precisionIndex < DecimalPrecision.values.length) {
         decimalPrecision = DecimalPrecision.values[precisionIndex];
       }
       Formatters.setPrecision(decimalPrecision);
-
-      isCosmicTheme =
-          prefs.getBool(CosmicUIConstants.cosmicThemeStorageKey) ?? false;
-
+      isCosmicTheme = prefs.getBool(CosmicUIConstants.cosmicThemeStorageKey) ?? false;
       userName = prefs.getString(userNameStorageKey) ?? '';
-      userAvatarPath = prefs.getString(userAvatarPathStorageKey) ?? '';
+      
+      final storedPath = prefs.getString(userAvatarPathStorageKey) ?? '';
+      if (storedPath.isNotEmpty && File(storedPath).existsSync()) {
+        userAvatarPath = storedPath;
+      } else {
+        userAvatarPath = '';
+      }
+
+      isLoaded = true;
+      notifyListeners();
     } catch (_) {
-    } finally {
       isLoaded = true;
       notifyListeners();
     }
@@ -107,16 +113,85 @@ class SettingsProvider extends ChangeNotifier {
     } catch (_) {}
   }
 
-  Future<void> setUserAvatarPath(String path) async {
-    userAvatarPath = path.trim();
-    notifyListeners();
+  /// Saves the user avatar permanently to Application Documents Directory
+  /// ensuring high resolution preservation and long-term persistence across OS cache purges.
+  Future<void> setUserAvatarPath(String sourcePath) async {
+    final cleanPath = sourcePath.trim();
+    if (cleanPath.isEmpty) {
+      await removeUserAvatar();
+      return;
+    }
+
     try {
+      final sourceFile = File(cleanPath);
+      if (!await sourceFile.exists()) {
+        debugPrint('[SettingsProvider] Source avatar file missing: $cleanPath');
+        return;
+      }
+
+      final appDocDir = await getApplicationDocumentsDirectory();
+      final avatarDir = Directory(path.join(appDocDir.path, 'profile'));
+      if (!await avatarDir.exists()) {
+        await avatarDir.create(recursive: true);
+      }
+
+      // Delete previous avatar file if exists
+      if (userAvatarPath.isNotEmpty && userAvatarPath != cleanPath) {
+        try {
+          final oldFile = File(userAvatarPath);
+          if (await oldFile.exists()) {
+            await oldFile.delete();
+          }
+          FileImage(oldFile).evict();
+        } catch (e) {
+          debugPrint('[SettingsProvider] Error cleaning old avatar file: $e');
+        }
+      }
+
+      // Determine extension and target permanent destination
+      var ext = path.extension(cleanPath);
+      if (ext.isEmpty) ext = '.jpg';
+
+      final destPath = path.join(
+        avatarDir.path,
+        'avatar_${DateTime.now().millisecondsSinceEpoch}$ext',
+      );
+
+      final destFile = await sourceFile.copy(destPath);
+
+      // Evict ImageCache for old and new file images
+      FileImage(destFile).evict();
+
+      userAvatarPath = destFile.path;
+      notifyListeners();
+
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(userAvatarPathStorageKey, userAvatarPath);
-    } catch (_) {}
+      debugPrint('[SettingsProvider] Permanent user avatar saved: $userAvatarPath');
+    } catch (e) {
+      debugPrint('[SettingsProvider] Error saving permanent avatar: $e');
+      userAvatarPath = cleanPath;
+      notifyListeners();
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(userAvatarPathStorageKey, userAvatarPath);
+      } catch (_) {}
+    }
   }
 
+  /// Removes the current user avatar and deletes its permanent file from storage.
   Future<void> removeUserAvatar() async {
+    if (userAvatarPath.isNotEmpty) {
+      try {
+        final file = File(userAvatarPath);
+        if (await file.exists()) {
+          await file.delete();
+        }
+        FileImage(file).evict();
+      } catch (e) {
+        debugPrint('[SettingsProvider] Error deleting avatar file: $e');
+      }
+    }
     userAvatarPath = '';
     notifyListeners();
     try {

@@ -3,7 +3,7 @@ class AppConstants {
 
   static const String appName = 'Unit Converter';
 
-  static const String appVersion = '2.2.0';
+  static const String appVersion = '2.4.0';
 
   static const String packageId = 'com.msdevx.unitconverter';
 
@@ -13,7 +13,7 @@ class AppConstants {
   static const String appOpenAdUnitId =
       'ca-app-pub-8684958562988579/4208361403';
 
-  static const String privacyPolicyUrl = 'https://msdevx.com/msunit-privacy';
+  static const String privacyPolicyUrl = 'https://msdevx.com/unit-converter/privacy';
 
   static const String playStoreUrl =
       'https://play.google.com/store/apps/details?id=com.msdevx.unitconverter';
@@ -37,6 +37,8 @@ class AppConstants {
   static const int adCooldownMinutes = 5;
 
   static const int splashDurationMs = 1500;
+
+  static const String keyLastSeenVersion = 'last_seen_version';
 }
 
 class DatabaseConstants {

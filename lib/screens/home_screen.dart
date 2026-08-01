@@ -17,6 +17,7 @@ import '../providers/home_layout_provider.dart';
 import '../providers/pinned_provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/usage_provider.dart';
+import '../services/app_update_service.dart';
 import '../services/conversion_service.dart';
 import '../services/refresh_service.dart';
 import '../services/smart_parse_service.dart';
@@ -54,6 +55,7 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
     _searchController.addListener(() {
       if (mounted) setState(() {});
     });
+    AppUpdateService.instance.checkAndShowWhatsNew(context);
   }
 
   @override

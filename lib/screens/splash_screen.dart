@@ -58,6 +58,7 @@ class _SplashScreenState extends State<SplashScreen> {
     try {
       await MobileAds.instance.initialize();
       debugPrint('[Splash] MobileAds initialized');
+      AdmobService.instance.initialize();
       await AdmobService.instance.loadAppOpenAd();
       debugPrint('[Splash] Ad load completed');
     } catch (e) {

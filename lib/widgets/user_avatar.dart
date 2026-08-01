@@ -26,15 +26,38 @@ class UserAvatar extends StatefulWidget {
 }
 
 class _UserAvatarState extends State<UserAvatar> {
-  bool? _cachedExists;
-  String _cachedPath = '';
-
   bool _checkFileExists(String path) {
-    if (path != _cachedPath) {
-      _cachedPath = path;
-      _cachedExists = path.isNotEmpty && File(path).existsSync();
+    if (path.isEmpty) return false;
+    try {
+      return File(path).existsSync();
+    } catch (_) {
+      return false;
     }
-    return _cachedExists ?? false;
+  }
+
+  Widget _buildInitialsFallback(BuildContext context, String initials) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      width: widget.size,
+      height: widget.size,
+      decoration: BoxDecoration(
+        color: colorScheme.primary.withValues(alpha: 0.15),
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: colorScheme.primary.withValues(alpha: 0.4),
+          width: 1.5,
+        ),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        initials,
+        style: TextStyle(
+          fontSize: widget.size * 0.42,
+          fontWeight: FontWeight.w700,
+          color: colorScheme.primary,
+        ),
+      ),
+    );
   }
 
   @override
@@ -53,36 +76,23 @@ class _UserAvatarState extends State<UserAvatar> {
             height: widget.size,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              image: DecorationImage(
-                image: FileImage(File(avatarPath)),
-                fit: BoxFit.cover,
-              ),
               border: Border.all(color: AppColors.primary, width: 1.5),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Image.file(
+              File(avatarPath),
+              width: widget.size,
+              height: widget.size,
+              fit: BoxFit.cover,
+              filterQuality: FilterQuality.high,
+              errorBuilder: (context, error, stackTrace) {
+                debugPrint('[UserAvatar] Error loading image ($avatarPath): $error');
+                return _buildInitialsFallback(context, initials);
+              },
             ),
           );
         } else {
-          final colorScheme = Theme.of(context).colorScheme;
-          avatarCore = Container(
-            width: widget.size,
-            height: widget.size,
-            decoration: BoxDecoration(
-              color: colorScheme.primary.withValues(alpha: 0.15),
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: colorScheme.primary.withValues(alpha: 0.4),
-                width: 1.5,
-              ),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              initials,
-              style: TextStyle(
-                fontSize: widget.size * 0.42,
-                fontWeight: FontWeight.w700,
-                color: colorScheme.primary,
-              ),
-            ),
-          );
+          avatarCore = _buildInitialsFallback(context, initials);
         }
 
         if (widget.showEditBadge) {

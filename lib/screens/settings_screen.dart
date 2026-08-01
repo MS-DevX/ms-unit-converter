@@ -12,6 +12,7 @@ import '../core/colors.dart';
 import '../core/constants.dart';
 import '../providers/settings_provider.dart';
 import '../providers/usage_provider.dart';
+import '../services/app_update_service.dart';
 import '../services/in_app_update_service.dart';
 import '../utils/formatters.dart';
 import '../widgets/stitch_card.dart';
@@ -117,9 +118,14 @@ class SettingsScreen extends StatelessWidget {
               onTap: () async {
                 Navigator.pop(ctx);
                 try {
-                  final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+                  final XFile? image = await picker.pickImage(
+                    source: ImageSource.gallery,
+                    maxWidth: 1024,
+                    maxHeight: 1024,
+                    imageQuality: 98,
+                  );
                   if (image != null) {
-                    settings.setUserAvatarPath(image.path);
+                    await settings.setUserAvatarPath(image.path);
                   }
                 } catch (e) {
                   debugPrint('[AvatarPicker] Error: $e');
@@ -132,9 +138,14 @@ class SettingsScreen extends StatelessWidget {
               onTap: () async {
                 Navigator.pop(ctx);
                 try {
-                  final XFile? photo = await picker.pickImage(source: ImageSource.camera);
+                  final XFile? photo = await picker.pickImage(
+                    source: ImageSource.camera,
+                    maxWidth: 1024,
+                    maxHeight: 1024,
+                    imageQuality: 98,
+                  );
                   if (photo != null) {
-                    settings.setUserAvatarPath(photo.path);
+                    await settings.setUserAvatarPath(photo.path);
                   }
                 } catch (e) {
                   debugPrint('[AvatarPicker] Error: $e');
@@ -566,9 +577,23 @@ class SettingsScreen extends StatelessWidget {
                   ),
                   Divider(height: 1, indent: 56, color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
                   _SettingsListTile(
+                    icon: Icons.privacy_tip_outlined,
+                    title: 'Privacy Policy',
+                    subtitle: 'Read our 100% offline data privacy commitment',
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      _launchUrl(AppConstants.privacyPolicyUrl);
+                    },
+                  ),
+                  Divider(height: 1, indent: 56, color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                  _SettingsListTile(
                     icon: Icons.info_outline_rounded,
                     title: 'Version',
                     subtitle: AppConstants.appVersion,
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      AppUpdateService.instance.checkAndShowWhatsNew(context);
+                    },
                   ),
                 ],
               ),
