@@ -44,20 +44,23 @@ class _StitchCardState extends State<StitchCard> {
         ? AppColors.outlineVariant.withValues(alpha: 0.4)
         : AppColors.borderLight;
 
-    Widget cardContent = Container(
-      padding: widget.padding,
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(widget.borderRadius),
-        border: widget.border ??
-            (widget.leftBorderColor != null
-                ? null
-                : Border.all(
-                    color: defaultBorderColor,
-                    width: 1,
-                  )),
+    Widget cardContent = Material(
+      color: bgColor,
+      borderRadius: BorderRadius.circular(widget.borderRadius),
+      child: Container(
+        padding: widget.padding,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(widget.borderRadius),
+          border: widget.border ??
+              (widget.leftBorderColor != null
+                  ? null
+                  : Border.all(
+                      color: defaultBorderColor,
+                      width: 1,
+                    )),
+        ),
+        child: widget.child,
       ),
-      child: widget.child,
     );
 
     if (widget.leftBorderColor != null) {

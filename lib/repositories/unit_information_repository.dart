@@ -18,7 +18,11 @@ library;
 import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 
+import 'base_repository.dart';
 import '../database/database_service.dart';
+
+import 'tag_repository.dart';
+import 'related_content_repository.dart';
 
 /// Represents a single unit's educational information record.
 @immutable
@@ -30,10 +34,15 @@ class UnitInfoRow {
     required this.history,
     required this.usedFor,
     required this.examples,
+    this.tags = const [],
+    this.relatedContent = const [],
   });
 
   /// Factory from raw SQLite row.
-  factory UnitInfoRow.fromMap(Map<String, Object?> map) {
+  factory UnitInfoRow.fromMap(Map<String, Object?> map, {
+    List<TagRow> tags = const [],
+    List<RelatedContentRow> relatedContent = const [],
+  }) {
     final rawExamples = map['examples'] as String? ?? '[]';
     List<String> examples;
     try {
@@ -55,6 +64,8 @@ class UnitInfoRow {
       history: map['history'] as String? ?? '',
       usedFor: map['used_for'] as String? ?? '',
       examples: examples,
+      tags: tags,
+      relatedContent: relatedContent,
     );
   }
 
@@ -72,10 +83,16 @@ class UnitInfoRow {
 
   /// Concrete measurement examples.
   final List<String> examples;
+
+  /// Taxonomy tags.
+  final List<TagRow> tags;
+
+  /// Related content edges.
+  final List<RelatedContentRow> relatedContent;
 }
 
 /// Singleton repository for [UnitInfoRow] data.
-class UnitInformationRepository {
+class UnitInformationRepository implements BaseRepository<UnitInfoRow, String> {
   UnitInformationRepository._();
 
   /// The singleton instance.
@@ -85,6 +102,49 @@ class UnitInformationRepository {
   final Map<String, UnitInfoRow?> _cache = {};
 
   Database get _db => DatabaseService.instance.database;
+
+  // ─── BaseRepository API ───────────────────────────────────────────────────
+
+  @override
+  Future<List<UnitInfoRow>> getAll() async {
+    final rows = await _db.query('unit_information');
+    return rows.map(UnitInfoRow.fromMap).toList();
+  }
+
+  @override
+  Future<UnitInfoRow?> getById(String id) => findByUnitName(id);
+
+  @override
+  Future<List<UnitInfoRow>> search(String query) async {
+    if (query.isEmpty) return getAll();
+    final all = await getAll();
+    final lower = query.toLowerCase();
+    return all
+        .where(
+          (u) =>
+              u.definition.toLowerCase().contains(lower) ||
+              u.history.toLowerCase().contains(lower) ||
+              u.usedFor.toLowerCase().contains(lower) ||
+              u.symbol.toLowerCase().contains(lower),
+        )
+        .toList();
+  }
+
+  @override
+  Future<int> count() async {
+    if (!DatabaseService.instance.isInitialized) return 0;
+    try {
+      final res = Sqflite.firstIntValue(
+        await _db.rawQuery('SELECT COUNT(*) FROM unit_information'),
+      );
+      return res ?? 0;
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  @override
+  Future<bool> exists(String id) async => (await findByUnitName(id)) != null;
 
   // ─── Public API ────────────────────────────────────────────────────────────
 
@@ -116,7 +176,10 @@ class UnitInformationRepository {
       LIMIT 1
     ''', [unitName]);
 
-    final result = rows.isEmpty ? null : UnitInfoRow.fromMap(rows.first);
+    if (rows.isEmpty) return null;
+    final tags = await TagRepository.instance.getTagsForContent('unit', unitName);
+    final related = await RelatedContentRepository.instance.getRelatedContent('unit', unitName);
+    final result = UnitInfoRow.fromMap(rows.first, tags: tags, relatedContent: related);
     _cache[unitName] = result;
     return result;
   }
@@ -155,5 +218,6 @@ class UnitInformationRepository {
   }
 
   /// Clears in-memory cache (dev/test use only).
+  @override
   void clearCache() => _cache.clear();
 }

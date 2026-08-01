@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../data/collections_data.dart';
 import '../data/converter_config.dart';
 import '../data/units_data.dart';
+import '../repositories/collection_repository.dart';
 import '../providers/converter_provider.dart';
 import '../providers/favorites_provider.dart';
 import '../providers/pinned_provider.dart';
@@ -25,14 +26,19 @@ class CollectionScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final cats = collection.categories;
 
     return Scaffold(
       body: RefreshIndicator(
         onRefresh: () => RefreshService.refreshApp(context),
-        child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
+        child: FutureBuilder<List<UnitCategory>>(
+          future: CollectionRepository.instance.loadCategories(collection.id),
+          initialData: collection.categories,
+          builder: (context, snapshot) {
+            final cats = snapshot.data ?? collection.categories;
+
+            return CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
           // ── Header ─────────────────────────────────────────────────────
           SliverAppBar(
             pinned: true,
@@ -116,10 +122,12 @@ class CollectionScreen extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    ),
-    );
-  }
+      );
+    },
+  ),
+),
+);
+}
 }
 
 class _CollectionCategoryCard extends StatelessWidget {

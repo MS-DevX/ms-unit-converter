@@ -64,6 +64,9 @@ class DatabaseHealthService {
     'educational_facts',
     'search_aliases',
     'unit_information',
+    'tags',
+    'content_tags',
+    'related_content',
   ];
 
   /// Performs a lightweight health audit of the SQLite database.

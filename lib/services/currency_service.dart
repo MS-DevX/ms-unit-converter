@@ -13,6 +13,7 @@ import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/currencies_data.dart';
+import '../repositories/currency_repository.dart';
 
 /// Cache key for the rates JSON map.
 const String _cacheKeyRates = 'currency_rates';
@@ -168,8 +169,12 @@ class CurrencyService {
     return amount * toRate / fromRate;
   }
 
-  /// Returns fallback (hardcoded) rates as a last resort.
-  static Map<String, double> getFallbackRates() {
+  /// Returns fallback rates from SQLite via [CurrencyRepository].
+  static Future<Map<String, double>> getFallbackRates() async {
+    try {
+      final dbRates = await CurrencyRepository.instance.getFallbackRates();
+      if (dbRates.isNotEmpty) return dbRates;
+    } catch (_) {}
     return Map.from(fallbackRatesToUsd);
   }
 }

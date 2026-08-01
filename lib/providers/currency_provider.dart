@@ -192,7 +192,7 @@ class CurrencyProvider extends ChangeNotifier {
         _isUsingCached = true;
         _error = null;
       } else {
-        _rates = CurrencyService.getFallbackRates();
+        _rates = await CurrencyService.getFallbackRates();
         _isUsingCached = false;
         _error = 'Could not update rates. Using approximate rates.';
       }

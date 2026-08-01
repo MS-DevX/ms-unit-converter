@@ -19,17 +19,13 @@ library;
 import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 
+import 'base_repository.dart';
 import '../database/database_service.dart';
 import '../data/units_data.dart';
 import '../models/unit_model.dart';
 
 /// Only layer allowed to query SQLite for unit data.
-///
-/// ## ARCHITECTURE GUARDRAILS
-/// - Widgets and Providers must NEVER perform SQL queries directly.
-/// - Transforms SQLite database rows into typed [UnitModel] instances.
-/// - Caches loaded units in memory per category for 0ms access latency.
-class UnitRepository {
+class UnitRepository implements BaseRepository<UnitModel, String> {
   UnitRepository._();
 
   /// The singleton instance.
@@ -42,6 +38,27 @@ class UnitRepository {
   List<UnitModel>? _fullCache;
 
   Database get _db => DatabaseService.instance.database;
+
+  // ─── BaseRepository API ───────────────────────────────────────────────────
+
+  @override
+  Future<List<UnitModel>> getAll() => loadAll();
+
+  @override
+  Future<UnitModel?> getById(String id) async {
+    final all = await loadAll();
+    try {
+      return all.firstWhere((u) => u.name.toLowerCase() == id.toLowerCase());
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  Future<int> count() async => (await loadAll()).length;
+
+  @override
+  Future<bool> exists(String id) async => (await getById(id)) != null;
 
   // ─── Public API ────────────────────────────────────────────────────────────
 
@@ -135,6 +152,7 @@ class UnitRepository {
   ///
   /// The method signature is stable. A future FTS5 backend upgrade
   /// will only change the internals of this method.
+  @override
   Future<List<UnitModel>> search(String query) async {
     if (query.isEmpty) return [];
     final lower = query.toLowerCase();
@@ -160,6 +178,7 @@ class UnitRepository {
   /// Clears all in-memory caches.
   ///
   /// Should only be called during dev/test reseeding.
+  @override
   void clearCache() {
     _categoryCache.clear();
     _fullCache = null;

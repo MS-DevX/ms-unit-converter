@@ -8,12 +8,13 @@ library;
 import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 
+import 'base_repository.dart';
 import '../database/database_service.dart';
 import '../data/did_you_know.dart';
 import '../data/units_data.dart';
 
 /// Singleton repository for educational facts from the [educational_facts] table.
-class EducationalFactsRepository {
+class EducationalFactsRepository implements BaseRepository<DidYouKnowFact, int> {
   EducationalFactsRepository._();
 
   /// The singleton instance.
@@ -26,6 +27,35 @@ class EducationalFactsRepository {
   final Map<String, List<DidYouKnowFact>> _categoryCache = {};
 
   Database get _db => DatabaseService.instance.database;
+
+  // ─── BaseRepository API ───────────────────────────────────────────────────
+
+  @override
+  Future<List<DidYouKnowFact>> getAll() => loadAll();
+
+  @override
+  Future<DidYouKnowFact?> getById(int id) async {
+    final all = await loadAll();
+    if (id >= 0 && id < all.length) return all[id];
+    return null;
+  }
+
+  @override
+  Future<List<DidYouKnowFact>> search(String query) async {
+    if (query.isEmpty) return loadAll();
+    final all = await loadAll();
+    final lower = query.toLowerCase();
+    return all.where((f) => f.fact.toLowerCase().contains(lower)).toList();
+  }
+
+  @override
+  Future<int> count() async => (await loadAll()).length;
+
+  @override
+  Future<bool> exists(int id) async {
+    final total = await count();
+    return id >= 0 && id < total;
+  }
 
   // ─── Public API ────────────────────────────────────────────────────────────
 
@@ -90,6 +120,7 @@ class EducationalFactsRepository {
   }
 
   /// Clears all in-memory caches (dev/test use only).
+  @override
   void clearCache() {
     _cache = null;
     _categoryCache.clear();

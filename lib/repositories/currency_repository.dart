@@ -17,11 +17,12 @@ library;
 import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 
+import 'base_repository.dart';
 import '../database/database_service.dart';
 import '../models/currency_model.dart';
 
 /// Singleton repository for [CurrencyModel] data loaded from SQLite.
-class CurrencyRepository {
+class CurrencyRepository implements BaseRepository<CurrencyModel, String> {
   CurrencyRepository._();
 
   /// The singleton instance.
@@ -37,6 +38,20 @@ class CurrencyRepository {
   Map<String, CurrencyModel>? _cacheByCode;
 
   Database get _db => DatabaseService.instance.database;
+
+  // ─── BaseRepository API ───────────────────────────────────────────────────
+
+  @override
+  Future<List<CurrencyModel>> getAll() => getAllCurrencies();
+
+  @override
+  Future<CurrencyModel?> getById(String id) => findByCode(id);
+
+  @override
+  Future<int> count() async => (await getAllCurrencies()).length;
+
+  @override
+  Future<bool> exists(String id) async => (await findByCode(id)) != null;
 
   // ─── Public API ────────────────────────────────────────────────────────────
 
@@ -71,6 +86,7 @@ class CurrencyRepository {
   ///
   /// Returns results sorted by [search_weight] descending.
   /// Stable API — FTS5 upgrade changes only the internals.
+  @override
   Future<List<CurrencyModel>> search(String query) async {
     if (query.isEmpty) return getAllCurrencies();
     final lower = query.toLowerCase();
@@ -86,6 +102,7 @@ class CurrencyRepository {
   }
 
   /// Clears in-memory caches (dev/test use only).
+  @override
   void clearCache() {
     _cache = null;
     _ratesCache = null;

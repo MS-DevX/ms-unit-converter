@@ -11,6 +11,9 @@ import '../data/converter_config.dart';
 import '../data/currencies_data.dart';
 import '../data/did_you_know.dart';
 import '../data/units_data.dart';
+import '../repositories/collection_repository.dart';
+import '../repositories/currency_repository.dart';
+import '../repositories/educational_facts_repository.dart';
 import '../models/companion_result.dart';
 import '../providers/custom_converter_provider.dart';
 import '../providers/favorites_provider.dart';
@@ -121,10 +124,10 @@ class CompanionSearchService {
     await _searchFormulas(context, q, terms, results);
 
     // 4. Search Currencies
-    _searchCurrencies(context, q, terms, results);
+    await _searchCurrencies(context, q, terms, results);
 
     // 5. Search Curated Collections
-    _searchCollections(context, q, terms, results);
+    await _searchCollections(context, q, terms, results);
 
     // 6. Search Custom Converters
     if (customProv != null) {
@@ -147,7 +150,7 @@ class CompanionSearchService {
     }
 
     // 10. Search Did You Know Facts
-    _searchFacts(context, q, terms, results);
+    await _searchFacts(context, q, terms, results);
 
     // Sort deterministically by score (highest score first)
     results.sort((a, b) => b.score.compareTo(a.score));
@@ -378,15 +381,16 @@ class CompanionSearchService {
     }
   }
 
-  static void _searchCurrencies(
+  static Future<void> _searchCurrencies(
     BuildContext context,
     String rawQuery,
     Set<String> terms,
     List<CompanionSearchResult> results,
-  ) {
-    final fallbackCurrencies = buildFallbackCurrencies();
+  ) async {
+    final currencyModels = await CurrencyRepository.instance.getAllCurrencies();
+    final currenciesList = currencyModels.isNotEmpty ? currencyModels : buildFallbackCurrencies();
 
-    for (final c in fallbackCurrencies) {
+    for (final c in currenciesList) {
       final codeLower = c.code.toLowerCase();
       final nameLower = c.name.toLowerCase();
       final symLower = c.symbol.toLowerCase();
@@ -427,13 +431,16 @@ class CompanionSearchService {
     }
   }
 
-  static void _searchCollections(
+  static Future<void> _searchCollections(
     BuildContext context,
     String rawQuery,
     Set<String> terms,
     List<CompanionSearchResult> results,
-  ) {
-    for (final col in predefinedCollections) {
+  ) async {
+    final fullCollections = await CollectionRepository.instance.loadFullCollections();
+    final collectionsList = fullCollections.isNotEmpty ? fullCollections : predefinedCollections;
+
+    for (final col in collectionsList) {
       final nameLower = col.name.toLowerCase();
       final descLower = col.description.toLowerCase();
 
@@ -676,13 +683,16 @@ class CompanionSearchService {
     }
   }
 
-  static void _searchFacts(
+  static Future<void> _searchFacts(
     BuildContext context,
     String rawQuery,
     Set<String> terms,
     List<CompanionSearchResult> results,
-  ) {
-    for (final fact in didYouKnowFacts) {
+  ) async {
+    final factsList = await EducationalFactsRepository.instance.loadAll();
+    final facts = factsList.isNotEmpty ? factsList : didYouKnowFacts;
+
+    for (final fact in facts) {
       final factLower = fact.fact.toLowerCase();
 
       if (terms.any((t) => t.length > 3 && factLower.contains(t))) {

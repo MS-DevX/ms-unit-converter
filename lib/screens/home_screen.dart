@@ -9,6 +9,7 @@ import '../data/collections_data.dart';
 import '../data/converter_config.dart';
 import '../data/units_data.dart';
 import '../models/history_entry.dart';
+import '../repositories/collection_repository.dart';
 import '../providers/converter_provider.dart';
 import '../providers/favorites_provider.dart';
 import '../providers/history_provider.dart';
@@ -502,37 +503,44 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
         case 'collections':
           slivers.add(
             SliverToBoxAdapter(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Text(
-                      'Curated Collections',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: colorScheme.onSurface,
-                        letterSpacing: -0.3,
+              child: FutureBuilder<List<Collection>>(
+                future: CollectionRepository.instance.loadFullCollections(),
+                initialData: predefinedCollections,
+                builder: (context, snapshot) {
+                  final collections = snapshot.data ?? predefinedCollections;
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Text(
+                          'Curated Collections',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: colorScheme.onSurface,
+                            letterSpacing: -0.3,
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    height: 90,
-                    child: ListView.separated(
-                      physics: const BouncingScrollPhysics(),
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      itemCount: predefinedCollections.length,
-                      separatorBuilder: (context, index) => const SizedBox(width: 12),
-                      itemBuilder: (context, index) {
-                        final col = predefinedCollections[index];
-                        return _CollectionChipCard(collection: col);
-                      },
-                    ),
-                  ),
-                ],
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        height: 90,
+                        child: ListView.separated(
+                          physics: const BouncingScrollPhysics(),
+                          scrollDirection: Axis.horizontal,
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          itemCount: collections.length,
+                          separatorBuilder: (context, index) => const SizedBox(width: 12),
+                          itemBuilder: (context, index) {
+                            final col = collections[index];
+                            return _CollectionChipCard(collection: col);
+                          },
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
             ),
           );

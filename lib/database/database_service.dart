@@ -24,7 +24,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import '../core/constants.dart';
 import 'migration_service.dart';
@@ -85,6 +85,11 @@ class DatabaseService {
   Future<void> initialize() async {
     if (_initialized && _db != null && _db!.isOpen) return;
 
+    if (!kIsWeb && (Platform.isLinux || Platform.isWindows || Platform.isMacOS)) {
+      sqfliteFfiInit();
+      databaseFactory = databaseFactoryFfi;
+    }
+
     final stopwatch = Stopwatch()..start();
 
     try {
@@ -103,6 +108,7 @@ class DatabaseService {
         onCreate: (db, version) async {
           debugPrint('[DatabaseService] Creating schema (version $version)');
           await MigrationService.createSchema(db);
+          await _clearReferenceData(db);
           await _seedAllData(db);
           await _writeVersions(db);
         },
@@ -223,6 +229,8 @@ class DatabaseService {
   /// All reference tables that are cleared and reseeded on content version change.
   static const List<String> _referenceTablesToClear = [
     'related_content',
+    'content_tags',
+    'tags',
     'educational_facts',
     'collection_items',
     'collections',
@@ -249,6 +257,8 @@ class DatabaseService {
       await _seedCurrencies(txn);
       await _seedEducationalFacts(txn);
       await _seedUnitInformation(txn);
+      await _seedTagsAndTaxonomy(txn);
+      await _seedRelatedContentNetwork(txn);
     });
 
     stopwatch.stop();
@@ -375,7 +385,6 @@ class DatabaseService {
 
   /// Mirrors SearchHelper._aliases + currency aliases for the database.
   static const Map<String, String> _searchAliasMap = {
-    // Length
     'metre': 'Meter',
     'metres': 'Meter',
     'meters': 'Meter',
@@ -401,7 +410,6 @@ class DatabaseService {
     'yd': 'Yard',
     'yards': 'Yard',
     'nmi': 'Nautical Mile',
-    // Weight
     'kg': 'Kilogram',
     'kilos': 'Kilogram',
     'kilogramme': 'Kilogram',
@@ -415,7 +423,6 @@ class DatabaseService {
     'ounces': 'Ounce',
     'stone': 'Stone',
     'st': 'Stone',
-    // Volume
     'l': 'Liter',
     'litre': 'Liter',
     'litres': 'Liter',
@@ -424,18 +431,15 @@ class DatabaseService {
     'millilitre': 'Milliliter',
     'gal': 'Gallon (US)',
     'gallon': 'Gallon (US)',
-    // Temperature
     'celsius': 'Celsius',
     'centigrade': 'Celsius',
     'fahrenheit': 'Fahrenheit',
     'kelvin': 'Kelvin',
     'temp': 'Temperature',
-    // Speed
     'kph': 'Kilometers per Hour',
     'kmh': 'Kilometers per Hour',
     'mph': 'Miles per Hour',
     'knots': 'Knot',
-    // Data
     'byte': 'Byte',
     'bytes': 'Byte',
     'kb': 'Kilobyte',
@@ -443,7 +447,6 @@ class DatabaseService {
     'gb': 'Gigabyte',
     'tb': 'Terabyte',
     'pb': 'Petabyte',
-    // Time
     's': 'Second',
     'sec': 'Second',
     'secs': 'Second',
@@ -457,7 +460,6 @@ class DatabaseService {
     'days': 'Day',
     'week': 'Week',
     'weeks': 'Week',
-    // Currency
     'dollar': 'US Dollar',
     'dollars': 'US Dollar',
     'euro': 'Euro',
@@ -467,39 +469,164 @@ class DatabaseService {
     'rupee': 'Pakistani Rupee',
     'pkr': 'Pakistani Rupee',
     'inr': 'Indian Rupee',
-    // Angle
     'deg': 'Degree',
     'degrees': 'Degree',
     'rad': 'Radian',
     'radians': 'Radian',
-    // Pressure
     'pascal': 'Pascal',
     'pa': 'Pascal',
     'kpa': 'Kilopascal',
     'bar': 'Bar',
     'psi': 'PSI',
     'atm': 'Atmosphere',
-    // Energy
     'j': 'Joule',
     'joules': 'Joule',
     'kj': 'Kilojoule',
     'kwh': 'Kilowatt-hour',
     'cal': 'Calorie',
     'calories': 'Calorie',
-    // Power
     'w': 'Watt',
     'watts': 'Watt',
     'kw': 'Kilowatt',
     'mw': 'Megawatt',
     'hp': 'Horsepower',
-    // Force
     'n': 'Newton',
     'newtons': 'Newton',
-    // Frequency
     'hz': 'Hertz',
     'khz': 'Kilohertz',
     'mhz': 'Megahertz',
     'ghz': 'Gigahertz',
+    'kilowatts': 'Kilowatt',
+    'megawatts': 'Megawatt',
+    'gw': 'Gigawatt',
+    'gigawatts': 'Gigawatt',
+    'horsepower': 'Horsepower',
+    'kilojoules': 'Kilojoule',
+    'mj': 'Megajoule',
+    'megajoules': 'Megajoule',
+    'kcal': 'Kilocalorie',
+    'kilocalories': 'Kilocalorie',
+    'btu': 'BTU',
+    'btus': 'BTU',
+    'wh': 'Watt-hour',
+    'mwh': 'Megawatt-hour',
+    'ev': 'Electronvolt',
+    'hertz': 'Hertz',
+    'v': 'Volt',
+    'volts': 'Volt',
+    'mv': 'Millivolt',
+    'kv': 'Kilovolt',
+    'a': 'Ampere',
+    'amps': 'Ampere',
+    'ampere': 'Ampere',
+    'ma': 'Milliampere',
+    'ka': 'Kiloampere',
+    'ohm': 'Ohm',
+    'ohms': 'Ohm',
+    'kohm': 'Kilohm',
+    'mohm': 'Megohm',
+    'pf': 'Picofarad',
+    'nf': 'Nanofarad',
+    'uf': 'Microfarad',
+    'farad': 'Farad',
+    'henry': 'Henry',
+    'mh': 'Millihenry',
+    'uh': 'Microhenry',
+    'coulomb': 'Coulomb',
+    'coulombs': 'Coulomb',
+    'mah': 'Milliampere-hour',
+    'ah': 'Ampere-hour',
+    'siemens': 'Siemens',
+    'lx': 'Lux',
+    'lux': 'Lux',
+    'lm': 'Lumen',
+    'lumens': 'Lumen',
+    'cd': 'Candela',
+    'candela': 'Candela',
+    'nit': 'Nit',
+    'nits': 'Nit',
+    'fl': 'Foot-lambert',
+    'klx': 'Kilolux',
+    'fc': 'Foot-candle',
+    'atmospheres': 'Atmosphere',
+    'torr': 'Torr',
+    'mbar': 'Millibar',
+    'millibar': 'Millibar',
+    'mpa': 'Megapascal',
+    'gpa': 'Gigapascal',
+    'newton': 'Newton',
+    'kn': 'Kilonewton',
+    'lbf': 'Pound-force',
+    'dyn': 'Dyne',
+    'dyne': 'Dyne',
+    'nm_torque': 'Newton-meter',
+    'ft_lb': 'Foot-pound',
+    'rpm': 'Revolution per Minute',
+    'rps': 'Revolution per Second',
+    'rad/s': 'Radian per Second',
+    'deg/s': 'Degree per Second',
+    'm/s': 'Meter per Second',
+    'm/s2': 'Meter per Second Squared',
+    'ft/s2': 'Foot per Second Squared',
+    'g_accel': 'Standard Gravity',
+    'au': 'Astronomical Unit',
+    'ly': 'Light-year',
+    'lightyears': 'Light-year',
+    'pc': 'Parsec',
+    'parsecs': 'Parsec',
+    'kpc': 'Kiloparsec',
+    'mpc': 'Megaparsec',
+    'bpm': 'Beats per Minute',
+    'bps': 'Beats per Second',
+    'mg/dl': 'Milligrams per Deciliter',
+    'mmol/l': 'Millimoles per Liter',
+    'mmhg': 'Millimeters of Mercury',
+    'bmi': 'Body Mass Index',
+    'db': 'Decibel',
+    'decibel': 'Decibel',
+    'decibels': 'Decibel',
+    'ppm': 'Parts per Million',
+    'bq': 'Becquerel',
+    'becquerel': 'Becquerel',
+    'ci': 'Curie',
+    'curie': 'Curie',
+    'mci': 'Millicurie',
+    'gy': 'Gray',
+    'gray': 'Gray',
+    'sv': 'Sievert',
+    'sievert': 'Sievert',
+    'msv': 'Millisievert',
+    'usv': 'Microsievert',
+    'rem': 'Rem',
+    'roentgen': 'Roentgen',
+    'mroentgen': 'Milliroentgen',
+    't': 'Tesla',
+    'tesla': 'Tesla',
+    'mt': 'Millitesla',
+    'ut': 'Microtesla',
+    'gauss': 'Gauss',
+    'wb': 'Weber',
+    'weber': 'Weber',
+    'mwb': 'Milliweber',
+    'maxwell': 'Maxwell',
+    'mol': 'Mole',
+    'moles': 'Mole',
+    'mol/l': 'Mole per Liter',
+    'g/l': 'Gram per Liter',
+    'w/m-k': 'W/(m·K)',
+    'c/w': '°C/W',
+    'fps': 'Feet per Second',
+    'mpg': 'Miles per Gallon (US)',
+    'l/100km': 'Liters per 100 Kilometers',
+    'cgs': 'Centimeter-Gram-Second',
+    'mks': 'Meter-Kilogram-Second',
+    'si': 'International System of Units',
+    'dwt': 'Pennyweight',
+    'sq_m': 'Square Meter',
+    'sq_ft': 'Square Foot',
+    'sq_mi': 'Square Mile',
+    'cu_m': 'Cubic Meter',
+    'cu_ft': 'Cubic Foot',
   };
 
   /// Seeds the [collections] table from [predefinedCollections].
@@ -655,6 +782,149 @@ class DatabaseService {
 
 
   /// Closes the database. Should only be called when the app is disposing.
+
+  /// Seeds [tags] and [content_tags] for cross-cutting domain taxonomy (Phase F1).
+  Future<void> _seedTagsAndTaxonomy(Transaction txn) async {
+    final domainTags = [
+      'metric',
+      'imperial',
+      'si',
+      'cgs',
+      'everyday',
+      'science',
+      'engineering',
+      'medical',
+      'electrical',
+      'optics',
+      'thermodynamics',
+      'astronomy',
+      'digital',
+      'acoustics',
+      'fluid_mechanics',
+      'automotive',
+    ];
+
+    final tagMap = <String, int>{};
+    for (final tagName in domainTags) {
+      await txn.insert(
+        'tags',
+        {'name': tagName},
+        conflictAlgorithm: ConflictAlgorithm.ignore,
+      );
+      final rows = await txn.query('tags', where: 'name = ?', whereArgs: [tagName], columns: ['id']);
+      if (rows.isNotEmpty) {
+        tagMap[tagName] = rows.first['id'] as int;
+      }
+    }
+
+    // Category taxonomy associations
+    final categoryTaxonomy = <String, List<String>>{
+      'length': ['metric', 'imperial', 'si', 'everyday'],
+      'weight': ['metric', 'imperial', 'si', 'everyday'],
+      'temperature': ['si', 'everyday', 'thermodynamics'],
+      'area': ['metric', 'imperial', 'si', 'everyday'],
+      'volume': ['metric', 'imperial', 'si', 'everyday'],
+      'speed': ['everyday', 'automotive', 'si'],
+      'data': ['digital', 'engineering'],
+      'time': ['everyday', 'science', 'si'],
+      'voltage': ['electrical', 'engineering', 'si'],
+      'current': ['electrical', 'engineering', 'si'],
+      'resistance': ['electrical', 'engineering', 'si'],
+      'capacitance': ['electrical', 'engineering', 'si'],
+      'inductance': ['electrical', 'engineering', 'si'],
+      'power': ['electrical', 'engineering', 'automotive', 'si'],
+      'energy': ['science', 'thermodynamics', 'si'],
+      'pressure': ['engineering', 'fluid_mechanics', 'si'],
+      'illuminance': ['optics', 'science', 'si'],
+      'luminousFlux': ['optics', 'science', 'si'],
+      'bloodPressure': ['medical', 'everyday'],
+      'bloodSugar': ['medical', 'everyday'],
+      'heartRate': ['medical', 'everyday'],
+      'bmi': ['medical', 'everyday'],
+      'astronomicalLength': ['astronomy', 'science'],
+      'radioactivity': ['science', 'medical'],
+      'radiationDose': ['science', 'medical'],
+      'soundLevel': ['acoustics', 'engineering'],
+      'flowRate': ['fluid_mechanics', 'engineering'],
+      'density': ['science', 'fluid_mechanics'],
+      'torque': ['engineering', 'automotive'],
+      'fuelEconomy': ['automotive', 'everyday'],
+    };
+
+    var count = 0;
+    for (final entry in categoryTaxonomy.entries) {
+      final catId = entry.key;
+      for (final tagName in entry.value) {
+        final tagId = tagMap[tagName];
+        if (tagId != null) {
+          await txn.insert(
+            'content_tags',
+            {
+              'tag_id': tagId,
+              'source_type': 'category',
+              'source_id': catId,
+            },
+            conflictAlgorithm: ConflictAlgorithm.replace,
+          );
+          count++;
+        }
+      }
+    }
+    debugPrint('[DatabaseService]   ↳ ${tagMap.length} tags and $count content_tags seeded');
+  }
+
+  /// Seeds [related_content] graph edges between categories (Phase G1).
+  Future<void> _seedRelatedContentNetwork(Transaction txn) async {
+    final relationships = <(String, String, String)>[
+      ('length', 'area', 'child'),
+      ('length', 'volume', 'child'),
+      ('length', 'speed', 'related'),
+      ('weight', 'density', 'related'),
+      ('weight', 'force', 'related'),
+      ('voltage', 'current', 'sibling'),
+      ('voltage', 'resistance', 'sibling'),
+      ('voltage', 'power', 'sibling'),
+      ('current', 'conductance', 'sibling'),
+      ('temperature', 'specificHeat', 'related'),
+      ('temperature', 'thermalConductivity', 'related'),
+      ('temperature', 'thermalResistance', 'related'),
+      ('illuminance', 'luminousFlux', 'sibling'),
+      ('illuminance', 'luminousIntensity', 'sibling'),
+      ('illuminance', 'luminance', 'sibling'),
+      ('flowRate', 'massFlowRate', 'sibling'),
+      ('flowRate', 'kinematicViscosity', 'related'),
+      ('kinematicViscosity', 'dynamicViscosity', 'sibling'),
+      ('torque', 'power', 'related'),
+      ('speed', 'fuelEconomy', 'related'),
+      ('bloodPressure', 'heartRate', 'sibling'),
+      ('bloodSugar', 'bmi', 'sibling'),
+      ('radioactivity', 'radiationDose', 'sibling'),
+      ('radiationDose', 'radiationExposure', 'sibling'),
+      ('frequency', 'soundLevel', 'related'),
+      ('frequency', 'wavenumber', 'related'),
+    ];
+
+    var count = 0;
+    for (var i = 0; i < relationships.length; i++) {
+      final (src, tgt, relType) = relationships[i];
+      await txn.insert(
+        'related_content',
+        {
+          'source_type': 'category',
+          'source_id': src,
+          'target_type': 'category',
+          'target_id': tgt,
+          'relationship_type': relType,
+          'display_order': i,
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+      count++;
+    }
+    debugPrint('[DatabaseService]   ↳ $count related_content edges seeded');
+  }
+
+
   Future<void> close() async {
     await _db?.close();
     _db = null;

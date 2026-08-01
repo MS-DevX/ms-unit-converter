@@ -7,12 +7,13 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 import '../data/did_you_know.dart';
+import '../repositories/educational_facts_repository.dart';
 
 /// Displays a randomly rotating [DidYouKnowFact] with a fade animation.
 ///
 /// The fact changes every 180 seconds (3 minutes) automatically. The user can tap
-/// the forward arrow to skip to the next fact. All facts are bundled
-/// offline — no internet required.
+/// the forward arrow to skip to the next fact. All facts are loaded from SQLite
+/// database via [EducationalFactsRepository].
 class DidYouKnowCard extends StatefulWidget {
   const DidYouKnowCard({super.key});
 
@@ -24,15 +25,13 @@ class _DidYouKnowCardState extends State<DidYouKnowCard>
     with SingleTickerProviderStateMixin {
   late final AnimationController _fadeCtrl;
   late final Animation<double> _fade;
-  late Timer _timer;
+  Timer? _timer;
+  List<DidYouKnowFact> _facts = const [];
   int _currentIndex = 0;
 
   @override
   void initState() {
     super.initState();
-    // Start at a random fact
-    _currentIndex = Random().nextInt(didYouKnowFacts.length);
-
     _fadeCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
@@ -40,21 +39,35 @@ class _DidYouKnowCardState extends State<DidYouKnowCard>
     _fade = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeIn);
     _fadeCtrl.forward();
 
+    _loadFacts();
+  }
+
+  Future<void> _loadFacts() async {
+    final facts = await EducationalFactsRepository.instance.loadAll();
+    if (!mounted) return;
+    setState(() {
+      _facts = facts;
+      if (_facts.isNotEmpty) {
+        _currentIndex = Random().nextInt(_facts.length);
+      }
+    });
+
     _timer = Timer.periodic(const Duration(seconds: 180), (_) => _nextFact());
   }
 
   @override
   void dispose() {
-    _timer.cancel();
+    _timer?.cancel();
     _fadeCtrl.dispose();
     super.dispose();
   }
 
   void _nextFact() {
+    if (_facts.isEmpty) return;
     _fadeCtrl.reverse().then((_) {
       if (!mounted) return;
       setState(() {
-        _currentIndex = (_currentIndex + 1) % didYouKnowFacts.length;
+        _currentIndex = (_currentIndex + 1) % _facts.length;
       });
       _fadeCtrl.forward();
     });
@@ -62,8 +75,9 @@ class _DidYouKnowCardState extends State<DidYouKnowCard>
 
   @override
   Widget build(BuildContext context) {
+    if (_facts.isEmpty) return const SizedBox.shrink();
     final colorScheme = Theme.of(context).colorScheme;
-    final fact = didYouKnowFacts[_currentIndex];
+    final fact = _facts[_currentIndex];
 
     return FadeTransition(
       opacity: _fade,

@@ -41,20 +41,20 @@ void main() {
     });
 
     group('getFallbackRates()', () {
-      test('returns a copy of fallbackRatesToUsd', () {
-        final rates = CurrencyService.getFallbackRates();
+      test('returns a copy of fallbackRatesToUsd', () async {
+        final rates = await CurrencyService.getFallbackRates();
         expect(rates, fallbackRatesToUsd);
       });
 
-      test('returned map is mutable (not const)', () {
-        final rates = CurrencyService.getFallbackRates();
+      test('returned map is mutable (not const)', () async {
+        final rates = await CurrencyService.getFallbackRates();
         rates['TEST'] = 1.0;
         expect(rates.containsKey('TEST'), isTrue);
         expect(fallbackRatesToUsd.containsKey('TEST'), isFalse);
       });
 
-      test('contains all fallback currencies', () {
-        final rates = CurrencyService.getFallbackRates();
+      test('contains all fallback currencies', () async {
+        final rates = await CurrencyService.getFallbackRates();
         final currencies = buildFallbackCurrencies();
         for (final c in currencies) {
           expect(
@@ -65,8 +65,8 @@ void main() {
         }
       });
 
-      test('PKR rate matches data file', () {
-        final rates = CurrencyService.getFallbackRates();
+      test('PKR rate matches data file', () async {
+        final rates = await CurrencyService.getFallbackRates();
         expect(rates['PKR'], fallbackRatesToUsd['PKR']);
       });
     });

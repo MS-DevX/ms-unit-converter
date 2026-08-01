@@ -1,5 +1,6 @@
 library;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
@@ -45,6 +46,15 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _initAds() async {
+    if (defaultTargetPlatform != TargetPlatform.android &&
+        defaultTargetPlatform != TargetPlatform.iOS) {
+      debugPrint('[Splash] Non-mobile platform — skipping AdMob initialization');
+      if (mounted) {
+        setState(() => _adReady = false);
+      }
+      return;
+    }
+
     try {
       await MobileAds.instance.initialize();
       debugPrint('[Splash] MobileAds initialized');
@@ -59,7 +69,9 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _checkUpdate() async {
-    await InAppUpdateService.instance.checkForUpdate(context: context);
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      await InAppUpdateService.instance.checkForUpdate();
+    }
   }
 
   void _onReady() {

@@ -34,7 +34,7 @@ void main() {
       expect(health.tableCounts['categories'], greaterThanOrEqualTo(50));
       expect(health.tableCounts['units'], greaterThanOrEqualTo(300));
       expect(health.tableCounts['currencies'], greaterThanOrEqualTo(100));
-      expect(health.tableCounts['collections'], equals(9));
+      expect(health.tableCounts['collections'], greaterThanOrEqualTo(15));
       expect(health.tableCounts['educational_facts'], greaterThanOrEqualTo(300));
       expect(health.tableCounts['search_aliases'], greaterThanOrEqualTo(100));
     });

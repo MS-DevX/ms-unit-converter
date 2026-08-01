@@ -23,6 +23,8 @@ class UnitInfo {
   final String history;
   final String usedFor;
   final List<String> examples;
+  final List<String> tags;
+  final List<String> relatedContent;
 
   const UnitInfo({
     required this.symbol,
@@ -30,6 +32,8 @@ class UnitInfo {
     required this.history,
     required this.usedFor,
     required this.examples,
+    this.tags = const [],
+    this.relatedContent = const [],
   });
 
   factory UnitInfo.fromJson(Map<String, dynamic> json) {
@@ -39,6 +43,8 @@ class UnitInfo {
       history: json['history'] as String? ?? 'Historical measurement standard.',
       usedFor: json['used_for'] as String? ?? 'General scientific and everyday applications.',
       examples: (json['examples'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
+      tags: (json['tags'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
+      relatedContent: (json['related_content'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
     );
   }
 }
@@ -84,12 +90,16 @@ class UnitInfoService {
       try {
         final dbRow = await UnitInformationRepository.instance.findByUnitName(unitName);
         if (dbRow != null) {
+          final tags = dbRow.tags.map((t) => t.name).toList();
+          final related = dbRow.relatedContent.map((r) => r.targetId).toList();
           return UnitInfo(
             symbol: dbRow.symbol,
             definition: dbRow.definition,
             history: dbRow.history,
             usedFor: dbRow.usedFor,
             examples: dbRow.examples,
+            tags: tags,
+            relatedContent: related,
           );
         }
       } catch (e) {
@@ -99,7 +109,7 @@ class UnitInfoService {
 
     // Phase 1 fallback: JSON asset.
     await load();
-    final key = unitName.toLowerCase().replaceAll(' ', '_');
+    final key = unitName.toLowerCase();
     if (_jsonCache != null && _jsonCache!.containsKey(key)) {
       return _jsonCache![key]!;
     }

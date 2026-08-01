@@ -13,7 +13,9 @@ library;
 import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 
+import 'base_repository.dart';
 import '../database/database_service.dart';
+import '../data/collections_data.dart';
 import '../data/units_data.dart';
 
 /// Row model for a collection returned from the [collections] table.
@@ -61,7 +63,7 @@ class CollectionRow {
 }
 
 /// Singleton repository for [CollectionRow] data.
-class CollectionRepository {
+class CollectionRepository implements BaseRepository<CollectionRow, String> {
   CollectionRepository._();
 
   /// The singleton instance.
@@ -74,6 +76,34 @@ class CollectionRepository {
   final Map<String, List<UnitCategory>> _itemsCache = {};
 
   Database get _db => DatabaseService.instance.database;
+
+  // ─── BaseRepository API ───────────────────────────────────────────────────
+
+  @override
+  Future<List<CollectionRow>> getAll() => loadAll();
+
+  @override
+  Future<CollectionRow?> getById(String id) => findById(id);
+
+  @override
+  Future<List<CollectionRow>> search(String query) async {
+    if (query.isEmpty) return loadAll();
+    final all = await loadAll();
+    final lower = query.toLowerCase();
+    return all
+        .where(
+          (c) =>
+              c.name.toLowerCase().contains(lower) ||
+              c.description.toLowerCase().contains(lower),
+        )
+        .toList();
+  }
+
+  @override
+  Future<int> count() async => (await loadAll()).length;
+
+  @override
+  Future<bool> exists(String id) async => (await findById(id)) != null;
 
   // ─── Public API ────────────────────────────────────────────────────────────
 
@@ -132,7 +162,27 @@ class CollectionRepository {
     return categories;
   }
 
+  /// Loads all [Collection] objects with populated category lists from SQLite.
+  Future<List<Collection>> loadFullCollections() async {
+    final rows = await loadAll();
+    final result = <Collection>[];
+    for (final row in rows) {
+      final cats = await loadCategories(row.id);
+      result.add(
+        Collection(
+          id: row.id,
+          name: row.name,
+          emoji: row.emoji,
+          description: row.description,
+          categories: cats,
+        ),
+      );
+    }
+    return result;
+  }
+
   /// Clears all in-memory caches (dev/test use only).
+  @override
   void clearCache() {
     _collectionsCache = null;
     _itemsCache.clear();

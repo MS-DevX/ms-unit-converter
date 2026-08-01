@@ -24,6 +24,7 @@ library;
 import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 
+import 'base_repository.dart';
 import '../database/database_service.dart';
 import '../data/units_data.dart';
 import '../models/unit_model.dart';
@@ -115,7 +116,7 @@ class SqliteSearchBackend implements SearchBackend {
 ///
 /// All callers (SearchHelper, SmartParseService) use this repository.
 /// The active backend can be swapped without changing any caller code.
-class SearchRepository {
+class SearchRepository implements BaseRepository<Map<String, String>, String> {
   SearchRepository._();
 
   /// The singleton instance.
@@ -128,6 +129,54 @@ class SearchRepository {
     _backend ??= SqliteSearchBackend(DatabaseService.instance.database);
     return _backend!;
   }
+
+  // ─── BaseRepository API ───────────────────────────────────────────────────
+
+  @override
+  Future<List<Map<String, String>>> getAll() async {
+    final rows = await DatabaseService.instance.database.query(
+      'search_aliases',
+      columns: ['keyword', 'canonical'],
+    );
+    return rows.map((r) => {
+      'keyword': r['keyword'] as String,
+      'canonical': r['canonical'] as String,
+    }).toList();
+  }
+
+  @override
+  Future<Map<String, String>?> getById(String id) async {
+    final canonical = await resolveAlias(id);
+    if (canonical != null) {
+      return {'keyword': id, 'canonical': canonical};
+    }
+    return null;
+  }
+
+  @override
+  Future<List<Map<String, String>>> search(String query) async {
+    final all = await getAll();
+    if (query.isEmpty) return all;
+    final lower = query.toLowerCase();
+    return all.where((r) =>
+      r['keyword']!.toLowerCase().contains(lower) ||
+      r['canonical']!.toLowerCase().contains(lower),
+    ).toList();
+  }
+
+  @override
+  Future<int> count() async {
+    final res = Sqflite.firstIntValue(
+      await DatabaseService.instance.database.rawQuery('SELECT COUNT(*) FROM search_aliases'),
+    );
+    return res ?? 0;
+  }
+
+  @override
+  Future<bool> exists(String id) async => (await resolveAlias(id)) != null;
+
+  @override
+  void clearCache() => resetBackend();
 
   /// Resolves [keyword] to its canonical display name via the alias table.
   ///
