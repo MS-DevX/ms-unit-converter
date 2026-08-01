@@ -30,7 +30,7 @@ void main() {
       expect(result.isHealthy, isTrue);
       expect(result.isInitialized, isTrue);
       expect(result.schemaVersion, equals(MigrationService.currentSchemaVersion));
-      expect(result.contentVersion, equals('2.3.0'));
+      expect(result.contentVersion, equals('2.3.1'));
       expect(result.tableCounts['categories'], equals(60));
       expect(result.tableCounts['units'], equals(480));
       expect(result.tableCounts['currencies'], equals(151));

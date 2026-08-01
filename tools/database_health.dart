@@ -86,7 +86,13 @@ void main() async {
       errors.add('Orphan collection_items references: $orphanItems');
     }
 
-    // 7. Empty Descriptions Check
+    // 7. Missing Unit Information Check
+    final missingInfoCount = unitsCount - unitInfoCount;
+    if (missingInfoCount > 0) {
+      warnings.add('$missingInfoCount units are missing educational information entries');
+    }
+
+    // 8. Empty Descriptions Check
     final emptyDesc = await db.rawQuery('''
       SELECT id FROM categories WHERE description = '' OR description IS NULL
     ''');

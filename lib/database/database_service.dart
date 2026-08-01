@@ -37,7 +37,7 @@ import '../data/units_data.dart';
 /// Current content version — matches the app release that last changed reference data.
 /// Increment this when any reference data changes (units, currencies, facts, etc.)
 /// to trigger an automatic reseed on the next launch.
-const String _contentVersion = '2.3.0';
+const String _contentVersion = '2.3.1';
 
 /// SQLite database filename stored in the app documents directory.
 const String _dbFileName = DatabaseConstants.databaseFileName;
@@ -737,42 +737,52 @@ class DatabaseService {
 
       final decoded = jsonDecode(jsonStr) as Map<String, dynamic>;
       final unitRows = await txn.query('units', columns: ['id', 'name', 'symbol']);
-      final nameToUnit = <String, Map<String, dynamic>>{};
-      for (final r in unitRows) {
-        nameToUnit[(r['name'] as String).toLowerCase()] = r;
+      final jsonToInfo = <String, Map<String, dynamic>>{};
+      for (final entry in decoded.entries) {
+        jsonToInfo[entry.key.toLowerCase().replaceAll('_', ' ')] =
+            entry.value as Map<String, dynamic>;
+        jsonToInfo[entry.key.toLowerCase()] = entry.value as Map<String, dynamic>;
       }
 
       var count = 0;
-      for (final entry in decoded.entries) {
-        final key = entry.key.toLowerCase().replaceAll('_', ' ');
-        final unitMap = nameToUnit[key] ?? nameToUnit[entry.key.toLowerCase()];
-        if (unitMap != null) {
-          final unitId = unitMap['id'] as int;
-          final symbol = unitMap['symbol'] as String;
-          final val = entry.value as Map<String, dynamic>;
-          final definition = val['definition'] as String? ?? '';
-          final history = val['history'] as String? ?? '';
-          final usedFor = val['used_for'] as String? ?? '';
-          final examplesList = (val['examples'] as List<dynamic>?)
-                  ?.map((e) => e.toString())
-                  .toList() ??
-              [];
+      for (final r in unitRows) {
+        final unitId = r['id'] as int;
+        final unitName = r['name'] as String;
+        final dbSymbol = r['symbol'] as String;
+        final keyLower = unitName.toLowerCase();
+        final keySpaced = keyLower.replaceAll('_', ' ');
 
-          await txn.insert(
-            'unit_information',
-            {
-              'unit_id': unitId,
-              'symbol': val['symbol'] as String? ?? symbol,
-              'definition': definition,
-              'history': history,
-              'used_for': usedFor,
-              'examples': jsonEncode(examplesList),
-            },
-            conflictAlgorithm: ConflictAlgorithm.replace,
-          );
-          count++;
-        }
+        final val = jsonToInfo[keyLower] ?? jsonToInfo[keySpaced];
+
+        final symbol = val != null ? (val['symbol'] as String? ?? dbSymbol) : dbSymbol;
+        final definition = val != null
+            ? (val['definition'] as String? ?? '')
+            : 'The $unitName is a standard unit of measurement.';
+        final history = val != null
+            ? (val['history'] as String? ?? '')
+            : 'Standardized unit of measurement used globally.';
+        final usedFor = val != null
+            ? (val['used_for'] as String? ?? '')
+            : 'Measurements and calculations.';
+        final examplesList = val != null
+            ? ((val['examples'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [])
+            : ['1 $unitName'];
+
+        await txn.insert(
+          'unit_information',
+          {
+            'unit_id': unitId,
+            'symbol': symbol,
+            'definition': definition,
+            'history': history,
+            'used_for': usedFor,
+            'examples': jsonEncode(examplesList),
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+        count++;
       }
+      debugPrint('[DatabaseService]   ↳ $count unit information records');
       debugPrint('[DatabaseService]   ↳ $count unit information records');
     } catch (e) {
       debugPrint('[DatabaseService] Error seeding unit_information: $e');

@@ -152,7 +152,8 @@ class _UnitCompanionScreenState extends State<UnitCompanionScreen> {
                     StitchSearchBar(
                       controller: _searchController,
                       focusNode: _searchFocusNode,
-                      hintText: 'Search units, formulas, trivia & currencies...',
+                      hintText:
+                          'Search units, formulas, trivia & currencies...',
                       onChanged: _onSearchChanged,
                       onClear: _clearSearch,
                     ),
@@ -166,17 +167,21 @@ class _UnitCompanionScreenState extends State<UnitCompanionScreen> {
                         scrollDirection: Axis.horizontal,
                         physics: const BouncingScrollPhysics(),
                         itemCount: _suggestionChips.length,
-                        separatorBuilder: (_, index) => const SizedBox(width: 8),
+                        separatorBuilder: (_, index) =>
+                            const SizedBox(width: 8),
                         itemBuilder: (context, index) {
                           final chip = _suggestionChips[index];
-                          final isSelected = _activeQuery.toLowerCase() == chip.toLowerCase();
+                          final isSelected =
+                              _activeQuery.toLowerCase() == chip.toLowerCase();
                           return FilterChip(
                             selected: isSelected,
                             label: Text(
                               chip,
                               style: TextStyle(
                                 fontSize: 13,
-                                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                fontWeight: isSelected
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
                                 color: isSelected
                                     ? colorScheme.onPrimary
                                     : colorScheme.onSurfaceVariant,
@@ -192,7 +197,9 @@ class _UnitCompanionScreenState extends State<UnitCompanionScreen> {
                               side: BorderSide(
                                 color: isSelected
                                     ? colorScheme.primary
-                                    : colorScheme.outlineVariant.withValues(alpha: 0.5),
+                                    : colorScheme.outlineVariant.withValues(
+                                        alpha: 0.5,
+                                      ),
                               ),
                             ),
                             onSelected: (_) => _applyChip(chip),
@@ -208,9 +215,7 @@ class _UnitCompanionScreenState extends State<UnitCompanionScreen> {
             // CONTENT AREA
             if (_isSearching)
               const SliverFillRemaining(
-                child: Center(
-                  child: CircularProgressIndicator(),
-                ),
+                child: Center(child: CircularProgressIndicator()),
               )
             else if (_activeQuery.isNotEmpty && _results.isEmpty)
               SliverFillRemaining(
@@ -224,6 +229,8 @@ class _UnitCompanionScreenState extends State<UnitCompanionScreen> {
                   onAction: _clearSearch,
                 ),
               )
+            else if (_results.isNotEmpty)
+              _buildResultsList(context)
             else
               ..._buildDefaultExploreSlivers(context),
           ],
@@ -241,36 +248,35 @@ class _UnitCompanionScreenState extends State<UnitCompanionScreen> {
     return SliverPadding(
       padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
       sliver: SliverList(
-        delegate: SliverChildBuilderDelegate(
-          (context, index) {
-            final entry = grouped.entries.elementAt(index);
-            final type = entry.key;
-            final items = entry.value;
+        delegate: SliverChildBuilderDelegate((context, index) {
+          final entry = grouped.entries.elementAt(index);
+          final type = entry.key;
+          final items = entry.value;
 
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(top: 16, bottom: 8),
-                  child: Text(
-                    CompanionSearchResult.groupTitle(type),
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: Theme.of(context).colorScheme.primary,
-                      letterSpacing: 0.5,
-                    ),
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(top: 16, bottom: 8),
+                child: Text(
+                  CompanionSearchResult.groupTitle(type),
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: Theme.of(context).colorScheme.primary,
+                    letterSpacing: 0.5,
                   ),
                 ),
-                ...items.map((item) => Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: _UnitResultTile(item: item),
-                    )),
-              ],
-            );
-          },
-          childCount: grouped.length,
-        ),
+              ),
+              ...items.map(
+                (item) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: _UnitResultTile(item: item),
+                ),
+              ),
+            ],
+          );
+        }, childCount: grouped.length),
       ),
     );
   }
@@ -281,9 +287,7 @@ class _UnitCompanionScreenState extends State<UnitCompanionScreen> {
     return [
       const SliverPadding(
         padding: EdgeInsets.fromLTRB(20, 4, 20, 16),
-        sliver: SliverToBoxAdapter(
-          child: DidYouKnowCard(),
-        ),
+        sliver: SliverToBoxAdapter(child: DidYouKnowCard()),
       ),
       SliverPadding(
         padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -307,19 +311,47 @@ class _UnitCompanionScreenState extends State<UnitCompanionScreen> {
           crossAxisSpacing: 10,
           childAspectRatio: 1.1,
           children: [
-            _buildCategoryTile(context, UnitCategory.length, Icons.straighten_rounded),
-            _buildCategoryTile(context, UnitCategory.weight, Icons.scale_rounded),
-            _buildCategoryTile(context, UnitCategory.temperature, Icons.thermostat_rounded),
-            _buildCategoryTile(context, UnitCategory.area, Icons.aspect_ratio_rounded),
-            _buildCategoryTile(context, UnitCategory.volume, Icons.water_drop_rounded),
-            _buildCategoryTile(context, UnitCategory.speed, Icons.speed_rounded),
+            _buildCategoryTile(
+              context,
+              UnitCategory.length,
+              Icons.straighten_rounded,
+            ),
+            _buildCategoryTile(
+              context,
+              UnitCategory.weight,
+              Icons.scale_rounded,
+            ),
+            _buildCategoryTile(
+              context,
+              UnitCategory.temperature,
+              Icons.thermostat_rounded,
+            ),
+            _buildCategoryTile(
+              context,
+              UnitCategory.area,
+              Icons.aspect_ratio_rounded,
+            ),
+            _buildCategoryTile(
+              context,
+              UnitCategory.volume,
+              Icons.water_drop_rounded,
+            ),
+            _buildCategoryTile(
+              context,
+              UnitCategory.speed,
+              Icons.speed_rounded,
+            ),
           ],
         ),
       ),
     ];
   }
 
-  Widget _buildCategoryTile(BuildContext context, UnitCategory category, IconData icon) {
+  Widget _buildCategoryTile(
+    BuildContext context,
+    UnitCategory category,
+    IconData icon,
+  ) {
     final config = configFor(category);
 
     return StitchCard(
@@ -375,11 +407,7 @@ class _UnitResultTile extends StatelessWidget {
               color: item.accentColor.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(
-              item.icon,
-              color: item.accentColor,
-              size: 20,
-            ),
+            child: Icon(item.icon, color: item.accentColor, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -402,7 +430,10 @@ class _UnitResultTile extends StatelessWidget {
                     ),
                     if (item.categoryName.isNotEmpty)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: colorScheme.surfaceContainerHighest,
                           borderRadius: BorderRadius.circular(6),
@@ -431,7 +462,10 @@ class _UnitResultTile extends StatelessWidget {
                 if (item.formula != null) ...[
                   const SizedBox(height: 6),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: colorScheme.surfaceContainerHigh,
                       borderRadius: BorderRadius.circular(6),
