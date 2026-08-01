@@ -1,9 +1,9 @@
-/// Data model for STEM Companion offline search results.
+/// Data model for Unit Companion offline search results.
 library;
 
 import 'package:flutter/material.dart';
 
-/// Categories of offline search results in STEM Companion.
+/// Categories of offline search results in Unit Companion.
 enum CompanionResultType {
   intent,
   guide,
@@ -19,10 +19,6 @@ enum CompanionResultType {
   pinned,
   recent,
   fact,
-  mathematics,
-  physics,
-  chemistry,
-  constant,
   bookmark,
 }
 
@@ -71,14 +67,6 @@ class CompanionSearchResult {
         return '📚 Definitions';
       case CompanionResultType.formula:
         return '📐 Formulas';
-      case CompanionResultType.physics:
-        return '⚛️ Physics';
-      case CompanionResultType.chemistry:
-        return '🧪 Chemistry';
-      case CompanionResultType.mathematics:
-        return '➗ Mathematics';
-      case CompanionResultType.constant:
-        return '🔬 Scientific Constants';
       case CompanionResultType.currency:
         return '💱 Currency Database';
       case CompanionResultType.collection:

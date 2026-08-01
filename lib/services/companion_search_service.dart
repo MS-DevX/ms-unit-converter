@@ -29,7 +29,7 @@ import '../services/smart_parse_service.dart';
 import '../services/unit_info_service.dart';
 import '../utils/formatters.dart';
 
-/// Pure-Dart offline search orchestrator for STEM Companion.
+/// Pure-Dart offline search orchestrator for Unit Companion.
 class CompanionSearchService {
   CompanionSearchService._();
 
