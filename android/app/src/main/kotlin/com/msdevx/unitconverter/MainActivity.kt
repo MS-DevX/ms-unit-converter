@@ -17,8 +17,12 @@ class MainActivity : FlutterActivity() {
                     val packageName = call.argument<String>("packageName")
                     if (packageName != null) {
                         try {
-                            @Suppress("DEPRECATION")
-                            val installer = packageManager.getInstallerPackageName(packageName)
+                            val installer = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                                packageManager.getInstallSourceInfo(packageName).installingPackageName
+                            } else {
+                                @Suppress("DEPRECATION")
+                                packageManager.getInstallerPackageName(packageName)
+                            }
                             result.success(installer)
                         } catch (e: Exception) {
                             result.success(null)
