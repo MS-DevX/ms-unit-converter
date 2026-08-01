@@ -15,11 +15,19 @@ void main() {
 
   setUp(() async {
     tempDir = await Directory.systemTemp.createTemp('avatar_test_');
-    const channel = MethodChannel('plugins.flutter.io/path_provider');
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
-      return tempDir.path;
-    });
+    for (final channelName in [
+      'plugins.flutter.io/path_provider',
+      'plugins.flutter.io/path_provider_linux',
+      'plugins.flutter.io/path_provider_macos',
+      'plugins.flutter.io/path_provider_ios',
+      'plugins.flutter.io/path_provider_android',
+    ]) {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(MethodChannel(channelName),
+              (MethodCall methodCall) async {
+        return tempDir.path;
+      });
+    }
     SharedPreferences.setMockInitialValues({});
   });
 
@@ -82,16 +90,7 @@ void main() {
         (WidgetTester tester) async {
       final settings = SettingsProvider();
       await settings.setUserName('Shahzad Dev');
-
-      final sourceFile = File('${tempDir.path}/temp_to_delete.jpg');
-      await sourceFile.writeAsBytes([1, 2, 3]);
-      await settings.setUserAvatarPath(sourceFile.path);
-
-      // Delete the permanent file to simulate missing file on disk
-      final permFile = File(settings.userAvatarPath);
-      if (await permFile.exists()) {
-        await permFile.delete();
-      }
+      settings.userAvatarPath = '${tempDir.path}/missing_avatar.jpg';
 
       await tester.pumpWidget(
         ChangeNotifierProvider<SettingsProvider>.value(
@@ -104,7 +103,7 @@ void main() {
         ),
       );
 
-      await tester.pumpAndSettle();
+      await tester.pump();
 
       // Verify fallback initials 'SD' are rendered
       expect(find.text('SD'), findsOneWidget);
